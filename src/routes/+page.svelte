@@ -161,7 +161,7 @@
         <!-- GRID TYPE -->
         <div class="flex flex-col w-[50%] gap-2 mx-auto">
             <div class="flex flex-row justify-between">
-                <span class="font-semibold">Grid</span> {grid_style.charAt(0).toUpperCase() + grid_style.slice(1)}
+                <span class="font-semibold">Grid</span> <span class="opacity-70">{grid_style.charAt(0).toUpperCase() + grid_style.slice(1)}</span>
             </div>
             <div class="flex flex-row justify-between">
                 <button class="btn btn-sm group {grid_style === 'standard' ? 'btn-neutral' : 'btn-outline'}" type="button" onclick={grid_style = "standard"} aria-label="standard">
@@ -178,7 +178,7 @@
         <!-- BACTERIA COLOR & CONTROLS -->
         <div class="flex flex-col w-[50%] gap-2 mx-auto">
             <div class="flex flex-row justify-between">
-                <span class="font-semibold">Bacteria Color</span> {current_color}
+                <span class="font-semibold">Bacteria Color</span><span class="opacity-70">{current_color}</span>
             </div>
             <div class="flex flex-row justify-around my-auto">
                 <input type="radio" class="radio checked:bg-blue-400" checked="checked" value="Blue" bind:group={current_color} />
@@ -194,14 +194,14 @@
         <!-- GRID SPACING -->
         <div class="flex flex-col w-full gap-2 mx-auto">
             <div class="flex flex-row justify-between">
-                <span class="font-semibold">Grid Spacing</span> {grid_spacing_mm}mm
+                <span class="font-semibold">Grid Spacing</span><span class="opacity-70">{grid_spacing_mm}mm</span>
             </div>
             <input type="range" min="1" max="15" class="range" step="0.1" bind:value={grid_spacing_mm} />
         </div>
         <!-- GRID MARGIN -->
         <div class="flex flex-col w-full gap-2 mx-auto">
             <div class="flex flex-row justify-between">
-                <span class="font-semibold">Margin</span> {radius_margin_mm}mm
+                <span class="font-semibold">Margin</span><span class="opacity-70">{radius_margin_mm}mm</span>
             </div>
             <input type="range" min="1" max="15" class="range" step="0.1" bind:value={radius_margin_mm} />
         </div>
@@ -236,7 +236,7 @@
     </button>
 
     <!-- ABOUT SECTION -->
-    <div class="collapse collapse-arrow pt-10">
+    <div class="collapse collapse-arrow pt-4">
         <input type="checkbox" id="section1" class="toggle-checkbox" />
         <label for="section1" class="collapse-title text-xl font-medium">What is Opentrons GUI?</label>
         <div class="collapse-content">
