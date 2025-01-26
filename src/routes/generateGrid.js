@@ -5,23 +5,14 @@ export function generateGrid(grid_style, radius_mm, radius_margin_mm, grid_spaci
 
     if (grid_style === 'standard') {
         // Regular grid
-        for (let y = -adjusted_radius; y <= adjusted_radius; y += step) {
-            for (let x = -adjusted_radius; x <= adjusted_radius; x += step) {
+        const center = { x: 0, y: 0 };
+        const start = -Math.floor(adjusted_radius / step) * step;
+        const end = Math.ceil(adjusted_radius / step) * step;
+    
+        for (let y = start; y <= end; y += step) {
+            for (let x = start; x <= end; x += step) {
                 if (Math.sqrt(x * x + y * y) <= adjusted_radius) {
                     points.push({ x, y });
-                }
-            }
-        }
-    } else if (grid_style === 'honeycomb') {
-        // Honeycomb grid
-        const offset = step * Math.sqrt(3) / 2; // Vertical offset for honeycomb pattern
-        for (let y = -adjusted_radius; y <= adjusted_radius; y += offset) {
-            for (let x = -adjusted_radius; x <= adjusted_radius; x += step) {
-                const xOffset = Math.abs(Math.floor(y / offset) % 2) * (step / 2); // Offset every other row
-                const xPos = x + xOffset;
-                
-                if (Math.sqrt(xPos * xPos + y * y) <= adjusted_radius) {
-                    points.push({ x: xPos, y });
                 }
             }
         }
@@ -43,6 +34,49 @@ export function generateGrid(grid_style, radius_mm, radius_margin_mm, grid_spaci
                 }
             }
         }
+    } else if (grid_style === 'honeycomb') {
+        // Honeycomb grid
+        const offset = step * Math.sqrt(3) / 2; // Vertical offset for honeycomb pattern
+        const rows = Math.ceil(adjusted_radius / offset); // Number of rows to generate (up to radius)
+    
+        // Generate the grid points, but don't add the center point here
+        for (let row = 1; row <= rows; row++) {
+            const yPos = row * offset;
+    
+            // Iterate over positive and negative x for each row
+            const xRange = Math.floor(adjusted_radius / step);
+            for (let i = -xRange; i <= xRange; i++) {
+                let xPos = i * step;
+    
+                // For every other row, apply an offset (half step)
+                if (row % 2 !== 0) {
+                    xPos += step / 2;
+                }
+    
+                // Add points for the positive y-position row
+                if (Math.sqrt(xPos * xPos + yPos * yPos) <= adjusted_radius) {
+                    points.push({ x: xPos, y: yPos });
+                }
+    
+                // Also check negative y-position row (symmetry)
+                if (Math.sqrt(xPos * xPos + (-yPos) * (-yPos)) <= adjusted_radius) {
+                    points.push({ x: xPos, y: -yPos });
+                }
+            }
+        }
+    
+        // Now generate the center row (y = 0), without duplicating the center point
+        const centerRowY = 0;
+        const xRange = Math.floor(adjusted_radius / step);
+        for (let i = -xRange; i <= xRange; i++) {
+            const xPos = i * step;
+    
+            // Only add the center point if it's not already included
+            if (Math.sqrt(xPos * xPos + centerRowY * centerRowY) <= adjusted_radius) {
+                points.push({ x: xPos, y: centerRowY });
+            }
+        }
     }
+
     return points;
 }
