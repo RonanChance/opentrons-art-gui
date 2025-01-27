@@ -3,7 +3,7 @@
     let grid_style = $state('standard'); // 'standard' or 'honeycomb' or 'radial'
     let radius_mm = $state(40);
     let radius_margin_mm = $state(2);
-    let grid_spacing_mm = $state(3);
+    let grid_spacing_mm = $state(4);
     
     let points = $state({});
     let point_colors = $state({});
@@ -54,7 +54,7 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
         current_color = 'Blue';
         radius_mm = 40;
         radius_margin_mm = 2;
-        grid_spacing_mm = 3;
+        grid_spacing_mm = 4;
         points = generateGrid(grid_style, radius_mm, radius_margin_mm, grid_spacing_mm);
     }
 
@@ -163,7 +163,7 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
 </script>
 
 <article class="prose w-full mx-auto mt-5">
-    <h2 class="text-center">Opentrons Art GUI</h2>
+    <h2 class="text-center">Opentrons Art Interface</h2>
 </article>
 
 <div class="flex flex-row w-full max-w-[100vw] sm:max-w-[500px] mx-auto px-5">
@@ -289,8 +289,8 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
     <!-- ABOUT SECTION -->
     <div class="collapse collapse-arrow pt-4">
         <input type="checkbox" id="section1" class="toggle-checkbox" />
-        <label for="section1" class="collapse-title text-lg font-medium">What is Opentrons GUI?</label>
-        <div class="collapse-content text-xs">
+        <label for="section1" class="collapse-title text-lg font-medium">What is Opentrons Art Interface?</label>
+        <div class="collapse-content text-sm">
             <p>This website is made for the Opentrons recitation of <a class="italic underline" href="https://howtogrowalmostanything.notion.site/HTGAA-2024-63a45d6c8f934456b70e30eee86f9b78">'How To Grow (Almost) Anything'</a> (HTGAA), to teach bio-enthusiasts of all backgrounds the principles and skills at the cutting edge of bioengineering and synthetic biology.</p>
         </div>
     </div>
@@ -298,8 +298,8 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
         <input type="checkbox" id="section1" class="toggle-checkbox" />
         <label for="section1" class="collapse-title text-lg font-medium">How To Use The Data Points</label>
         <div class="collapse-content">
-            <p class="text-left text-xs">You'll want to write a script that iterates over each coordinate and dispenses the correct color of bacteria into that location. <span class="font-semibold">Try it yourself before you continue reading!</span></p>
-            <span class="text-center text-xs opacity-60">Note: this will need to be combined with the code from class</span>
+            <p class="text-left text-sm">You'll want to write a script that iterates over each coordinate and dispenses the correct color of bacteria into that location. <span class="font-semibold">Try it yourself before you continue reading!</span></p>
+            <span class="text-center text-sm opacity-60">Note: this will need to be combined with the code from class</span>
             <div class="flex flex-col w-full gap-2 mx-auto pb-2 bg-neutral-100 rounded px-2 mt-2">
                 <div class="flex flex-row justify-between pt-2 items-center">
                     <span class="font-semibold">Python Script</span>
@@ -316,7 +316,7 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
     <div class="collapse collapse-arrow">
         <input type="checkbox" id="section2" class="toggle-checkbox" />
         <label for="section2" class="collapse-title text-lg font-medium">Code & License</label>
-        <div class="collapse-content text-xs">
+        <div class="collapse-content text-sm">
             <p>This project is <a class="underline" href="https://github.com/RonanChance/opentrons-art-gui/blob/main/LICENSE">MIT Licensed</a> and I would love your help in adding new features!</p>
             <div class="max-w-[200px] mx-auto pt-4">
                 <a href="https://github.com/RonanChance/opentrons-art-gui" target="_blank" data-value="github" style="border-radius:4px;" class="py-2 px-1 flex justify-center items-center bg-neutral hover:bg-gray-900 text-white transition ease-in duration-100 text-center text-sm font-semibold shadow-md focus:outline-none">
