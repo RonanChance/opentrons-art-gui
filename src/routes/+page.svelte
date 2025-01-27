@@ -22,6 +22,27 @@
         'Cyan' : '#67e8f9', // cyan-300
     }
     let contentToCopy;
+    let scriptToCopy = `color_names = ["Blue", "Red", "Yellow", "Green", "Cyan"]
+for i, point_list in enumerate([blue_points, red_points, yellow_points, green_points, cyan_points]):
+    # Skip the rest of the loop if the list is empty
+    if not point_list:
+        continue
+
+    # Get the tip for this run, set the bacteria color, and the aspirate bacteria of choice
+    pipette_20ul.pick_up_tip()
+    current_color = color_names[i]
+    pipette_20ul.aspirate(min(len(point_list), 20), location_of_color(current_color))
+
+    # Iterate over the current points list and dispense them, refilling along the way
+    for i in range(len(point_list)):
+        x, y = point_list[i]
+        adjusted_location = center_location.move(types.Point(x, y))
+        dispense_and_jog(pipette_20ul, 1, adjusted_location)
+        if pipette_20ul.current_volume == 0 and len(point_list[i+1:]) > 0:
+            pipette_20ul.aspirate(min(len(point_list[i+1:]), 20), location_of_color(current_color))
+
+    # Drop tip between each color
+    pipette_20ul.drop_tip()`;
     
     $effect(() => {points = generateGrid(grid_style, radius_mm, radius_margin_mm, grid_spacing_mm); point_colors = {}; points_by_color = points_by_color_defaults;});
 
@@ -108,6 +129,36 @@
         }
     }
 
+    async function copyScriptToClipboard() {
+        try {
+            // Get the content to copy
+            let content = scriptToCopy;
+            // content = content.replace(/\s+/g, ' ');
+            // content = content.replace(/(\w+_points = \[[^\]]*\])/g, '$1\n');
+
+            // Create a textarea for copying
+            const textArea = document.createElement("textarea");
+            textArea.value = content;
+
+            // Temporarily add it to the DOM with minimal layout impact
+            textArea.style.position = "absolute";
+            textArea.style.opacity = "0";
+            textArea.style.pointerEvents = "none";
+            textArea.style.height = "1px";
+            textArea.style.width = "1px";
+            textArea.style.margin = "0";
+
+            // Add the textarea to the body, select its content, and copy
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand("copy");
+            document.body.removeChild(textArea);
+
+        } catch (err) {
+            console.log("Failed to copy:", err);
+        }
+    }
+
 
 </script>
 
@@ -117,8 +168,8 @@
 
 <div class="flex flex-row w-full max-w-[100vw] sm:max-w-[500px] mx-auto px-5">
     <div class="">
-        {#if current_point.x && current_point.y}
-            {roundPoint(current_point.x)} {roundPoint(current_point.y)}
+        {#if current_point.x != null && current_point.y != null}
+            {roundPoint(current_point.x)}, {roundPoint(current_point.y)}
         {/if}
     </div>
     <label class="swap ml-auto">
@@ -137,7 +188,7 @@
                 left: calc(50% + ({x / radius_mm} * 50%) - 8px); 
                 top: calc(50% - ({y / radius_mm} * 50%) - 8px);
                 background-color: {well_colors[point_colors[`${x}, ${y}`]] || 'transparent'};
-                box-shadow: {point_colors[`${x}, ${y}`] ? `0 0 12px 4px ${well_colors[point_colors[`${x}, ${y}`]]}` : 'none'}
+                box-shadow: {point_colors[`${x}, ${y}`] ? `0 0 7px 3px ${well_colors[point_colors[`${x}, ${y}`]]}` : 'none'}
                 "
             onmouseover={() => current_point = { x, y }}
             onfocus={() => current_point = { x, y }}
@@ -181,11 +232,11 @@
                 <span class="font-semibold">Bacteria Color</span><span class="opacity-70">{current_color}</span>
             </div>
             <div class="flex flex-row justify-around my-auto">
-                <input type="radio" class="radio checked:bg-blue-400" checked="checked" value="Blue" bind:group={current_color} />
-                <input type="radio" class="radio checked:bg-red-400" checked="checked" value="Red" bind:group={current_color} />
-                <input type="radio" class="radio checked:bg-yellow-400" checked="checked" value="Yellow" bind:group={current_color} />
-                <input type="radio" class="radio checked:bg-green-400" checked="checked" value="Green" bind:group={current_color} />
-                <input type="radio" class="radio checked:bg-cyan-400" checked="checked" value="Cyan" bind:group={current_color} />
+                <input type="radio" class="radio checked:bg-blue-400" value="Blue" bind:group={current_color} />
+                <input type="radio" class="radio checked:bg-red-400" value="Red" bind:group={current_color} />
+                <input type="radio" class="radio checked:bg-yellow-400" value="Yellow" bind:group={current_color} />
+                <input type="radio" class="radio checked:bg-green-400" value="Green" bind:group={current_color} />
+                <input type="radio" class="radio checked:bg-cyan-400" value="Cyan" bind:group={current_color} />
             </div>
         </div>
     </div>
@@ -215,7 +266,7 @@
                 <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M10 8V7C10 6.05719 10 5.58579 10.2929 5.29289C10.5858 5 11.0572 5 12 5H17C17.9428 5 18.4142 5 18.7071 5.29289C19 5.58579 19 6.05719 19 7V12C19 12.9428 19 13.4142 18.7071 13.7071C18.4142 14 17.9428 14 17 14H16M7 19H12C12.9428 19 13.4142 19 13.7071 18.7071C14 18.4142 14 17.9428 14 17V12C14 11.0572 14 10.5858 13.7071 10.2929C13.4142 10 12.9428 10 12 10H7C6.05719 10 5.58579 10 5.29289 10.2929C5 10.5858 5 11.0572 5 12V17C5 17.9428 5 18.4142 5.29289 18.7071C5.58579 19 6.05719 19 7 19Z" stroke="#464455" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>
             </button>
         </div>
-        <div class="" bind:this={contentToCopy}>
+        <div class="text-xs" bind:this={contentToCopy}>
             {#if Object.keys(points_by_color).length >= 1}
                 {#each Object.entries(points_by_color) as [color, points]}
                     <div>
@@ -238,18 +289,37 @@
     <!-- ABOUT SECTION -->
     <div class="collapse collapse-arrow pt-4">
         <input type="checkbox" id="section1" class="toggle-checkbox" />
-        <label for="section1" class="collapse-title text-xl font-medium">What is Opentrons GUI?</label>
-        <div class="collapse-content">
+        <label for="section1" class="collapse-title text-lg font-medium">What is Opentrons GUI?</label>
+        <div class="collapse-content text-xs">
             <p>This website is made for the Opentrons recitation of <a class="italic underline" href="https://howtogrowalmostanything.notion.site/HTGAA-2024-63a45d6c8f934456b70e30eee86f9b78">'How To Grow (Almost) Anything'</a> (HTGAA), to teach bio-enthusiasts of all backgrounds the principles and skills at the cutting edge of bioengineering and synthetic biology.</p>
         </div>
     </div>
     <div class="collapse collapse-arrow">
-        <input type="checkbox" id="section2" class="toggle-checkbox" />
-        <label for="section2" class="collapse-title text-xl font-medium">Code & License?</label>
+        <input type="checkbox" id="section1" class="toggle-checkbox" />
+        <label for="section1" class="collapse-title text-lg font-medium">How To Use The Data Points</label>
         <div class="collapse-content">
+            <p class="text-left text-xs">You'll want to write a script that iterates over each coordinate and dispenses the correct color of bacteria into that location. <span class="font-semibold">Try it yourself before you continue reading!</span></p>
+            <span class="text-center text-xs opacity-60">Note: this will need to be combined with the code from class</span>
+            <div class="flex flex-col w-full gap-2 mx-auto pb-2 bg-neutral-100 rounded px-2 mt-2">
+                <div class="flex flex-row justify-between pt-2 items-center">
+                    <span class="font-semibold">Python Script</span>
+                    <button class="btn btn-sm px-1 tooltip tooltip-left" aria-label="Copy Points" data-tip="Copy To Clipboard" onclick={copyScriptToClipboard}>
+                        <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M10 8V7C10 6.05719 10 5.58579 10.2929 5.29289C10.5858 5 11.0572 5 12 5H17C17.9428 5 18.4142 5 18.7071 5.29289C19 5.58579 19 6.05719 19 7V12C19 12.9428 19 13.4142 18.7071 13.7071C18.4142 14 17.9428 14 17 14H16M7 19H12C12.9428 19 13.4142 19 13.7071 18.7071C14 18.4142 14 17.9428 14 17V12C14 11.0572 14 10.5858 13.7071 10.2929C13.4142 10 12.9428 10 12 10H7C6.05719 10 5.58579 10 5.29289 10.2929C5 10.5858 5 11.0572 5 12V17C5 17.9428 5 18.4142 5.29289 18.7071C5.58579 19 6.05719 19 7 19Z" stroke="#464455" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>
+                    </button>
+                </div>
+                <div class="text-xs whitespace-pre-wrap overflow-auto break-words max-w-full">
+                    {scriptToCopy}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="collapse collapse-arrow">
+        <input type="checkbox" id="section2" class="toggle-checkbox" />
+        <label for="section2" class="collapse-title text-lg font-medium">Code & License</label>
+        <div class="collapse-content text-xs">
             <p>This project is <a class="underline" href="https://github.com/RonanChance/opentrons-art-gui/blob/main/LICENSE">MIT Licensed</a> and I would love your help in adding new features!</p>
             <div class="max-w-[200px] mx-auto pt-4">
-                <a href="https://github.com/RonanChance/opentrons-art-gui" target="_blank" data-value="github" style="border-radius:4px;" class="py-2 px-3 flex justify-center items-center bg-neutral hover:bg-gray-900 text-white transition ease-in duration-100 text-center text-base font-semibold shadow-md focus:outline-none">
+                <a href="https://github.com/RonanChance/opentrons-art-gui" target="_blank" data-value="github" style="border-radius:4px;" class="py-2 px-1 flex justify-center items-center bg-neutral hover:bg-gray-900 text-white transition ease-in duration-100 text-center text-sm font-semibold shadow-md focus:outline-none">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="mr-2" viewBox="0 0 1792 1792">
                     <path d="M896 128q209 0 385.5 103t279.5 279.5 103 385.5q0 251-146.5 451.5t-378.5 277.5q-27 5-40-7t-13-30q0-3 .5-76.5t.5-134.5q0-97-52-142 57-6 102.5-18t94-39 81-66.5 53-105 20.5-150.5q0-119-79-206 37-91-8-204-28-9-81 11t-92 44l-38 24q-93-26-192-26t-192 26q-16-11-42.5-27t-83.5-38.5-85-13.5q-45 113-8 204-79 87-79 206 0 85 20.5 150t52.5 105 80.5 67 94 39 102.5 18q-39 36-49 103-21 10-45 15t-57 5-65.5-21.5-55.5-62.5q-19-32-48.5-52t-49.5-24l-20-3q-21 0-29 4.5t-5 11.5 9 14 13 12l7 5q22 10 43.5 38t31.5 51l10 23q13 38 44 61.5t67 30 69.5 7 55.5-3.5l23-4q0 38 .5 88.5t.5 54.5q0 18-13 30t-40 7q-232-77-378.5-277.5t-146.5-451.5q0-209 103-385.5t279.5-279.5 385.5-103zm-477 1103q3-7-7-12-10-3-13 2-3 7 7 12 9 6 13-2zm31 34q7-5-2-16-10-9-16-3-7 5 2 16 10 10 16 3zm30 45q9-7 0-19-8-13-17-6-9 5 0 18t17 7zm42 42q8-8-4-19-12-12-20-3-9 8 4 19 12 12 20 3zm57 25q3-11-13-16-15-4-19 7t13 15q15 6 19-6zm63 5q0-13-17-11-16 0-16 11 0 13 17 11 16 0 16-11zm58-10q-2-11-18-9-16 3-14 15t18 8 14-14z"></path>
                     </svg>
