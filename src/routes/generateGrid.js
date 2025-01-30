@@ -1,4 +1,5 @@
 export function generateGrid(grid_style, radius_mm, radius_margin_mm, grid_spacing_mm) {
+    console.log('GENERATING GRID', grid_spacing_mm)
     const points = [];
     const adjusted_radius = radius_mm - radius_margin_mm;
     const step = grid_spacing_mm;
@@ -12,7 +13,7 @@ export function generateGrid(grid_style, radius_mm, radius_margin_mm, grid_spaci
         for (let y = start; y <= end; y += step) {
             for (let x = start; x <= end; x += step) {
                 if (Math.sqrt(x * x + y * y) <= adjusted_radius) {
-                    points.push({ x, y });
+                    points.push({ x: x.toFixed(3), y: y.toFixed(3) });
                 }
             }
         }
@@ -30,7 +31,7 @@ export function generateGrid(grid_style, radius_mm, radius_margin_mm, grid_spaci
                 const y = radius * Math.sin(angle);
 
                 if (Math.sqrt(x * x + y * y) <= adjusted_radius) {
-                    points.push({ x, y });
+                    points.push({ x: x.toFixed(3), y: y.toFixed(3) });
                 }
             }
         }
@@ -55,12 +56,12 @@ export function generateGrid(grid_style, radius_mm, radius_margin_mm, grid_spaci
     
                 // Add points for the positive y-position row
                 if (Math.sqrt(xPos * xPos + yPos * yPos) <= adjusted_radius) {
-                    points.push({ x: xPos, y: yPos });
+                    points.push({ x: xPos.toFixed(3), y: yPos.toFixed(3) });
                 }
     
                 // Also check negative y-position row (symmetry)
                 if (Math.sqrt(xPos * xPos + (-yPos) * (-yPos)) <= adjusted_radius) {
-                    points.push({ x: xPos, y: -yPos });
+                    points.push({ x: xPos.toFixed(3), y: -yPos.toFixed(3) });
                 }
             }
         }
@@ -73,7 +74,7 @@ export function generateGrid(grid_style, radius_mm, radius_margin_mm, grid_spaci
     
             // Only add the center point if it's not already included
             if (Math.sqrt(xPos * xPos + centerRowY * centerRowY) <= adjusted_radius) {
-                points.push({ x: xPos, y: centerRowY });
+                points.push({ x: xPos.toFixed(3), y: centerRowY.toFixed(3) });
             }
         }
     }
