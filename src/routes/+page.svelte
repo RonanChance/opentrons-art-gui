@@ -18,6 +18,7 @@
     let createMode = $state(true);
     let loadingRecords = $state(true);
     let loadedRecords = $state({});
+    let uploading = $state(false);
 
     let current_color = $state('Blue');
     const well_colors = {
@@ -96,6 +97,7 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
     }
 
     async function saveToGallery() {
+        uploading = true;
         const response = await fetch('/save', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -110,11 +112,19 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
             })
         });
         let r = await response.json();
-        if (r.success) {
-            return;
+        console.log(r);
+
+        if (r.success && !r.duplicate) {
+            showAlert("alert-success", "Added to gallery!");
+        } else if (r.duplicate) {
+            showAlert("alert-warning", "Duplicate submission.");
         } else {
-            console.log("Error saving to databse");
+            showAlert("alert-error", "Error: try again later.");
         }
+        uploading = false;
+        // close the popup modal
+        const modal = document.getElementById('upload_modal');
+        modal.close();
     }
     
     function groupByColors() {
@@ -213,11 +223,72 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
         return Math.round(parseFloat(p) * 1000) / 1000;
     }
 
+    let isToastVisible = $state(false);
+    let alertMessage = $state('');
+    let alertType = $state('');
+	function showAlert(type = "alert-success", msg = "Success!") {
+		isToastVisible = true;
+        alertMessage = msg;
+        alertType = type;
+		setTimeout(() => { isToastVisible = false; }, 3000);
+	}
 </script>
 
 <article class="prose w-full mx-auto mt-5">
     <h2 class="text-center">Opentrons Art Interface</h2>
 </article>
+
+<dialog id="upload_modal" class="modal modal-bottom sm:modal-middle">
+    <div class="modal-box">
+        <h3 class="text-lg font-bold">Ready to publish?</h3>
+        <p class="pt-5 flex flex-row gap-2 items-center">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 256 256" id="Flat" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M63.99805,140.002a7.99955,7.99955,0,0,1-8,8h-.00049l-44.00147-.0039a8,8,0,0,1-6.3955-12.80469A67.81463,67.81463,0,0,1,33.02783,113.5127,39.99241,39.99241,0,1,1,99.29492,76.50293a7.99971,7.99971,0,0,1-3.78515,8.37695,64.36027,64.36027,0,0,0-27.85889,33.7959A63.645,63.645,0,0,0,63.99805,140.002Zm186.39941-4.81054a67.81009,67.81009,0,0,0-27.42676-21.68067A39.99246,39.99246,0,1,0,156.70361,76.5a8.00092,8.00092,0,0,0,3.78467,8.37695,64.367,64.367,0,0,1,27.85938,33.79688A63.64448,63.64448,0,0,1,192,140a8.00039,8.00039,0,0,0,8.001,8l44.001-.00391a8,8,0,0,0,6.39551-12.80468ZM157.16162,178.0896a48,48,0,1,0-58.32324,0,71.66776,71.66776,0,0,0-35.59522,34.40454A7.9997,7.9997,0,0,0,70.43457,223.999H185.56543a8.00017,8.00017,0,0,0,7.19141-11.50488A71.66776,71.66776,0,0,0,157.16162,178.0896Z"></path> </g></svg>
+            Publicly viewable
+        </p>
+        <p class="pt-2 flex flex-row gap-2 items-center">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 256 256" id="Flat" xmlns="http://www.w3.org/2000/svg" stroke="#000000" stroke-width="5.12"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M225.25439,82.74512a51.65924,51.65924,0,0,1-15.22949,36.76953L181.74072,147.7998a52.0625,52.0625,0,0,1-73.54,0,8.00053,8.00053,0,0,1,11.31446-11.31445,36.04088,36.04088,0,0,0,50.91211,0l28.2832-28.28515A35.99926,35.99926,0,0,0,147.79932,57.29L128.00049,77.08887A8.00053,8.00053,0,1,1,116.686,65.77441l19.79882-19.79882a51.99951,51.99951,0,0,1,88.76953,36.76953Zm-97.25488,96.166L108.20068,198.71A35.99926,35.99926,0,1,1,57.28955,147.7998l28.2832-28.28515a36.03821,36.03821,0,0,1,50.91211,0,8.00053,8.00053,0,1,0,11.31446-11.31445,52.0625,52.0625,0,0,0-73.54,0L45.9751,136.48535a52.00031,52.00031,0,0,0,73.54,73.53906L139.314,190.22559a8.00053,8.00053,0,0,0-11.31445-11.31446Z"></path> </g></svg>
+            Shareable link
+        </p>
+        <p class="pt-2 flex flex-row gap-2 items-center">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 256.00 256.00" id="Flat" xmlns="http://www.w3.org/2000/svg" stroke="#000000" stroke-width="5.12"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M80.34375,115.668A8,8,0,0,1,86,102.01074h34V40a8,8,0,0,1,16,0v62.01074h34a8,8,0,0,1,5.65625,13.65723l-42,41.98926a7.99945,7.99945,0,0,1-11.3125,0ZM216,144a8.00039,8.00039,0,0,0-8,8v56H48V152a8,8,0,0,0-16,0v56a16.01833,16.01833,0,0,0,16,16H208a16.01833,16.01833,0,0,0,16-16V152A8.00039,8.00039,0,0,0,216,144Z"></path> </g></svg>
+            Access on any device
+        </p>
+        <div class="modal-action">
+        <form method="dialog">
+            <button type="button" class="btn">
+                {#if !uploading}
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 -1.5 35 35" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>upload1</title> <path d="M29.426 15.535c0 0 0.649-8.743-7.361-9.74-6.865-0.701-8.955 5.679-8.955 5.679s-2.067-1.988-4.872-0.364c-2.511 1.55-2.067 4.388-2.067 4.388s-5.576 1.084-5.576 6.768c0.124 5.677 6.054 5.734 6.054 5.734h9.351v-6h-3l5-5 5 5h-3v6h8.467c0 0 5.52 0.006 6.295-5.395 0.369-5.906-5.336-7.070-5.336-7.070z"></path> </g></svg>
+                {:else}
+                    <span class="loading loading-spinner loading-xs"></span>
+                {/if}
+                Publish
+            </button>
+        </form>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+</dialog>
+
+{#if isToastVisible}
+    <div role="alert" class="alert {alertType} fixed top-4 left-1/2 -translate-x-1/2 z-20 text-white max-w-[80%] flex px-4 py-2 rounded shadow-lg items-center">
+        {#if alertType === 'alert-success'}
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        {:else if alertType === 'alert-warning'}
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+        {:else}
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        {/if}
+        <span>{alertMessage}</span>
+    </div>
+{/if}
 
 <div class="flex flex-row max-w-[100vw] sm:max-w-[500px] mx-auto justify-center join mt-5 mb-2">
     <button class="btn btn-sm hover:bg-neutral hover:text-white {createMode ? 'bg-neutral text-white' : ''}" onclick={() => {createMode = true;}}>
@@ -235,11 +306,10 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
 
 {#if !createMode}
     {#if !loadingRecords}
-        <div class="flex flex-row flex-wrap w-full max-w-[100vw] sm:max-w-[500px] mx-auto gap-5 pt-5 justify-center mb-10">
+        <div class="flex flex-row flex-wrap w-full max-w-[100vw] sm:max-w-[1000px] mx-auto gap-3 pt-5 justify-center mb-10">
             {#each loadedRecords as r, i}
-                <div class="bg-neutral-200 rounded">
-                    <div 
-                    class="relative border border-neutral rounded-full mx-auto max-w-[150px] max-h-[150px] aspect-square bg-white"
+                <div class="card bg-base-200 shadow-xl px-3 py-3">
+                    <div class="relative border rounded-full mx-auto max-w-[150px] max-h-[150px] aspect-square bg-white"
                     style="width: {(r.radius_mm + r.radius_margin_mm) * 16}px; height: {(r.radius_mm + r.radius_margin_mm) * 16}px;">
                     {#each Object.entries(r.point_colors) as [ key, color ]}
                         <!-- svelte-ignore a11y_mouse_events_have_key_events -->
@@ -254,7 +324,7 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
                         />
                     {/each}
                     </div>
-                    <button class="flex w-full btn btn-sm bg-neutral text-white hover:bg-neutral-200 hover:text-neutral mx-auto" onclick={() => {loadValues(i);}}>
+                    <button class="flex w-full btn btn-sm rounded bg-neutral text-white hover:bg-neutral-200 hover:text-neutral mx-auto mt-3" onclick={() => {loadValues(i);}}>
                         <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>download</title> <path d="M21.6 8h-11l-6.6 9v5c0 1.104 0.896 2 2 2h20c1.104 0 2-0.896 2-2v-5l-6.4-9zM22.465 17.023l-2.052 3.002-8.588-0.020-2.202-2.994-4.086-0.024 5.662-7.975h9.801l5.6 7.975-4.135 0.036zM17.375 11c0-0.552-0.323-1-0.875-1-0.553 0-0.938 0.448-0.938 1v3.938l-2.437 0.062 3.375 3.812 3.312-3.812-2.438-0.062v-3.938z"></path> </g></svg>
                         Load
                     </button>
@@ -262,9 +332,11 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
             {/each}
         </div>
     {:else}
-        <div class="flex flex-row flex-wrap w-full max-w-[100vw] sm:max-w-[500px] mx-auto gap-5 pt-5 justify-center">
-            {#each Array(16).fill(0) as _, i}
-                <div class="skeleton h-[150px] w-[150px]"></div>
+        <div class="flex flex-row flex-wrap w-full max-w-[100vw] sm:max-w-[1000px] mx-auto gap-3 pt-5 justify-center mb-10">
+            {#each Array(15).fill(0) as _, i}
+                <div class="skeleton h-[180px] min-w-[174px] px-3 py-3">
+                    <div class=" min-w-[150px] min-h-[150px]"></div>
+                </div>
             {/each}
         </div>
     {/if}
@@ -414,7 +486,7 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
 
         <!-- RESET/PUBLISH BUTTON -->
         <div class="flex flex-row justify-between">
-            <button class="btn btn-sm hover:bg-neutral hover:text-white " onclick={saveToGallery}>
+            <button class="btn btn-sm hover:bg-neutral hover:text-white " onclick={() => { if (!uploading) {upload_modal.showModal()}}}>
                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 -1.5 35 35" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>upload1</title> <path d="M29.426 15.535c0 0 0.649-8.743-7.361-9.74-6.865-0.701-8.955 5.679-8.955 5.679s-2.067-1.988-4.872-0.364c-2.511 1.55-2.067 4.388-2.067 4.388s-5.576 1.084-5.576 6.768c0.124 5.677 6.054 5.734 6.054 5.734h9.351v-6h-3l5-5 5 5h-3v6h8.467c0 0 5.52 0.006 6.295-5.395 0.369-5.906-5.336-7.070-5.336-7.070z"></path> </g></svg>
                 Publish Design
             </button>
