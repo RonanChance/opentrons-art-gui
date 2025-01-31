@@ -1,5 +1,7 @@
 <script>
     import { generateGrid } from './generateGrid.js';
+    import { tick } from 'svelte';
+
     let grid_style = $state('standard'); // 'standard' or 'honeycomb' or 'radial'
     let radius_mm = $state(40);
     let radius_margin_mm = $state(2);
@@ -25,7 +27,7 @@
         'Green' : '#86efac', // green-300
         'Cyan' : '#67e8f9', // cyan-300
     }
-    let contentToCopy;
+    let contentToCopy = $state();
     let scriptToCopy = `color_names = ["Blue", "Red", "Yellow", "Green", "Cyan"]
 for i, point_list in enumerate([blue_points, red_points, yellow_points, green_points, cyan_points]):
     # Skip the rest of the loop if the list is empty
@@ -66,12 +68,56 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
         points = generateGrid(grid_style, radius_mm, radius_margin_mm, grid_spacing_mm);
     }
 
-    function roundPoint(p) {
-        return Math.round(parseFloat(p) * 1000) / 1000;
+    async function loadValues(i) {
+        const record = loadedRecords[i];
+        grid_style = record.grid_style;
+        grid_spacing_mm = record.grid_spacing_mm;
+        radius_margin_mm = record.radius_margin_mm;
+        radius_mm = record.radius_mm;
+        points = record.points;
+        await tick();
+        point_colors = record.point_colors;
+        groupByColors();
+        createMode = true;
+    }
+
+    async function loadGallery() {
+        loadingRecords = true;
+        const response = await fetch('/loadGallery', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                'num': 10,
+            })
+        });
+        const r = await response.json();
+        loadedRecords = r.records;
+        loadingRecords = false;
+    }
+
+    async function saveToGallery() {
+        const response = await fetch('/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                'name': 'test',
+                grid_style,
+                radius_mm,
+                radius_margin_mm,
+                grid_spacing_mm,
+                points,
+                point_colors,
+            })
+        });
+        let r = await response.json();
+        if (r.success) {
+            return;
+        } else {
+            console.log("Error saving to databse");
+        }
     }
     
     function groupByColors() {
-        console.log('RUNING GROUPING');
         // Convert object into an array
         const entries = Object.entries(point_colors);
 
@@ -105,7 +151,6 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
                                     color
                                 }));
         points_by_color = {blue_points, red_points, yellow_points, green_points, cyan_points};
-        console.log('points by color', points_by_color);
     }
 
     async function copyPointsToClipboard() {
@@ -142,9 +187,6 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
         try {
             // Get the content to copy
             let content = scriptToCopy;
-            // content = content.replace(/\s+/g, ' ');
-            // content = content.replace(/(\w+_points = \[[^\]]*\])/g, '$1\n');
-
             // Create a textarea for copying
             const textArea = document.createElement("textarea");
             textArea.value = content;
@@ -162,59 +204,13 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
             textArea.select();
             document.execCommand("copy");
             document.body.removeChild(textArea);
-
         } catch (err) {
             console.log("Failed to copy:", err);
         }
     }
 
-    async function saveToDatabase() {
-        const response = await fetch('/save', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                'name': 'test',
-                grid_style,
-                radius_mm,
-                radius_margin_mm,
-                grid_spacing_mm,
-                points,
-                point_colors,
-            })
-        });
-        let r = await response.json();
-        if (r.success) {
-            return;
-        } else {
-            console.log("Error saving to databse");
-        }
-    }
-
-    async function loadGallery() {
-        loadingRecords = true;
-        const response = await fetch('/loadGallery', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                'num': 10,
-            })
-        });
-        const r = await response.json();
-        loadedRecords = r.records;
-        loadingRecords = false;
-    }
-    
-    async function loadValues(i) {
-        const record = loadedRecords[i];
-        grid_style = record.grid_style;
-        grid_spacing_mm = record.grid_spacing_mm;
-        radius_margin_mm = record.radius_margin_mm;
-        radius_mm = record.radius_mm;
-        // points = record.points;
-        point_colors = record.point_colors;
-        groupByColors();
-        createMode = true;
-        console.log("FINAL PBC", points_by_color)
+    function roundPoint(p) {
+        return Math.round(parseFloat(p) * 1000) / 1000;
     }
 
 </script>
@@ -247,7 +243,7 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
                     style="width: {(r.radius_mm + r.radius_margin_mm) * 16}px; height: {(r.radius_mm + r.radius_margin_mm) * 16}px;">
                     {#each Object.entries(r.point_colors) as [ key, color ]}
                         <!-- svelte-ignore a11y_mouse_events_have_key_events -->
-                        <input type="checkbox" id="dot-{key.split(", ")[0]}-{key.split(", ")[1]}"  
+                        <input type="checkbox" id="dot-{key.split(", ")[0]}-{key.split(", ")[1]}-{i}"  
                             class="checkbox w-2 h-2 absolute rounded-full [--chkfg:invisible] transition-[box-shadow] duration-300 ease-in-out {color ? 'border-0' : ''} {show_outlines ? '' : 'border-0'}"
                             style=" 
                                 left: calc(50% + ({key.split(", ")[0] / r.radius_mm} * 50%) - 4px); 
@@ -275,7 +271,6 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
 {/if}
 
 {#if createMode}
-    
     <div class="flex flex-row w-full max-w-[100vw] sm:max-w-[500px] mx-auto px-5">
         <div class="">
             {#if current_point.x != null && current_point.y != null}
@@ -283,7 +278,7 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
             {/if}
         </div>
         <label class="swap ml-auto">
-            <input type="checkbox" bind:checked={show_outlines} />
+            <input type="checkbox" id="toggle-outlines" bind:checked={show_outlines} />
             <svg class="swap-on w-8 h-8 text-neutral" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g data-name="Layer 2"> <g data-name="eye"> <rect width="24" height="24" opacity="0"></rect> <circle cx="12" cy="12" r="1.5"></circle> <path d="M21.87 11.5c-.64-1.11-4.16-6.68-10.14-6.5-5.53.14-8.73 5-9.6 6.5a1 1 0 0 0 0 1c.63 1.09 4 6.5 9.89 6.5h.25c5.53-.14 8.74-5 9.6-6.5a1 1 0 0 0 0-1zm-9.87 4a3.5 3.5 0 1 1 3.5-3.5 3.5 3.5 0 0 1-3.5 3.5z"></path> </g> </g> </g></svg>
             <svg class="swap-off w-8 h-8 text-neutral" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g data-name="Layer 2"> <g data-name="eye-off"> <rect width="24" height="24" opacity="0"></rect> <circle cx="12" cy="12" r="1.5"></circle> <path d="M15.29 18.12L14 16.78l-.07-.07-1.27-1.27a4.07 4.07 0 0 1-.61.06A3.5 3.5 0 0 1 8.5 12a4.07 4.07 0 0 1 .06-.61l-2-2L5 7.87a15.89 15.89 0 0 0-2.87 3.63 1 1 0 0 0 0 1c.63 1.09 4 6.5 9.89 6.5h.25a9.48 9.48 0 0 0 3.23-.67z"></path> <path d="M8.59 5.76l2.8 2.8A4.07 4.07 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 4.07 4.07 0 0 1-.06.61l2.68 2.68.84.84a15.89 15.89 0 0 0 2.91-3.63 1 1 0 0 0 0-1c-.64-1.11-4.16-6.68-10.14-6.5a9.48 9.48 0 0 0-3.23.67z"></path> <path d="M20.71 19.29L19.41 18l-2-2-9.52-9.53L6.42 5 4.71 3.29a1 1 0 0 0-1.42 1.42L5.53 7l1.75 1.7 7.31 7.3.07.07L16 17.41l.59.59 2.7 2.71a1 1 0 0 0 1.42 0 1 1 0 0 0 0-1.42z"></path> </g> </g> </g></svg>
         </label>
@@ -369,11 +364,11 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
                     <span class="font-semibold">Bacteria Color</span><span class="opacity-70">{current_color}</span>
                 </div>
                 <div class="flex flex-row justify-around my-auto">
-                    <input type="radio" class="radio checked:bg-blue-400" value="Blue" bind:group={current_color} />
-                    <input type="radio" class="radio checked:bg-red-400" value="Red" bind:group={current_color} />
-                    <input type="radio" class="radio checked:bg-yellow-400" value="Yellow" bind:group={current_color} />
-                    <input type="radio" class="radio checked:bg-green-400" value="Green" bind:group={current_color} />
-                    <input type="radio" class="radio checked:bg-cyan-400" value="Cyan" bind:group={current_color} />
+                    <input type="radio" class="radio checked:bg-blue-400" value="Blue" id="radio-blue" bind:group={current_color} />
+                    <input type="radio" class="radio checked:bg-red-400" value="Red" id="radio-red" bind:group={current_color} />
+                    <input type="radio" class="radio checked:bg-yellow-400" value="Yellow" id="radio-yellow" bind:group={current_color} />
+                    <input type="radio" class="radio checked:bg-green-400" value="Green" id="radio-green" bind:group={current_color} />
+                    <input type="radio" class="radio checked:bg-cyan-400" value="Cyan" id="radio-cyan" bind:group={current_color} />
                 </div>
             </div>
         </div>
@@ -419,7 +414,7 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
 
         <!-- RESET/PUBLISH BUTTON -->
         <div class="flex flex-row justify-between">
-            <button class="btn btn-sm hover:bg-neutral hover:text-white " onclick={saveToDatabase}>
+            <button class="btn btn-sm hover:bg-neutral hover:text-white " onclick={saveToGallery}>
                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 -1.5 35 35" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>upload1</title> <path d="M29.426 15.535c0 0 0.649-8.743-7.361-9.74-6.865-0.701-8.955 5.679-8.955 5.679s-2.067-1.988-4.872-0.364c-2.511 1.55-2.067 4.388-2.067 4.388s-5.576 1.084-5.576 6.768c0.124 5.677 6.054 5.734 6.054 5.734h9.351v-6h-3l5-5 5 5h-3v6h8.467c0 0 5.52 0.006 6.295-5.395 0.369-5.906-5.336-7.070-5.336-7.070z"></path> </g></svg>
                 Publish Design
             </button>
@@ -438,7 +433,7 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
             </div>
         </div>
         <div class="collapse collapse-arrow">
-            <input type="checkbox" id="section1" class="toggle-checkbox" />
+            <input type="checkbox" id="section2" class="toggle-checkbox" />
             <label for="section1" class="collapse-title text-lg font-medium">How To Use The Data Points</label>
             <div class="collapse-content">
                 <p class="text-left text-sm">You'll want to write a script that iterates over each coordinate and dispenses the correct color of bacteria into that location. <span class="font-semibold">Try it yourself before you continue reading!</span></p>
