@@ -4,7 +4,7 @@ export function generateGrid(grid_style, radius_mm, radius_margin_mm, grid_spaci
     const adjusted_radius = radius_mm - radius_margin_mm;
     const step = grid_spacing_mm;
 
-    if (grid_style === 'standard') {
+    if (grid_style === 'Standard') {
         // Regular grid
         const center = { x: 0, y: 0 };
         const start = -Math.floor(adjusted_radius / step) * step;
@@ -17,7 +17,7 @@ export function generateGrid(grid_style, radius_mm, radius_margin_mm, grid_spaci
                 }
             }
         }
-    } else if (grid_style === 'radial') {
+    } else if (grid_style === 'Radial') {
         // Radial (Concentric Circles) grid
         const numCircles = Math.floor(adjusted_radius / step); // Number of circles
         points.push({ x: 0, y: 0 });
@@ -35,7 +35,7 @@ export function generateGrid(grid_style, radius_mm, radius_margin_mm, grid_spaci
                 }
             }
         }
-    } else if (grid_style === 'honeycomb') {
+    } else if (grid_style === 'Honeycomb') {
         // Honeycomb grid
         const offset = step * Math.sqrt(3) / 2; // Vertical offset for honeycomb pattern
         const rows = Math.ceil(adjusted_radius / offset); // Number of rows to generate (up to radius)

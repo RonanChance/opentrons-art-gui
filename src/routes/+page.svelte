@@ -1,8 +1,11 @@
 <script>
     import { generateGrid } from './generateGrid.js';
-    import { tick } from 'svelte';
+    import { onMount, tick } from 'svelte';
+    import { browser } from '$app/environment';
+    import { page } from '$app/stores';
+    import GalleryCard from '$lib/components/GalleryCard.svelte';
 
-    let grid_style = $state('standard'); // 'standard' or 'honeycomb' or 'radial'
+    let grid_style = $state('Standard'); // 'Standard' or 'Honeycomb' or 'Radial'
     let radius_mm = $state(40);
     let radius_margin_mm = $state(2);
     let grid_spacing_mm = $state(4);
@@ -17,8 +20,12 @@
     let isDrawing;
     let createMode = $state(true);
     let loadingRecords = $state(true);
-    let loadedRecords = $state({});
+    let loadedRecords = $state([]);
+    let loadingURLRecord = $state(false);
     let uploading = $state(false);
+
+    let verified_only = $state(true);
+    let record_load_iteration = $state(0);
 
     let current_color = $state('Blue');
     const well_colors = {
@@ -50,6 +57,15 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
 
     # Drop tip between each color
     pipette_20ul.drop_tip()`;
+
+    onMount(async () => {
+        if (browser) {
+            let loadRecordId = $page.url.searchParams.get('id');
+            if (loadRecordId) {
+                loadRecord(loadRecordId);
+            }
+        }
+    });
     
     $effect(() => {
         points = generateGrid(grid_style, radius_mm, radius_margin_mm, grid_spacing_mm);
@@ -61,7 +77,7 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
         point_colors = {};
         points_by_color = points_by_color_defaults;
         points = {};
-        grid_style = 'standard';
+        grid_style = 'Standard';
         current_color = 'Blue';
         radius_mm = 40;
         radius_margin_mm = 2;
@@ -82,22 +98,52 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
         createMode = true;
     }
 
+    async function loadRecord(id) {
+        try {
+            loadingURLRecord = true;
+            const response = await fetch('/loadRecord', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 'id': id })
+            });
+            const r = await response.json();
+            grid_style = r.record.grid_style;
+            grid_spacing_mm = r.record.grid_spacing_mm;
+            radius_margin_mm = r.record.radius_margin_mm;
+            radius_mm = r.record.radius_mm;
+            points = r.record.points;
+            await tick();
+            point_colors = r.record.point_colors;
+            groupByColors();
+            createMode = true;
+            showAlert("alert-success", "Loaded design successfully!");
+        } catch (error) {
+            showAlert("alert-warning", "Failed to load design.");
+        }
+        loadingURLRecord = false;
+    }
+
     async function loadGallery() {
         loadingRecords = true;
         const response = await fetch('/loadGallery', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                'num': 10,
-            })
+            body: JSON.stringify({ record_load_iteration, verified_only })
         });
         const r = await response.json();
-        loadedRecords = r.records;
+        loadedRecords = [...loadedRecords, ...r.records];
+        record_load_iteration += 1;
         loadingRecords = false;
     }
 
     async function saveToGallery() {
         uploading = true;
+        if (!point_colors || Object.keys(point_colors).length === 0) {
+            showAlert("alert-warning", "Design cannot be empty.");
+            uploading = false;
+            return;
+        }
+
         const response = await fetch('/save', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -112,8 +158,7 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
             })
         });
         let r = await response.json();
-        console.log(r);
-
+        
         if (r.success && !r.duplicate) {
             showAlert("alert-success", "Added to gallery!");
         } else if (r.duplicate) {
@@ -238,10 +283,10 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
     <h2 class="text-center">Opentrons Art Interface</h2>
 </article>
 
-<dialog id="upload_modal" class="modal modal-bottom sm:modal-middle">
+<dialog id="upload_modal" class="modal modal-middle">
     <div class="modal-box">
         <h3 class="text-lg font-bold">Ready to publish?</h3>
-        <p class="pt-5 flex flex-row gap-2 items-center">
+        <p class="pt-3 flex flex-row gap-2 items-center">
             <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 256 256" id="Flat" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M63.99805,140.002a7.99955,7.99955,0,0,1-8,8h-.00049l-44.00147-.0039a8,8,0,0,1-6.3955-12.80469A67.81463,67.81463,0,0,1,33.02783,113.5127,39.99241,39.99241,0,1,1,99.29492,76.50293a7.99971,7.99971,0,0,1-3.78515,8.37695,64.36027,64.36027,0,0,0-27.85889,33.7959A63.645,63.645,0,0,0,63.99805,140.002Zm186.39941-4.81054a67.81009,67.81009,0,0,0-27.42676-21.68067A39.99246,39.99246,0,1,0,156.70361,76.5a8.00092,8.00092,0,0,0,3.78467,8.37695,64.367,64.367,0,0,1,27.85938,33.79688A63.64448,63.64448,0,0,1,192,140a8.00039,8.00039,0,0,0,8.001,8l44.001-.00391a8,8,0,0,0,6.39551-12.80468ZM157.16162,178.0896a48,48,0,1,0-58.32324,0,71.66776,71.66776,0,0,0-35.59522,34.40454A7.9997,7.9997,0,0,0,70.43457,223.999H185.56543a8.00017,8.00017,0,0,0,7.19141-11.50488A71.66776,71.66776,0,0,0,157.16162,178.0896Z"></path> </g></svg>
             Publicly viewable
         </p>
@@ -253,17 +298,33 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
             <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 256.00 256.00" id="Flat" xmlns="http://www.w3.org/2000/svg" stroke="#000000" stroke-width="5.12"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M80.34375,115.668A8,8,0,0,1,86,102.01074h34V40a8,8,0,0,1,16,0v62.01074h34a8,8,0,0,1,5.65625,13.65723l-42,41.98926a7.99945,7.99945,0,0,1-11.3125,0ZM216,144a8.00039,8.00039,0,0,0-8,8v56H48V152a8,8,0,0,0-16,0v56a16.01833,16.01833,0,0,0,16,16H208a16.01833,16.01833,0,0,0,16-16V152A8.00039,8.00039,0,0,0,216,144Z"></path> </g></svg>
             Access on any device
         </p>
+
+        <div class="flex flex-col w-full gap-2 pt-5">
+            <label class="input input-bordered flex items-center gap-2">
+                <svg class="h-4 w-4 opacity-70" fill="#000000" height="200px" width="200px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" enable-background="new 0 0 512 512" xml:space="preserve"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M46.5,0v139.6h23.3c0-23.3,0-69.8,23.3-93.1c23.2-23.3,46.5-23.3,69.8-23.3h46.5v395.6c0,34.9-11.6,69.8-46.5,69.8l-22.8,0 l-0.5,23.2h232.7v-23.3h-23.3c-34.9,0-46.5-34.9-46.5-69.8V23.3h46.5c23.3,0,46.5,0,69.8,23.3s23.3,69.8,23.3,93.1h23.3V0H46.5z"></path> </g></svg>
+                <input type="text" class="grow no-autofill" placeholder="Title (optional)" autocomplete="off" maxlength="120" />
+            </label>
+            <label class="input input-bordered flex items-center gap-2">
+                <svg class="h-4 w-4 opacity-70" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M8 7C9.65685 7 11 5.65685 11 4C11 2.34315 9.65685 1 8 1C6.34315 1 5 2.34315 5 4C5 5.65685 6.34315 7 8 7Z" fill="#000000"></path> <path d="M14 12C14 10.3431 12.6569 9 11 9H5C3.34315 9 2 10.3431 2 12V15H14V12Z" fill="#000000"></path> </g></svg>
+                <input type="text" class="grow no-autofill" placeholder="Name (optional)" autocomplete="off" maxlength="25" />
+            </label>
+        </div>
+
+        <p class="pt-2 flex flex-row gap-2 items-center justify-center italic text-xs">
+            Note: designs are in the 'unverified' tab until approved by an admin
+        </p>
+
         <div class="modal-action">
-        <form method="dialog">
-            <button type="button" class="btn">
-                {#if !uploading}
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 -1.5 35 35" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>upload1</title> <path d="M29.426 15.535c0 0 0.649-8.743-7.361-9.74-6.865-0.701-8.955 5.679-8.955 5.679s-2.067-1.988-4.872-0.364c-2.511 1.55-2.067 4.388-2.067 4.388s-5.576 1.084-5.576 6.768c0.124 5.677 6.054 5.734 6.054 5.734h9.351v-6h-3l5-5 5 5h-3v6h8.467c0 0 5.52 0.006 6.295-5.395 0.369-5.906-5.336-7.070-5.336-7.070z"></path> </g></svg>
-                {:else}
-                    <span class="loading loading-spinner loading-xs"></span>
-                {/if}
-                Publish
-            </button>
-        </form>
+            <form method="dialog">
+                <button type="button" class="btn" onclick={saveToGallery}>
+                    {#if !uploading}
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 -1.5 35 35" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>upload1</title> <path d="M29.426 15.535c0 0 0.649-8.743-7.361-9.74-6.865-0.701-8.955 5.679-8.955 5.679s-2.067-1.988-4.872-0.364c-2.511 1.55-2.067 4.388-2.067 4.388s-5.576 1.084-5.576 6.768c0.124 5.677 6.054 5.734 6.054 5.734h9.351v-6h-3l5-5 5 5h-3v6h8.467c0 0 5.52 0.006 6.295-5.395 0.369-5.906-5.336-7.070-5.336-7.070z"></path> </g></svg>
+                    {:else}
+                        <span class="loading loading-spinner loading-xs"></span>
+                    {/if}
+                    Publish
+                </button>
+            </form>
         </div>
     </div>
     <form method="dialog" class="modal-backdrop">
@@ -291,51 +352,39 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
 {/if}
 
 <div class="flex flex-row max-w-[100vw] sm:max-w-[500px] mx-auto justify-center join mt-5 mb-2">
-    <button class="btn btn-sm hover:bg-neutral hover:text-white {createMode ? 'bg-neutral text-white' : ''}" onclick={() => {createMode = true;}}>
+    <button class="btn btn-sm hover:bg-neutral hover:text-white {createMode ? 'bg-neutral text-white' : ''}" onclick={() => {createMode = true; loadedRecords = []; record_load_iteration = 0;}}>
         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>pencil</title> <path d="M5.582 20.054l14.886-14.886 6.369 6.369-14.886 14.886-6.369-6.369zM21.153 8.758l-0.698-0.697-11.981 11.98 0.698 0.698 11.981-11.981zM22.549 10.154l-0.698-0.698-11.981 11.982 0.697 0.697 11.982-11.981zM23.945 11.55l-0.698-0.698-11.981 11.981 0.698 0.698 11.981-11.981zM23.319 2.356c0.781-0.783 2.045-0.788 2.82-0.013l3.512 3.512c0.775 0.775 0.77 2.038-0.012 2.82l-2.17 2.17-6.32-6.32 2.17-2.169zM5.092 20.883l6.030 6.030-5.284 1.877-2.623-2.623 1.877-5.284zM4.837 29.117l-3.066 1.117 1.117-3.066 1.949 1.949z"></path> </g></svg>
         Create
     </button>
-    <div class="indicator">
-        <span class="indicator-item badge badge-accent rounded-xl">new!</span>
-        <button class="btn btn-sm hover:bg-neutral hover:text-white {!createMode ? 'bg-neutral text-white' : ''}" onclick={() => {createMode = false; loadGallery();}}>
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 -0.5 33 33" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>pictures1</title> <path d="M26.604 29.587l-2.624-0.72-0.006-7.258 2.51 0.706 3.619-13.509-18.332-4.912-1.208 4.506h-2.068l1.863-6.952 22.193 5.946-5.947 22.193zM23.039 32h-23.039v-22.977h23.039v22.977zM21.041 11.021h-19.043v13.985h19.043v-13.985zM7.849 20.993l2.283-3.692 2.283 2.301 3.139-4.727 3.283 8.134h-14.556l1.855-3.71 1.713 1.694zM6.484 17.086c-0.828 0-1.499-0.67-1.499-1.498s0.671-1.498 1.499-1.498 1.498 0.67 1.498 1.498-0.67 1.498-1.498 1.498z"></path> </g></svg>
-            Gallery
-        </button>
-    </div>
+    <button class="btn btn-sm hover:bg-neutral hover:text-white {!createMode ? 'bg-neutral text-white' : ''}" onclick={() => {createMode = false; loadGallery();}}>
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 -0.5 33 33" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>pictures1</title> <path d="M26.604 29.587l-2.624-0.72-0.006-7.258 2.51 0.706 3.619-13.509-18.332-4.912-1.208 4.506h-2.068l1.863-6.952 22.193 5.946-5.947 22.193zM23.039 32h-23.039v-22.977h23.039v22.977zM21.041 11.021h-19.043v13.985h19.043v-13.985zM7.849 20.993l2.283-3.692 2.283 2.301 3.139-4.727 3.283 8.134h-14.556l1.855-3.71 1.713 1.694zM6.484 17.086c-0.828 0-1.499-0.67-1.499-1.498s0.671-1.498 1.499-1.498 1.498 0.67 1.498 1.498-0.67 1.498-1.498 1.498z"></path> </g></svg>
+        Gallery
+    </button>
 </div>
 
 {#if !createMode}
+    <div class="flex flex-row flex-wrap w-full max-w-[100vw] sm:max-w-[1000px] mx-auto pt-1 justify-center opacity-70">
+        <label class="ml-auto swap pr-6">
+            <button aria-label='toggle verified' onclick={() => {verified_only = !verified_only; record_load_iteration = 0; loadedRecords = []; loadGallery();}}>
+                {#if verified_only}
+                    Verified: ON
+                {:else}
+                    Verified: OFF
+                {/if}
+            </button>
+        </label>
+    </div>
     {#if !loadingRecords}
-        <div class="flex flex-row flex-wrap w-full max-w-[100vw] sm:max-w-[1000px] mx-auto gap-3 pt-5 justify-center mb-10">
-            {#each loadedRecords as r, i}
-                <div class="card bg-base-200 shadow-xl px-3 py-3">
-                    <div class="relative border rounded-full mx-auto max-w-[150px] max-h-[150px] aspect-square bg-white"
-                    style="width: {(r.radius_mm + r.radius_margin_mm) * 16}px; height: {(r.radius_mm + r.radius_margin_mm) * 16}px;">
-                    {#each Object.entries(r.point_colors) as [ key, color ]}
-                        <!-- svelte-ignore a11y_mouse_events_have_key_events -->
-                        <input type="checkbox" id="dot-{key.split(", ")[0]}-{key.split(", ")[1]}-{i}"  
-                            class="checkbox w-2 h-2 absolute rounded-full [--chkfg:invisible] transition-[box-shadow] duration-300 ease-in-out {color ? 'border-0' : ''} {show_outlines ? '' : 'border-0'}"
-                            style=" 
-                                left: calc(50% + ({key.split(", ")[0] / r.radius_mm} * 50%) - 4px); 
-                                top: calc(50% - ({key.split(", ")[1] / r.radius_mm} * 50%) - 4px);
-                                background-color: {well_colors[color] || 'transparent'};
-                                "
-                            draggable="false"
-                        />
-                    {/each}
-                    </div>
-                    <button class="flex w-full btn btn-sm rounded bg-neutral text-white hover:bg-neutral-200 hover:text-neutral mx-auto mt-3" onclick={() => {loadValues(i);}}>
-                        <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>download</title> <path d="M21.6 8h-11l-6.6 9v5c0 1.104 0.896 2 2 2h20c1.104 0 2-0.896 2-2v-5l-6.4-9zM22.465 17.023l-2.052 3.002-8.588-0.020-2.202-2.994-4.086-0.024 5.662-7.975h9.801l5.6 7.975-4.135 0.036zM17.375 11c0-0.552-0.323-1-0.875-1-0.553 0-0.938 0.448-0.938 1v3.938l-2.437 0.062 3.375 3.812 3.312-3.812-2.438-0.062v-3.938z"></path> </g></svg>
-                        Load
-                    </button>
-                </div>
+        <!-- GALLERY -->
+        <div class="flex flex-row flex-wrap w-full max-w-[100vw] sm:max-w-[1000px] mx-auto gap-3 pt-4 justify-center mb-10">
+            {#each loadedRecords as record, i}
+                <GalleryCard {record} {i} {well_colors} />
             {/each}
         </div>
     {:else}
         <div class="flex flex-row flex-wrap w-full max-w-[100vw] sm:max-w-[1000px] mx-auto gap-3 pt-5 justify-center mb-10">
             {#each Array(15).fill(0) as _, i}
-                <div class="skeleton h-[180px] min-w-[174px] px-3 py-3">
-                    <div class=" min-w-[150px] min-h-[150px]"></div>
+                <div class="skeleton min-h-[280px] min-w-[175px] px-3 py-3">
                 </div>
             {/each}
         </div>
@@ -358,7 +407,7 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
 
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div 
-        class="relative border border-neutral rounded-full mx-auto w-full max-w-[94vw] max-h-[94vw] sm:max-w-[500px] sm:max-h-[500px] aspect-square mb-6"
+        class="relative border border-neutral rounded-full mx-auto w-full max-w-[94vw] max-h-[94vw] sm:max-w-[500px] sm:max-h-[500px] aspect-square mb-6 {loadingURLRecord ? 'blur' : ''}"
         style="width: {(radius_mm + radius_margin_mm) * 16}px; height: {(radius_mm + radius_margin_mm) * 16}px;"
         onmousedown={() => isDrawing = true}
         onmouseup={() => isDrawing = false}
@@ -416,16 +465,16 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
             <!-- GRID TYPE -->
             <div class="flex flex-col w-[50%] gap-2 mx-auto">
                 <div class="flex flex-row justify-between">
-                    <span class="font-semibold">Grid</span> <span class="opacity-70">{grid_style.charAt(0).toUpperCase() + grid_style.slice(1)}</span>
+                    <span class="font-semibold">Grid</span> <span class="opacity-70">{grid_style}</span>
                 </div>
                 <div class="flex flex-row justify-between">
-                    <button class="btn btn-sm group {grid_style === 'standard' ? 'btn-neutral' : 'btn-outline'}" type="button" onclick={grid_style = "standard"} aria-label="standard">
+                    <button class="btn btn-sm group {grid_style === 'Standard' ? 'btn-neutral' : 'btn-outline'}" type="button" onclick={grid_style = "Standard"} aria-label="Standard">
                         <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="miter"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><line x1="5.99" y1="6" x2="6" y2="6" stroke-linecap="round" stroke-width="2"></line><line x1="11.99" y1="6" x2="12" y2="6" stroke-linecap="round" stroke-width="2"></line><line x1="17.99" y1="6" x2="18" y2="6" stroke-linecap="round" stroke-width="2"></line><line x1="5.99" y1="12" x2="6" y2="12" stroke-linecap="round" stroke-width="2"></line><line x1="11.99" y1="12" x2="12" y2="12" stroke-linecap="round" stroke-width="2"></line><line x1="17.99" y1="12" x2="18" y2="12" stroke-linecap="round" stroke-width="2"></line><line x1="5.99" y1="18" x2="6" y2="18" stroke-linecap="round" stroke-width="2"></line><line x1="11.99" y1="18" x2="12" y2="18" stroke-linecap="round" stroke-width="2"></line><line x1="17.99" y1="18" x2="18" y2="18" stroke-linecap="round" stroke-width="2"></line></g></svg>
                     </button>
-                    <button class="btn btn-sm group {grid_style === 'radial' ? 'btn-neutral' : 'btn-outline '}" type="button" onclick={grid_style = "radial"} aria-label="radial">
+                    <button class="btn btn-sm group {grid_style === 'Radial' ? 'btn-neutral' : 'btn-outline '}" type="button" onclick={grid_style = "Radial"} aria-label="Radial">
                         <svg class="w-5 h-5" viewBox="0 0 48 48" id="a" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><defs><style>.f{fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;}</style></defs><circle id="b" class="f" cx="24" cy="24" r="8.5"></circle><circle id="c" class="f" cx="24" cy="24" r="11.8"></circle><circle id="d" class="f" cx="24" cy="24" r="18.25"></circle><circle id="e" class="f" cx="24" cy="24" r="21.5"></circle></g></svg>
                     </button>
-                    <button class="btn btn-sm group {grid_style === 'honeycomb' ? 'btn-neutral' : 'btn-outline'}" type="button" onclick={grid_style = "honeycomb"} aria-label="honeycomb">
+                    <button class="btn btn-sm group {grid_style === 'Honeycomb' ? 'btn-neutral' : 'btn-outline'}" type="button" onclick={grid_style = "Honeycomb"} aria-label="Honeycomb">
                         <svg class="w-5 h-5" fill="currentColor" height="200px" width="200px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" xml:space="preserve"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <g> <path d="M508.203,197.698L435.2,149.03V59.731c0-2.995-1.579-5.769-4.139-7.313l-85.333-51.2c-2.705-1.621-6.084-1.621-8.789,0 L256,49.781L175.061,1.218c-2.705-1.621-6.084-1.621-8.789,0l-85.333,51.2c-2.56,1.544-4.139,4.318-4.139,7.313v89.3L3.797,197.7 C1.425,199.287,0,201.949,0,204.8v102.4c0,2.859,1.425,5.521,3.797,7.1L76.8,362.968v89.297c0,2.995,1.579,5.777,4.139,7.322 l85.333,51.2c1.357,0.811,2.876,1.212,4.395,1.212s3.038-0.401,4.395-1.212L256,462.223l80.939,48.563 c1.357,0.811,2.876,1.212,4.395,1.212c1.519,0,3.038-0.401,4.395-1.212l85.333-51.2c2.56-1.545,4.139-4.326,4.139-7.322v-89.298 l73.003-48.668c2.372-1.579,3.797-4.241,3.797-7.1v-102.4C512,201.948,510.575,199.285,508.203,197.698z M256,348.448 l-62.352-37.411l-14.448-8.669v-92.732l0.42-0.252L256,163.556l76.38,45.828l0.42,0.252v92.732l-14.448,8.669L256,348.448z M341.333,18.481l76.8,46.089v84.198l-76.8,46.08l-76.8-46.08V64.57L341.333,18.481z M93.867,64.57l76.8-46.089l76.8,46.089 v84.198l-76.8,46.08l-76.8-46.08V64.57z M17.067,209.365l68.502-45.668l57.07,34.242l19.495,11.699v92.73l-74.422,44.653 l-2.139,1.283l-68.506-45.67V209.365z M170.667,493.515l-76.8-46.08v-84.197l76.801-46.081l76.799,46.079v84.198L170.667,493.515z M341.333,493.515l-76.8-46.08v-84.198l76.8-46.08l76.8,46.08v84.198L341.333,493.515z M494.933,302.633l-68.506,45.67 l-76.066-45.638l-0.495-0.297v-92.732l76.561-45.935l68.506,45.67V302.633z"></path> </g> </g> </g></svg>
                     </button>
                 </div>
