@@ -8,7 +8,7 @@
     let grid_style = $state('Standard'); // 'Standard' or 'Honeycomb' or 'Radial'
     let radius_mm = $state(40);
     let radius_margin_mm = $state(2);
-    let grid_spacing_mm = $state(4);
+    let grid_spacing_mm = $state(3);
     
     let points = $state({});
     let point_colors = $state({});
@@ -26,6 +26,8 @@
 
     let verified_only = $state(true);
     let record_load_iteration = $state(0);
+    let title = $state('');
+    let author = $state('');
 
     let current_color = $state('Blue');
     const well_colors = {
@@ -81,7 +83,7 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
         current_color = 'Blue';
         radius_mm = 40;
         radius_margin_mm = 2;
-        grid_spacing_mm = 4;
+        grid_spacing_mm = 3;
         points = generateGrid(grid_style, radius_mm, radius_margin_mm, grid_spacing_mm);
     }
 
@@ -148,7 +150,8 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                'name': 'test',
+                title,
+                author,
                 grid_style,
                 radius_mm,
                 radius_margin_mm,
@@ -280,7 +283,7 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
 </script>
 
 <article class="prose w-full mx-auto mt-5">
-    <h2 class="text-center">Opentrons Art Interface</h2>
+    <h2 class="text-center">Opentrons Art {#if createMode}Interface{:else}Gallery{/if}</h2>
 </article>
 
 <dialog id="upload_modal" class="modal modal-middle">
@@ -302,11 +305,11 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
         <div class="flex flex-col w-full gap-2 pt-5">
             <label class="input input-bordered flex items-center gap-2">
                 <svg class="h-4 w-4 opacity-70" fill="#000000" height="200px" width="200px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" enable-background="new 0 0 512 512" xml:space="preserve"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M46.5,0v139.6h23.3c0-23.3,0-69.8,23.3-93.1c23.2-23.3,46.5-23.3,69.8-23.3h46.5v395.6c0,34.9-11.6,69.8-46.5,69.8l-22.8,0 l-0.5,23.2h232.7v-23.3h-23.3c-34.9,0-46.5-34.9-46.5-69.8V23.3h46.5c23.3,0,46.5,0,69.8,23.3s23.3,69.8,23.3,93.1h23.3V0H46.5z"></path> </g></svg>
-                <input type="text" class="grow no-autofill" placeholder="Title (optional)" autocomplete="off" maxlength="120" />
+                <input type="text" class="grow no-autofill" placeholder="Title (optional)" autocomplete="off" maxlength="120" bind:value={title} />
             </label>
             <label class="input input-bordered flex items-center gap-2">
                 <svg class="h-4 w-4 opacity-70" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M8 7C9.65685 7 11 5.65685 11 4C11 2.34315 9.65685 1 8 1C6.34315 1 5 2.34315 5 4C5 5.65685 6.34315 7 8 7Z" fill="#000000"></path> <path d="M14 12C14 10.3431 12.6569 9 11 9H5C3.34315 9 2 10.3431 2 12V15H14V12Z" fill="#000000"></path> </g></svg>
-                <input type="text" class="grow no-autofill" placeholder="Name (optional)" autocomplete="off" maxlength="25" />
+                <input type="text" class="grow no-autofill" placeholder="Name (optional)" autocomplete="off" maxlength="25" bind:value={author} />
             </label>
         </div>
 
@@ -352,11 +355,11 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
 {/if}
 
 <div class="flex flex-row max-w-[100vw] sm:max-w-[500px] mx-auto justify-center join mt-5 mb-2">
-    <button class="btn btn-sm hover:bg-neutral hover:text-white {createMode ? 'bg-neutral text-white' : ''}" onclick={() => {createMode = true; loadedRecords = []; record_load_iteration = 0;}}>
+    <button class="btn btn-sm hover:bg-neutral hover:text-white {createMode ? 'bg-neutral text-white' : ''}" onclick={() => {createMode = true; loadedRecords = []; record_load_iteration = 0; verified_only = true;}}>
         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>pencil</title> <path d="M5.582 20.054l14.886-14.886 6.369 6.369-14.886 14.886-6.369-6.369zM21.153 8.758l-0.698-0.697-11.981 11.98 0.698 0.698 11.981-11.981zM22.549 10.154l-0.698-0.698-11.981 11.982 0.697 0.697 11.982-11.981zM23.945 11.55l-0.698-0.698-11.981 11.981 0.698 0.698 11.981-11.981zM23.319 2.356c0.781-0.783 2.045-0.788 2.82-0.013l3.512 3.512c0.775 0.775 0.77 2.038-0.012 2.82l-2.17 2.17-6.32-6.32 2.17-2.169zM5.092 20.883l6.030 6.030-5.284 1.877-2.623-2.623 1.877-5.284zM4.837 29.117l-3.066 1.117 1.117-3.066 1.949 1.949z"></path> </g></svg>
         Create
     </button>
-    <button class="btn btn-sm hover:bg-neutral hover:text-white {!createMode ? 'bg-neutral text-white' : ''}" onclick={() => {createMode = false; loadGallery();}}>
+    <button class="btn btn-sm hover:bg-neutral hover:text-white {!createMode ? 'bg-neutral text-white' : ''}" onclick={() => {createMode = false; loadedRecords = []; record_load_iteration = 0; verified_only = true; loadGallery();}}>
         <svg class="w-5 h-5" fill="currentColor" viewBox="0 -0.5 33 33" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>pictures1</title> <path d="M26.604 29.587l-2.624-0.72-0.006-7.258 2.51 0.706 3.619-13.509-18.332-4.912-1.208 4.506h-2.068l1.863-6.952 22.193 5.946-5.947 22.193zM23.039 32h-23.039v-22.977h23.039v22.977zM21.041 11.021h-19.043v13.985h19.043v-13.985zM7.849 20.993l2.283-3.692 2.283 2.301 3.139-4.727 3.283 8.134h-14.556l1.855-3.71 1.713 1.694zM6.484 17.086c-0.828 0-1.499-0.67-1.499-1.498s0.671-1.498 1.499-1.498 1.498 0.67 1.498 1.498-0.67 1.498-1.498 1.498z"></path> </g></svg>
         Gallery
     </button>
