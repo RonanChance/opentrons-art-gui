@@ -3,12 +3,12 @@
     import { onMount, tick } from 'svelte';
     import { browser } from '$app/environment';
     import { page } from '$app/stores';
-    import { well_colors } from '$lib/constants.js';
+    import { well_colors, well_colors_abbr } from '$lib/constants.js';
 
     let grid_style = $state('Standard'); // 'Standard' or 'Honeycomb' or 'Radial'
     let radius_mm = $state(40);
     let radius_margin_mm = $state(2);
-    let grid_spacing_mm = $state(3);
+    let grid_spacing_mm = $state(5);
     
     let points = $state({});
     let point_colors = $state({});
@@ -19,6 +19,7 @@
     let current_point = $state({});
     let isDrawing;
     let loadingURLRecord = $state(false);
+    let loadingAIRecord = $state(false);
     let uploading = $state(false);
 
     let title = $state('');
@@ -48,12 +49,16 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
     # Drop tip between each color
     pipette_20ul.drop_tip()`;
 
+    let user_design = $state('');
+    let AIMode = $state(false);
+
     onMount(async () => {
         if (browser) {
             let loadRecordId = $page.url.searchParams.get('id');
             if (loadRecordId) {
                 loadRecord(loadRecordId);
             }
+            AIMode = $page.url.searchParams.get('ai');
         }
     });
     
@@ -71,7 +76,7 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
         current_color = 'Blue';
         radius_mm = 40;
         radius_margin_mm = 2;
-        grid_spacing_mm = 3;
+        grid_spacing_mm = 5;
         points = generateGrid(grid_style, radius_mm, radius_margin_mm, grid_spacing_mm);
     }
 
@@ -253,6 +258,89 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
         alertType = type;
 		setTimeout(() => { isToastVisible = false; }, 3000);
 	}
+
+    let AIGenerated2DList;
+    async function generateAIDesign() {
+        try {
+            loadingAIRecord = true;
+            point_colors = {};
+            points_by_color = points_by_color_defaults;
+            
+            // sort the points
+            points.sort((a, b) => parseFloat(b.x) - parseFloat(a.x));
+
+            // group the points by x value
+            const groupedPoints = points.reduce((acc, point) => {
+                if (!acc[point.x]) {
+                    acc[point.x] = [];
+                }
+                acc[point.x].push(point);
+                return acc;
+            }, {});
+
+            const groupedLists = Object.values(groupedPoints);
+            groupedLists.forEach(element => {
+                console.log(element.length)
+            });
+
+            // Step 1: Find the longest list length
+            const maxLength = Math.max(...groupedLists.map(group => group.length));
+
+            // Step 2: Create the nxn 2D array and populate it
+            const squareMatrix = groupedLists.map(group => {
+                const rowLength = group.length;
+                const paddingSize = Math.floor((maxLength - rowLength) / 2);
+
+                // Create row with "0" padding on both sides and "_" in the center
+                return Array(paddingSize).fill("0")
+                    .concat(Array(rowLength).fill("_"))
+                    .concat(Array(maxLength - rowLength - paddingSize).fill("0"));
+            });
+
+            // Format the grid nicely to send to LLM
+            let Formatted2DList = squareMatrix.map(row => JSON.stringify(row)).join("\n");
+
+            const response = await fetch('/generateWithAI', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_design, Formatted2DList })
+            });
+            let r = await response.json();
+            AIGenerated2DList = JSON.parse(r.result);
+            AIGenerated2DList = AIGenerated2DList.grid;
+            console.log(AIGenerated2DList);
+            console.log(AIGenerated2DList.map(row => JSON.stringify(row)).join("\n"));
+
+            convertMatrixToPoints();
+            await tick();
+            groupByColors();
+            await tick();
+            loadingAIRecord = false;
+            showAlert("alert-success", "Loaded design successfully!");
+
+        } catch (e) {
+            console.log(e);
+            showAlert("alert-error", "AI generation failed");
+            loadingAIRecord = false;
+        }
+    }
+    
+    function convertMatrixToPoints() {
+        const centerX = Math.floor(AIGenerated2DList[0].length / 2);
+        const centerY = Math.floor(AIGenerated2DList.length / 2);
+
+        for (let row = 0; row < AIGenerated2DList.length; row++) {
+            for (let col = 0; col < AIGenerated2DList[row].length; col++) {
+                const color = AIGenerated2DList[row][col];
+                if (color === "B" || color === "R" || color === "Y" || color === "G" || color === "C") {
+                    const x = ((col - centerX) * grid_spacing_mm).toFixed(3);
+                    const y = ((centerY - row) * grid_spacing_mm).toFixed(3);
+                    point_colors[`${x}, ${y}`] = well_colors_abbr[color];
+                }
+            }
+        }
+        return point_colors;
+    }
 </script>
 
 <article class="prose w-full mx-auto mt-5">
@@ -347,7 +435,7 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div 
-    class="relative border border-neutral rounded-full mx-auto w-full max-w-[94vw] max-h-[94vw] sm:max-w-[500px] sm:max-h-[500px] aspect-square mb-6 {loadingURLRecord ? 'blur' : ''}"
+    class="relative border border-neutral rounded-full mx-auto w-full max-w-[94vw] max-h-[94vw] sm:max-w-[500px] sm:max-h-[500px] aspect-square mb-6 {loadingURLRecord ? 'blur' : ''} {loadingAIRecord ? 'blur' : ''}"
     style="width: {(radius_mm + radius_margin_mm) * 16}px; height: {(radius_mm + radius_margin_mm) * 16}px;"
     onmousedown={() => isDrawing = true}
     onmouseup={() => isDrawing = false}
@@ -484,6 +572,19 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
             Reset All
         </button>
     </div>
+
+    {#if grid_style === 'Standard' && grid_spacing_mm >= 3 && AIMode}
+        <div class="flex flex-row mt-3 gap-1">
+            <input type="text" placeholder="Generate with AI. Example: Apple, Cube, Leaf" class="input input-bordered rounded-sm w-full input-sm" bind:value={user_design} maxlength=150 />
+            <button class="btn rounded-sm btn-sm" aria-label="Send to AI" onclick={() => {if (!loadingAIRecord) {generateAIDesign()}}}>
+                {#if !loadingAIRecord}
+                    <svg class="w-4 h-4" viewBox="0 0 24.00 24.00" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#000000" stroke-width="0.6"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round" stroke="#CCCCCC" stroke-width="0.192"></g><g id="SVGRepo_iconCarrier"> <path fill-rule="evenodd" clip-rule="evenodd" d="M12 3C12.2652 3 12.5196 3.10536 12.7071 3.29289L19.7071 10.2929C20.0976 10.6834 20.0976 11.3166 19.7071 11.7071C19.3166 12.0976 18.6834 12.0976 18.2929 11.7071L13 6.41421V20C13 20.5523 12.5523 21 12 21C11.4477 21 11 20.5523 11 20V6.41421L5.70711 11.7071C5.31658 12.0976 4.68342 12.0976 4.29289 11.7071C3.90237 11.3166 3.90237 10.6834 4.29289 10.2929L11.2929 3.29289C11.4804 3.10536 11.7348 3 12 3Z" fill="#000000"></path> </g></svg>
+                {:else}
+                    <span class="loading loading-spinner loading-sm"></span>
+                {/if}
+            </button>
+        </div>
+    {/if}
 
     <!-- ABOUT SECTION -->
     <div class="collapse collapse-arrow pt-4">

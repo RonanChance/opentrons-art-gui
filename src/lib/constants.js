@@ -5,3 +5,11 @@ export const well_colors = {
     'Green' : '#86efac', // green-300
     'Cyan' : '#67e8f9', // cyan-300
 }
+
+export const well_colors_abbr = {
+    'B' : 'Blue',
+    'R' : 'Red',
+    'Y' : 'Yellow',
+    'G' : 'Green',
+    'C' : 'Cyan',
+}
