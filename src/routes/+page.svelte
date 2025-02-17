@@ -33,18 +33,18 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
     if not point_list:
         continue
 
-    # Get the tip for this run, set the bacteria color, and the aspirate bacteria of choice
+    # Get the tip for this run, set the bacteria color, then aspirate the bacteria of choice
     pipette_20ul.pick_up_tip()
     current_color = color_names[i]
-    pipette_20ul.aspirate(min(len(point_list), 20), location_of_color(current_color))
+    pipette_20ul.aspirate(min(len(point_list)*4, 20), location_of_color(current_color))
 
     # Iterate over the current points list and dispense them, refilling along the way
     for i in range(len(point_list)):
         x, y = point_list[i]
         adjusted_location = center_location.move(types.Point(x, y))
-        dispense_and_jog(pipette_20ul, 1, adjusted_location)
-        if pipette_20ul.current_volume == 0 and len(point_list[i+1:]) > 0:
-            pipette_20ul.aspirate(min(len(point_list[i+1:]), 20), location_of_color(current_color))
+        dispense_and_jog(pipette_20ul, 4, adjusted_location)
+        if pipette_20ul.current_volume < 4 and len(point_list[i+1:]) > 0:
+            pipette_20ul.aspirate(min(len(point_list[i+1:])*4, 20), location_of_color(current_color))
 
     # Drop tip between each color
     pipette_20ul.drop_tip()`;
@@ -157,36 +157,28 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
         // Convert object into an array
         const entries = Object.entries(point_colors);
 
-        const blue_points = entries.filter(([, color]) => color === "Blue")
-                                .map(([point, color]) => ({
-                                    point: point.split(',').map(roundPoint), 
-                                    color
-                                }));
+        function processPoints(colorName) {
+            return entries
+                .filter(([, color]) => color === colorName)
+                .map(([point, color]) => ({
+                    point: point.split(',').map(roundPoint), 
+                    color
+                }))
+                .sort((a, b) => {
+                    // Sort by Y descending, then X ascending
+                    const [ax, ay] = a.point;
+                    const [bx, by] = b.point;
+                    return by - ay || ax - bx;
+                });
+        }
 
-        const red_points = entries.filter(([, color]) => color === "Red")
-                                .map(([point, color]) => ({
-                                    point: point.split(',').map(roundPoint), 
-                                    color
-                                }));
-        
-        const yellow_points = entries.filter(([, color]) => color === "Yellow")
-                                    .map(([point, color]) => ({
-                                        point: point.split(',').map(roundPoint), 
-                                        color
-                                    }));
-
-        const green_points = entries.filter(([, color]) => color === "Green")
-                                    .map(([point, color]) => ({
-                                        point: point.split(',').map(roundPoint), 
-                                        color
-                                    }));
-
-        const cyan_points = entries.filter(([, color]) => color === "Cyan")
-                                .map(([point, color]) => ({
-                                    point: point.split(',').map(roundPoint), 
-                                    color
-                                }));
-        points_by_color = {blue_points, red_points, yellow_points, green_points, cyan_points};
+        points_by_color = {
+            blue_points: processPoints("Blue"),
+            red_points: processPoints("Red"),
+            yellow_points: processPoints("Yellow"),
+            green_points: processPoints("Green"),
+            cyan_points: processPoints("Cyan")
+        };
     }
 
     async function copyPointsToClipboard() {
@@ -610,6 +602,20 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
                     {scriptToCopy}
                 </div>
             </div>
+        </div>
+    </div>
+    <div class="collapse collapse-arrow">
+        <input type="checkbox" id="section3" class="toggle-checkbox" />
+        <label for="section3" class="collapse-title text-lg font-medium">Tips & Tricks for Lab Day</label>
+        <div class="collapse-content text-sm">
+            <ul class="list-disc pl-5 space-y-2">
+                <li><span class="font-semibold">Dispense 4µL points</span>: Using 4µL per point ensures that your design prints with proportions similar to those on this website. You can experiment with different amounts, but be aware that you may get unexpected results.</li>
+                <li><span class="font-semibold">Add an offset when necessary</span>: To adjust for varying amounts of agar, apply a vertical offset after loading `agar_plate` in your `run()` function using the `set_offset` method:<br />
+                    <span class="italic pl-5">agar_plate.set_offset(x=0.00, y=0.00, z=17.5)</span>
+                </li>
+                <li><span class="font-semibold">Use a 100mm cell culture dish</span>: The <span class="italic">Thermo Fisher Nunclon Delta Surface Cell Culture Dish 100 (150464)</span> works best with MIT Lab's 3D-printed holder.</li>
+                <li><span class="font-semibold">Take photographs</span>: Document your process thoroughly & keep notes as you go!</li>
+            </ul>
         </div>
     </div>
     

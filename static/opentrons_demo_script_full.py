@@ -4,7 +4,7 @@ from opentrons import types
 metadata = {
     'protocolName': 'HTGAA Opentrons Lab',
     'author': 'HTGAA',
-    'source': 'HTGAA 2022',
+    'source': 'HTGAA 2025',
     'apiLevel': '2.20'
 }
 
@@ -59,6 +59,9 @@ def run(protocol):
     # Get the top-center of the plate, make sure the plate was calibrated before running this
     center_location = agar_plate['A1'].top()
 
+    # Add offset
+    agar_plate.set_offset(x=0.00, y=0.00, z=17.5) # 14.5 works best when testing empty dish with water & no agar
+
     pipette_20ul.starting_tip = tips_20ul.well(PIPETTE_STARTING_TIP_WELL)
 
     ##############################################################################
@@ -86,7 +89,7 @@ def run(protocol):
         pipette.dispense(volume, location)
         currLoc = pipette._get_last_location_by_api_version()
         pipette.move_to(currLoc.move(types.Point(z=5)))
-        pipette.move_to(currLoc)
+        # pipette.move_to(currLoc) # I recommend removing this line
 
     cursor = center_location.move(types.Point(x=-35.5, y = 12))
 
@@ -103,16 +106,16 @@ def run(protocol):
         # Get the tip for this run, set the bacteria color, and aspirate the required amount of bacteria
         pipette_20ul.pick_up_tip()
         current_color = color_names[i]
-        pipette_20ul.aspirate(min(len(point_list), 20), location_of_color(current_color))
+        pipette_20ul.aspirate(min(len(point_list)*4, 20), location_of_color(current_color))
 
         # Iterate over the current points list and dispense them, refilling along the way
         for i in range(len(point_list)):
             x, y = point_list[i]
             adjusted_location = center_location.move(types.Point(x, y))
-            dispense_and_jog(pipette_20ul, 1, adjusted_location)
+            dispense_and_jog(pipette_20ul, 4, adjusted_location)
             # If the pipette runs out, and there are more points, refill it by the necessary amount 
-            if pipette_20ul.current_volume == 0 and len(point_list[i+1:]) > 0:
-                pipette_20ul.aspirate(min(len(point_list[i+1:]), 20), location_of_color(current_color))
+            if pipette_20ul.current_volume < 4 and len(point_list[i+1:]) > 0:
+                pipette_20ul.aspirate(min(len(point_list[i+1:])*4, 20), location_of_color(current_color))
 
         # Drop tip between each color to avoid cross contamination
         pipette_20ul.drop_tip()

@@ -18,16 +18,16 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
     # Get the tip for this run, set the bacteria color, and aspirate the required amount of bacteria
     pipette_20ul.pick_up_tip()
     current_color = color_names[i]
-    pipette_20ul.aspirate(min(len(point_list), 20), location_of_color(current_color))
+    pipette_20ul.aspirate(min(len(point_list)*4, 20), location_of_color(current_color))
 
     # Iterate over the current points list and dispense them, refilling along the way
     for i in range(len(point_list)):
         x, y = point_list[i]
         adjusted_location = center_location.move(types.Point(x, y))
-        dispense_and_jog(pipette_20ul, 1, adjusted_location)
+        dispense_and_jog(pipette_20ul, 4, adjusted_location)
         # If the pipette runs out, and there are more points, refill it by the necessary amount 
-        if pipette_20ul.current_volume == 0 and len(point_list[i+1:]) > 0:
-            pipette_20ul.aspirate(min(len(point_list[i+1:]), 20), location_of_color(current_color))
+        if pipette_20ul.current_volume < 4 and len(point_list[i+1:]) > 0:
+            pipette_20ul.aspirate(min(len(point_list[i+1:])*4, 20), location_of_color(current_color))
 
     # Drop tip between each color to avoid cross contamination
     pipette_20ul.drop_tip()
