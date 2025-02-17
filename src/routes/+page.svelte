@@ -435,8 +435,7 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div 
-    class="relative border border-neutral rounded-full mx-auto w-full max-w-[94vw] max-h-[94vw] sm:max-w-[500px] sm:max-h-[500px] aspect-square mb-6 {loadingURLRecord ? 'blur' : ''} {loadingAIRecord ? 'blur' : ''}"
-    style="width: {(radius_mm + radius_margin_mm) * 16}px; height: {(radius_mm + radius_margin_mm) * 16}px;"
+    class="relative border border-neutral rounded-full mx-auto w-full max-w-[94vw] max-h-[94vw] sm:max-w-[440px] sm:max-h-[440px] aspect-square mb-6 {loadingURLRecord ? 'blur' : ''} {loadingAIRecord ? 'blur' : ''}"
     onmousedown={() => isDrawing = true}
     onmouseup={() => isDrawing = false}
     onmouseleave={() => {isDrawing = false; current_point = {};}}
@@ -451,8 +450,8 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
         <input type="checkbox" id="dot-{x}-{y}"  
             class="checkbox w-4 h-4 absolute rounded-full [--chkfg:invisible] transition-[box-shadow] duration-300 ease-in-out {point_colors[`${x}, ${y}`] ? 'border-0' : ''} {show_outlines ? '' : 'border-0'}"
             style=" 
-                left: calc(50% + ({x / radius_mm} * 50%) - 8px); 
-                top: calc(50% - ({y / radius_mm} * 50%) - 8px);
+                left: calc(50% + ({x / (radius_mm + 4)} * 50%) - 8px); 
+                top: calc(50% - ({y / (radius_mm + 4)} * 50%) - 8px);
                 background-color: {well_colors[point_colors[`${x}, ${y}`]] || 'transparent'};
                 box-shadow: {point_colors[`${x}, ${y}`] ? `0 0 7px 3px ${well_colors[point_colors[`${x}, ${y}`]]}` : 'none'}
                 "
@@ -528,21 +527,21 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
             <div class="flex flex-row justify-between">
                 <span class="font-semibold">Grid Spacing</span><span class="opacity-70">{grid_spacing_mm}mm</span>
             </div>
-            <input type="range" min="1" max="15" class="range" step="0.1" bind:value={grid_spacing_mm} />
+            <input type="range" min="3" max="15" class="range" step="0.1" bind:value={grid_spacing_mm} />
         </div>
         <!-- GRID MARGIN -->
         <div class="flex flex-col w-full gap-2 mx-auto">
             <div class="flex flex-row justify-between">
                 <span class="font-semibold">Margin</span><span class="opacity-70">{radius_margin_mm}mm</span>
             </div>
-            <input type="range" min="1" max="15" class="range" step="0.1" bind:value={radius_margin_mm} />
+            <input type="range" min="0.1" max="15" class="range" step="0.1" bind:value={radius_margin_mm} />
         </div>
     </div>
 
     <!-- SHOW POINTS -->
     <div class="flex flex-col w-full gap-2 mx-auto pb-2 bg-neutral-100 rounded px-2">
         <div class="flex flex-row justify-between pt-2 items-center">
-            <span class="font-semibold">Points</span>
+            <span class="font-semibold">Coordinates</span>
             <button class="btn btn-sm px-1 tooltip tooltip-left" aria-label="Copy Points" data-tip="Copy To Clipboard" onclick={copyPointsToClipboard}>
                 <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M10 8V7C10 6.05719 10 5.58579 10.2929 5.29289C10.5858 5 11.0572 5 12 5H17C17.9428 5 18.4142 5 18.7071 5.29289C19 5.58579 19 6.05719 19 7V12C19 12.9428 19 13.4142 18.7071 13.7071C18.4142 14 17.9428 14 17 14H16M7 19H12C12.9428 19 13.4142 19 13.7071 18.7071C14 18.4142 14 17.9428 14 17V12C14 11.0572 14 10.5858 13.7071 10.2929C13.4142 10 12.9428 10 12 10H7C6.05719 10 5.58579 10 5.29289 10.2929C5 10.5858 5 11.0572 5 12V17C5 17.9428 5 18.4142 5.29289 18.7071C5.58579 19 6.05719 19 7 19Z" stroke="#464455" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>
             </button>
@@ -591,7 +590,7 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
         <input type="checkbox" id="section1" class="toggle-checkbox" />
         <label for="section1" class="collapse-title text-lg font-medium">What is Opentrons Art Interface?</label>
         <div class="collapse-content text-sm">
-            <p>This website is made for the Opentrons recitation of <a class="italic underline" href="https://howtogrowalmostanything.notion.site/HTGAA-2024-63a45d6c8f934456b70e30eee86f9b78">'How To Grow (Almost) Anything'</a> (HTGAA), to teach bio-enthusiasts of all backgrounds the principles and skills at the cutting edge of bioengineering and synthetic biology.</p>
+            <p>This website is made for the Opentrons recitation of <a class="italic underline" href="https://howtogrowalmostanything.notion.site/htgaa25">'How To Grow (Almost) Anything'</a> (HTGAA), to teach bio-enthusiasts of all backgrounds the principles and skills at the cutting edge of bioengineering and synthetic biology.</p>
         </div>
     </div>
     <div class="collapse collapse-arrow">
@@ -603,7 +602,7 @@ for i, point_list in enumerate([blue_points, red_points, yellow_points, green_po
             <div class="flex flex-col w-full gap-2 mx-auto pb-2 bg-neutral-100 rounded px-2 mt-2">
                 <div class="flex flex-row justify-between pt-2 items-center">
                     <span class="font-semibold">Python Script</span>
-                    <button class="btn btn-sm px-1 tooltip tooltip-left" aria-label="Copy Points" data-tip="Copy To Clipboard" onclick={copyScriptToClipboard}>
+                    <button class="btn btn-sm px-1 tooltip tooltip-left" aria-label="Copy Coordinates" data-tip="Copy To Clipboard" onclick={copyScriptToClipboard}>
                         <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M10 8V7C10 6.05719 10 5.58579 10.2929 5.29289C10.5858 5 11.0572 5 12 5H17C17.9428 5 18.4142 5 18.7071 5.29289C19 5.58579 19 6.05719 19 7V12C19 12.9428 19 13.4142 18.7071 13.7071C18.4142 14 17.9428 14 17 14H16M7 19H12C12.9428 19 13.4142 19 13.7071 18.7071C14 18.4142 14 17.9428 14 17V12C14 11.0572 14 10.5858 13.7071 10.2929C13.4142 10 12.9428 10 12 10H7C6.05719 10 5.58579 10 5.29289 10.2929C5 10.5858 5 11.0572 5 12V17C5 17.9428 5 18.4142 5.29289 18.7071C5.58579 19 6.05719 19 7 19Z" stroke="#464455" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>
                     </button>
                 </div>
