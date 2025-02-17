@@ -1,16 +1,15 @@
 # Locations to dispense each color of bacteria
 # TODO: Replace these with your design
-blue_points = []
 red_points = []
-yellow_points = []
 green_points = []
-cyan_points = []
+blue_points = []
+orange_points = []
 
 # List of the color names 
-color_names = ["Blue", "Red", "Yellow", "Green", "Cyan"]
+color_names = ["Red", "Green", "Blue", "Orange"]
 
 # Handle one color bacteria at a time
-for i, point_list in enumerate([blue_points, red_points, yellow_points, green_points, cyan_points]):
+for i, point_list in enumerate([red_points, green_points, blue_points, orange_points]):
     # Skip the rest of the loop if the list is empty
     if not point_list:
         continue

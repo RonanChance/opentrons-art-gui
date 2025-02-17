@@ -10,11 +10,10 @@ metadata = {
 
 # Locations to dispense each color of bacteria
 # TODO: Replace these with your design
-blue_points = []
 red_points = []
-yellow_points = []
 green_points = []
-cyan_points = []
+blue_points = []
+orange_points = []
 
 ##############################################################################
 ###   Robot deck setup constants - don't change these                      ###
@@ -27,10 +26,9 @@ PIPETTE_STARTING_TIP_WELL = 'A1'
 
 well_colors = {
     'A1' : 'Red',
-    'B1' : 'Yellow',
-    'C1' : 'Green',
-    'D1' : 'Cyan',
-    'E1' : 'Blue'
+    'B1' : 'Green',
+    'C1' : 'Blue',
+    'D1' : 'Orange',
 }
 
 def run(protocol):
@@ -95,10 +93,10 @@ def run(protocol):
 
 
     # List of the color names 
-    color_names = ["Blue", "Red", "Yellow", "Green", "Cyan"]
+    color_names = ["Red", "Green", "Blue", "Orange"]
 
     # Handle one color bacteria at a time
-    for i, point_list in enumerate([blue_points, red_points, yellow_points, green_points, cyan_points]):
+    for i, point_list in enumerate([red_points, green_points, blue_points, orange_points]):
         # Skip the rest of the loop if the list is empty
         if not point_list:
             continue
