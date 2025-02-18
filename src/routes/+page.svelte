@@ -12,7 +12,7 @@
     
     let points = $state({});
     let point_colors = $state({});
-    const points_by_color_defaults = {"red_points": [], "green_points": [], "blue_points": [], "orange_points": []};
+    const points_by_color_defaults = {"red_points": [], "green_points": [], "orange_points": []};
     let points_by_color = $state(points_by_color_defaults);
 
     let show_outlines = $state(true);
@@ -27,8 +27,8 @@
 
     let current_color = $state('Red');
     let contentToCopy = $state();
-    let scriptToCopy = `color_names = ["Red", "Green", "Blue", "Orange"]
-for i, point_list in enumerate([red_points, green_points, blue_points, orange_points]):
+    let scriptToCopy = `color_names = ["Red", "Green", "Orange"]
+for i, point_list in enumerate([red_points, green_points, orange_points]):
     # Skip the rest of the loop if the list is empty
     if not point_list:
         continue
@@ -175,7 +175,6 @@ for i, point_list in enumerate([red_points, green_points, blue_points, orange_po
         points_by_color = {
             red_points: processPoints("Red"),
             green_points: processPoints("Green"),
-            blue_points: processPoints("Blue"),
             orange_points: processPoints("Orange"),
         };
     }
@@ -505,7 +504,7 @@ for i, point_list in enumerate([red_points, green_points, blue_points, orange_po
             <div class="flex flex-row justify-around my-auto">
                 <input type="radio" class="radio checked:bg-red-400" value="Red" id="radio-red" bind:group={current_color} />
                 <input type="radio" class="radio checked:bg-green-400" value="Green" id="radio-green" bind:group={current_color} />
-                <input type="radio" class="radio checked:bg-blue-400" value="Blue" id="radio-blue" bind:group={current_color} />
+                <!-- <input type="radio" class="radio checked:bg-blue-400" value="Blue" id="radio-blue" bind:group={current_color} /> -->
                 <input type="radio" class="radio checked:bg-orange-400" value="Orange" id="radio-orange" bind:group={current_color} />
                 <!-- <input type="radio" class="radio checked:bg-cyan-400" value="Cyan" id="radio-cyan" bind:group={current_color} /> -->
             </div>

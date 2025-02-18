@@ -12,7 +12,6 @@ metadata = {
 # TODO: Replace these with your design
 red_points = []
 green_points = []
-blue_points = []
 orange_points = []
 
 ##############################################################################
@@ -27,8 +26,7 @@ PIPETTE_STARTING_TIP_WELL = 'A1'
 well_colors = {
     'A1' : 'Red',
     'B1' : 'Green',
-    'C1' : 'Blue',
-    'D1' : 'Orange',
+    'C1' : 'Orange',
 }
 
 def run(protocol):
@@ -93,10 +91,10 @@ def run(protocol):
 
 
     # List of the color names 
-    color_names = ["Red", "Green", "Blue", "Orange"]
+    color_names = ["Red", "Green", "Orange"]
 
     # Handle one color bacteria at a time
-    for i, point_list in enumerate([red_points, green_points, blue_points, orange_points]):
+    for i, point_list in enumerate([red_points, green_points, orange_points]):
         # Skip the rest of the loop if the list is empty
         if not point_list:
             continue
