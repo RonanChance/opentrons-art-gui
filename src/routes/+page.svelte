@@ -7,8 +7,9 @@
 
     let grid_style = $state('Standard'); // 'Standard' or 'Honeycomb' or 'Radial'
     let radius_mm = $state(40);
-    let radius_margin_mm = $state(2);
-    let grid_spacing_mm = $state(5);
+    let radius_margin_mm = $state(0.1);
+    let grid_spacing_mm = $state(4);
+    let point_size = $state(2);
     
     let points = $state({});
     let point_colors = $state({});
@@ -36,15 +37,15 @@ for i, point_list in enumerate([red_points, green_points, orange_points]):
     # Get the tip for this run, set the bacteria color, then aspirate the bacteria of choice
     pipette_20ul.pick_up_tip()
     current_color = color_names[i]
-    pipette_20ul.aspirate(min(len(point_list)*4, 20), location_of_color(current_color))
+    pipette_20ul.aspirate(min(len(point_list)*2, 20), location_of_color(current_color))
 
     # Iterate over the current points list and dispense them, refilling along the way
     for i in range(len(point_list)):
         x, y = point_list[i]
         adjusted_location = center_location.move(types.Point(x, y))
-        dispense_and_jog(pipette_20ul, 4, adjusted_location)
-        if pipette_20ul.current_volume < 4 and len(point_list[i+1:]) > 0:
-            pipette_20ul.aspirate(min(len(point_list[i+1:])*4, 20), location_of_color(current_color))
+        dispense_and_jog(pipette_20ul, 2, adjusted_location)
+        if pipette_20ul.current_volume < 2 and len(point_list[i+1:]) > 0:
+            pipette_20ul.aspirate(min(len(point_list[i+1:])*2, 20), location_of_color(current_color))
 
     # Drop tip between each color
     pipette_20ul.drop_tip()`;
@@ -75,8 +76,9 @@ for i, point_list in enumerate([red_points, green_points, orange_points]):
         grid_style = 'Standard';
         current_color = 'Red';
         radius_mm = 40;
-        radius_margin_mm = 2;
-        grid_spacing_mm = 5;
+        radius_margin_mm = 0.1;
+        grid_spacing_mm = 4;
+        point_size = 2;
         points = generateGrid(grid_style, radius_mm, radius_margin_mm, grid_spacing_mm);
     }
 
@@ -106,6 +108,7 @@ for i, point_list in enumerate([red_points, green_points, orange_points]):
             radius_margin_mm = r.record.radius_margin_mm;
             radius_mm = r.record.radius_mm;
             points = r.record.points;
+            point_size = r.record.point_size || 4;
             await tick();
             point_colors = r.record.point_colors;
             groupByColors();
@@ -136,6 +139,7 @@ for i, point_list in enumerate([red_points, green_points, orange_points]):
                 grid_spacing_mm,
                 points,
                 point_colors,
+                point_size
             })
         });
         let r = await response.json();
@@ -438,10 +442,20 @@ for i, point_list in enumerate([red_points, green_points, orange_points]):
     {#each points as { x, y }}
         <!-- svelte-ignore a11y_mouse_events_have_key_events -->
         <input type="checkbox" id="dot-{x}-{y}"  
-            class="checkbox w-4 h-4 absolute rounded-full [--chkfg:invisible] transition-[box-shadow] duration-300 ease-in-out {point_colors[`${x}, ${y}`] ? 'border-0' : ''} {show_outlines ? '' : 'border-0'}"
+            class="checkbox
+                {point_size === 1 ? 'w-[8px] h-[8px]' : ''}
+                {point_size === 1.5 ? 'w-[10px] h-[10px]' : ''}
+                {point_size === 2 ? 'w-[12px] h-[12px]' : ''} 
+                {point_size === 2.5 ? 'w-[14px] h-[14px]' : ''} 
+                {point_size === 3 ? 'w-[16px] h-[16px]' : ''} 
+                {point_size === 3.5 ? 'w-[18px] h-[18px]' : ''}
+                {point_size === 4 ? 'w-[20px] h-[20px]' : ''}
+                {point_size === 4.5 ? 'w-[22px] h-[22px]' : ''}
+                {point_size === 5 ? 'w-[24px] h-[24px]' : ''}
+                absolute rounded-full [--chkfg:invisible] transition-[box-shadow] duration-300 ease-in-out {point_colors[`${x}, ${y}`] ? 'border-0' : ''} {show_outlines ? '' : 'border-0'}"
             style=" 
-                left: calc(50% + ({x / (radius_mm + 4)} * 50%) - 8px); 
-                top: calc(50% - ({y / (radius_mm + 4)} * 50%) - 8px);
+                left: calc(50% + ({x / (radius_mm + 4)} * 50%) - {point_size*2}px); 
+                top: calc(50% - ({y / (radius_mm + 4)} * 50%) - {point_size*2}px);
                 background-color: {well_colors[point_colors[`${x}, ${y}`]] || 'transparent'};
                 box-shadow: {point_colors[`${x}, ${y}`] ? `0 0 7px 3px ${well_colors[point_colors[`${x}, ${y}`]]}` : 'none'}
                 "
@@ -517,14 +531,14 @@ for i, point_list in enumerate([red_points, green_points, orange_points]):
             <div class="flex flex-row justify-between">
                 <span class="font-semibold">Grid Spacing</span><span class="opacity-70">{grid_spacing_mm}mm</span>
             </div>
-            <input type="range" min="3" max="15" class="range" step="0.1" bind:value={grid_spacing_mm} />
+            <input type="range" min="2" max="15" class="range" step="0.1" bind:value={grid_spacing_mm} />
         </div>
         <!-- GRID MARGIN -->
         <div class="flex flex-col w-full gap-2 mx-auto">
             <div class="flex flex-row justify-between">
-                <span class="font-semibold">Margin</span><span class="opacity-70">{radius_margin_mm}mm</span>
+                <span class="font-semibold">Point Size</span><span class="opacity-70">{point_size}µL</span>
             </div>
-            <input type="range" min="0.1" max="15" class="range" step="0.1" bind:value={radius_margin_mm} />
+            <input type="range" min="1" max="5" class="range" step="0.5" bind:value={point_size} />
         </div>
     </div>
 
@@ -587,8 +601,15 @@ for i, point_list in enumerate([red_points, green_points, orange_points]):
         <input type="checkbox" id="section2" class="toggle-checkbox" />
         <label for="section1" class="collapse-title text-lg font-medium">How To Use The Data Points</label>
         <div class="collapse-content">
-            <p class="text-left text-sm">You'll want to write a script that iterates over each coordinate and dispenses the correct color of bacteria into that location. <span class="font-semibold">Try it yourself before you continue reading!</span></p>
-            <span class="text-center text-sm opacity-60">Note: this will need to be combined with the code from class</span>
+            <p class="text-left text-sm">You should write a python script that iterates over each coordinate and dispenses the correct color of bacteria into that location using the <a class="underline" href="https://docs.opentrons.com/v2/">Opentrons API</a>. Remember to switch pipette tips between each color and aspirate liquid as needed!
+            <br />
+            <br />
+            <a class="underline" href="https://docs.google.com/document/d/1VR1ngrwncH4kW80PHKZDGITu4GJbDa7pCE9yCs4YdUU">HTGAA 2025 Opentrons Lab Protocol</a>
+            <br />
+            <br />
+            <a class="underline" href="https://colab.research.google.com/drive/1VoouRH0nqlk09g50rHxOElaLD-SVknYY">HTGAA 2025 Opentrons Lab Colab</a>
+            
+            <!-- <span class="text-center text-sm opacity-60">Note: this will need to be combined with the code from class</span>
             <div class="flex flex-col w-full gap-2 mx-auto pb-2 bg-neutral-100 rounded px-2 mt-2">
                 <div class="flex flex-row justify-between pt-2 items-center">
                     <span class="font-semibold">Python Script</span>
@@ -599,7 +620,7 @@ for i, point_list in enumerate([red_points, green_points, orange_points]):
                 <div class="text-xs whitespace-pre-wrap overflow-auto break-words max-w-full">
                     {scriptToCopy}
                 </div>
-            </div>
+            </div> -->
         </div>
     </div>
     <div class="collapse collapse-arrow">
@@ -607,9 +628,9 @@ for i, point_list in enumerate([red_points, green_points, orange_points]):
         <label for="section3" class="collapse-title text-lg font-medium">Tips & Tricks for Lab Day</label>
         <div class="collapse-content text-sm">
             <ul class="list-disc pl-5 space-y-2">
-                <li><span class="font-semibold">Dispense 4µL points</span>: Using 4µL per point ensures that your design prints with proportions similar to those on this website. You can experiment with different amounts, but be aware that you may get unexpected results.</li>
+                <li><span class="font-semibold">1-2µL points with 3-5mm spacing as a starting point</span>: You can experiment with different settings, but be aware that you may get unexpected results.</li>
                 <li><span class="font-semibold">Add an offset when necessary</span>: To adjust for varying amounts of agar, apply a vertical offset after loading `agar_plate` in your `run()` function using the `set_offset` method:<br />
-                    <span class="italic pl-5">agar_plate.set_offset(x=0.00, y=0.00, z=17.5)</span>
+                    <span class="italic pl-5">agar_plate.set_offset(x=0.00, y=0.00, z=11.0)</span>
                 </li>
                 <li><span class="font-semibold">Use a 100mm cell culture dish</span>: The <span class="italic">Thermo Fisher Nunclon Delta Surface Cell Culture Dish 100 (150464)</span> works best with MIT Lab's 3D-printed holder.</li>
                 <li><span class="font-semibold">Take photographs</span>: Document your process thoroughly & keep notes as you go!</li>

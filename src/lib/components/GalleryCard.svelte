@@ -24,13 +24,24 @@
     </button>
 
     <!-- FRONT OF CARD -->
-    <div class="flex flex-col justify-between min-w-[150px] max-w-[150px] min-h-[270px] max-h-[270px] touch-manipulation">
+    <div class="flex flex-col justify-between min-w-[150px] max-w-[150px] min-h-[295px] max-h-[295px] touch-manipulation">
         {#if !flipped}
             <div class="relative border border-neutral/70 rounded-full mx-auto max-w-[150px] max-h-[150px] aspect-square bg-white"
                 style="width: {(record.radius_mm + record.radius_margin_mm) * 16}px; height: {(record.radius_mm + record.radius_margin_mm) * 16}px;">
                 {#each Object.entries(record.point_colors) as [ key, color ]}
                     <input type="checkbox" id="dot-{key.split(", ")[0]}-{key.split(", ")[1]}-{i}"
-                        class="checkbox w-2 h-2 absolute rounded-full [--chkfg:invisible] transition-[box-shadow] duration-300 ease-in-out border-0"
+                        class="checkbox 
+                        {record.point_size === 0 ? 'w-[8px] h-[8px]' : ''}
+                        {record.point_size === 1 ? 'w-[2px] h-[2px]' : ''}
+                        {record.point_size === 1.5 ? 'w-[3px] h-[3px]' : ''}
+                        {record.point_size === 2 ? 'w-[4px] h-[4px]' : ''} 
+                        {record.point_size === 2.5 ? 'w-[5px] h-[5px]' : ''} 
+                        {record.point_size === 3 ? 'w-[6px] h-[6px]' : ''} 
+                        {record.point_size === 3.5 ? 'w-[7px] h-[7px]' : ''}
+                        {record.point_size === 4 ? 'w-[8px] h-[8px]' : ''}
+                        {record.point_size === 4.5 ? 'w-[9px] h-[9px]' : ''}
+                        {record.point_size === 5 ? 'w-[10px] h-[10px]' : ''}
+                        absolute rounded-full [--chkfg:invisible] transition-[box-shadow] duration-300 ease-in-out border-0"
                         style="left: calc(50% + ({key.split(", ")[0] / record.radius_mm} * 50%) - 4px); top: calc(50% - ({key.split(", ")[1] / record.radius_mm} * 50%) - 4px); background-color: {well_colors[color] || 'transparent'};"
                         draggable="false"/>
                 {/each}
@@ -42,6 +53,15 @@
                     </div>
                     <div class="inline-flex items-baseline gap-0.5">
                         <span class="text-base">{record.grid_style}</span>
+                    </div>
+                </div>
+                <div class="flex flex-row items-center gap-1">
+                    <div class="tooltip tooltip-right" data-tip="Point Size">
+                        <svg class="w-4 h-4" fill="#000000" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M256 56c110.532 0 200 89.451 200 200 0 110.532-89.451 200-200 200-110.532 0-200-89.451-200-200 0-110.532 89.451-200 200-200m0-48C119.033 8 8 119.033 8 256s111.033 248 248 248 248-111.033 248-248S392.967 8 256 8zm0 168c-44.183 0-80 35.817-80 80s35.817 80 80 80 80-35.817 80-80-35.817-80-80-80z"></path></g></svg>
+                    </div>
+                    <div class="inline-flex items-baseline gap-0.5">
+                        <span class="text-base">{record.point_size || 4}</span>
+                        <span class="text-sm">µL</span>
                     </div>
                 </div>
                 <div class="flex flex-row items-center gap-1">

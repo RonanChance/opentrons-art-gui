@@ -6,7 +6,7 @@ const pb = new PocketBase("https://opentrons-art-pb.rcdonovan.com");
 export const POST = async ({ request }) => {
     let { record_load_iteration, verified_only } = await request.json();
     let start = record_load_iteration * 10;
-    let end = start + 25;
+    let end = start + 500;
     let records;
     try {
         await pb.admins.authWithPassword(PB_EMAIL, PB_PASSWORD);
