@@ -32,17 +32,21 @@
                     <input type="checkbox" id="dot-{key.split(", ")[0]}-{key.split(", ")[1]}-{i}"
                         class="checkbox 
                         {record.point_size === 0 ? 'w-[8px] h-[8px]' : ''}
-                        {record.point_size === 1 ? 'w-[2px] h-[2px]' : ''}
+                        {record.point_size === 0.5 ? 'w-[2px] h-[2px]' : ''}
+                        {record.point_size === 1 ? 'w-[3px] h-[3px]' : ''}
                         {record.point_size === 1.5 ? 'w-[3px] h-[3px]' : ''}
-                        {record.point_size === 2 ? 'w-[4px] h-[4px]' : ''} 
+                        {record.point_size === 2 ? 'w-[5px] h-[5px]' : ''} 
                         {record.point_size === 2.5 ? 'w-[5px] h-[5px]' : ''} 
-                        {record.point_size === 3 ? 'w-[6px] h-[6px]' : ''} 
+                        {record.point_size === 3 ? 'w-[7px] h-[7px]' : ''} 
                         {record.point_size === 3.5 ? 'w-[7px] h-[7px]' : ''}
-                        {record.point_size === 4 ? 'w-[8px] h-[8px]' : ''}
+                        {record.point_size === 4 ? 'w-[9px] h-[9px]' : ''}
                         {record.point_size === 4.5 ? 'w-[9px] h-[9px]' : ''}
                         {record.point_size === 5 ? 'w-[10px] h-[10px]' : ''}
                         absolute rounded-full [--chkfg:invisible] transition-[box-shadow] duration-300 ease-in-out border-0"
-                        style="left: calc(50% + ({key.split(", ")[0] / record.radius_mm} * 50%) - 4px); top: calc(50% - ({key.split(", ")[1] / record.radius_mm} * 50%) - 4px); background-color: {well_colors[color] || 'transparent'};"
+                        style="
+                            left: calc(50% + ({key.split(", ")[0] / record.radius_mm} * 48%) - 2px); 
+                            top: calc(50% - ({key.split(", ")[1] / record.radius_mm} * 48%) - 2px); 
+                            background-color: {well_colors[color] || 'transparent'};"
                         draggable="false"/>
                 {/each}
             </div>
