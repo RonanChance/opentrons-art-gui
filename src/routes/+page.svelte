@@ -544,7 +544,12 @@ def run(protocol):
             draggable="false"
             onmouseover={() => {
                 if (isDrawing) {
-                    point_colors[`${x}, ${y}`] = current_color;
+                    if (current_color === 'Erase') {
+                        delete point_colors[`${x}, ${y}`];
+                    }
+                    else {
+                        point_colors[`${x}, ${y}`] = current_color;
+                    }
                     groupByColors();
                 }
                 current_point = {x, y}
@@ -559,7 +564,10 @@ def run(protocol):
                 }
             }}
             onclick={() => {
-                if (point_colors[`${x}, ${y}`] === current_color) {
+                if (current_color === 'Erase') {
+                    delete point_colors[`${x}, ${y}`];
+                }
+                else if (point_colors[`${x}, ${y}`] === current_color) {
                     delete point_colors[`${x}, ${y}`];
                     current_point = {};
                 } else {
@@ -598,11 +606,10 @@ def run(protocol):
                 <span class="font-semibold">Bacteria Color</span><span class="opacity-70">{current_color}</span>
             </div>
             <div class="flex flex-row justify-around my-auto">
-                <input type="radio" class="radio checked:bg-red-400" value="Red" id="radio-red" bind:group={current_color} />
-                <input type="radio" class="radio checked:bg-green-400" value="Green" id="radio-green" bind:group={current_color} />
-                <!-- <input type="radio" class="radio checked:bg-blue-400" value="Blue" id="radio-blue" bind:group={current_color} /> -->
-                <input type="radio" class="radio checked:bg-orange-400" value="Orange" id="radio-orange" bind:group={current_color} />
-                <!-- <input type="radio" class="radio checked:bg-cyan-400" value="Cyan" id="radio-cyan" bind:group={current_color} /> -->
+                <input type="radio" class="radio checked:bg-red-400 border-red-400" value="Red" id="radio-red" bind:group={current_color} />
+                <input type="radio" class="radio checked:bg-green-400 border-green-400" value="Green" id="radio-green" bind:group={current_color} />
+                <input type="radio" class="radio checked:bg-orange-400 border-orange-400" value="Orange" id="radio-orange" bind:group={current_color} />
+                <input type="radio" class="radio checked:bg-gray-100" value="Erase" id="radio-erase" bind:group={current_color} />
             </div>
         </div>
     </div>
