@@ -53,11 +53,8 @@
         points_by_color = points_by_color_defaults;
         points = {};
         grid_style = 'Standard';
-        current_color = 'Red';
         radius_mm = 40;
         radius_margin_mm = 0.1;
-        grid_spacing_mm = 4;
-        point_size = 2;
         points = generateGrid(grid_style, radius_mm, radius_margin_mm, grid_spacing_mm);
     }
 
@@ -583,14 +580,14 @@ def run(protocol):
             <div class="flex flex-row justify-between">
                 <span class="font-semibold">Grid</span> <span class="opacity-70">{grid_style}</span>
             </div>
-            <div class="flex flex-row justify-between">
-                <button class="btn btn-sm group {grid_style === 'Standard' ? 'btn-neutral' : 'btn-outline'}" type="button" onclick={grid_style = "Standard"} aria-label="Standard">
+            <div class="flex flex-row justify-between {Object.keys(point_colors).length > 0 ? 'tooltip tooltip-top' : ''}" data-tip="Reset Grid to Edit">
+                <button class="btn btn-sm group {grid_style === 'Standard' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed blur-sm' : ''}" type="button" onclick={grid_style = "Standard"} aria-label="Standard" disabled={Object.keys(point_colors).length > 0}>
                     <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="miter"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><line x1="5.99" y1="6" x2="6" y2="6" stroke-linecap="round" stroke-width="2"></line><line x1="11.99" y1="6" x2="12" y2="6" stroke-linecap="round" stroke-width="2"></line><line x1="17.99" y1="6" x2="18" y2="6" stroke-linecap="round" stroke-width="2"></line><line x1="5.99" y1="12" x2="6" y2="12" stroke-linecap="round" stroke-width="2"></line><line x1="11.99" y1="12" x2="12" y2="12" stroke-linecap="round" stroke-width="2"></line><line x1="17.99" y1="12" x2="18" y2="12" stroke-linecap="round" stroke-width="2"></line><line x1="5.99" y1="18" x2="6" y2="18" stroke-linecap="round" stroke-width="2"></line><line x1="11.99" y1="18" x2="12" y2="18" stroke-linecap="round" stroke-width="2"></line><line x1="17.99" y1="18" x2="18" y2="18" stroke-linecap="round" stroke-width="2"></line></g></svg>
                 </button>
-                <button class="btn btn-sm group {grid_style === 'Radial' ? 'btn-neutral' : 'btn-outline '}" type="button" onclick={grid_style = "Radial"} aria-label="Radial">
+                <button class="btn btn-sm group {grid_style === 'Radial' ? 'btn-neutral' : 'btn-outline '} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed blur-sm' : ''}" type="button" onclick={grid_style = "Radial"} aria-label="Radial" disabled={Object.keys(point_colors).length > 0}>
                     <svg class="w-5 h-5" viewBox="0 0 48 48" id="a" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><defs><style>.f{fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;}</style></defs><circle id="b" class="f" cx="24" cy="24" r="8.5"></circle><circle id="c" class="f" cx="24" cy="24" r="11.8"></circle><circle id="d" class="f" cx="24" cy="24" r="18.25"></circle><circle id="e" class="f" cx="24" cy="24" r="21.5"></circle></g></svg>
                 </button>
-                <button class="btn btn-sm group {grid_style === 'Honeycomb' ? 'btn-neutral' : 'btn-outline'}" type="button" onclick={grid_style = "Honeycomb"} aria-label="Honeycomb">
+                <button class="btn btn-sm group {grid_style === 'Honeycomb' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed blur-sm' : ''}" type="button" onclick={grid_style = "Honeycomb"} aria-label="Honeycomb" disabled={Object.keys(point_colors).length > 0}>
                     <svg class="w-5 h-5" fill="currentColor" height="200px" width="200px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" xml:space="preserve"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <g> <path d="M508.203,197.698L435.2,149.03V59.731c0-2.995-1.579-5.769-4.139-7.313l-85.333-51.2c-2.705-1.621-6.084-1.621-8.789,0 L256,49.781L175.061,1.218c-2.705-1.621-6.084-1.621-8.789,0l-85.333,51.2c-2.56,1.544-4.139,4.318-4.139,7.313v89.3L3.797,197.7 C1.425,199.287,0,201.949,0,204.8v102.4c0,2.859,1.425,5.521,3.797,7.1L76.8,362.968v89.297c0,2.995,1.579,5.777,4.139,7.322 l85.333,51.2c1.357,0.811,2.876,1.212,4.395,1.212s3.038-0.401,4.395-1.212L256,462.223l80.939,48.563 c1.357,0.811,2.876,1.212,4.395,1.212c1.519,0,3.038-0.401,4.395-1.212l85.333-51.2c2.56-1.545,4.139-4.326,4.139-7.322v-89.298 l73.003-48.668c2.372-1.579,3.797-4.241,3.797-7.1v-102.4C512,201.948,510.575,199.285,508.203,197.698z M256,348.448 l-62.352-37.411l-14.448-8.669v-92.732l0.42-0.252L256,163.556l76.38,45.828l0.42,0.252v92.732l-14.448,8.669L256,348.448z M341.333,18.481l76.8,46.089v84.198l-76.8,46.08l-76.8-46.08V64.57L341.333,18.481z M93.867,64.57l76.8-46.089l76.8,46.089 v84.198l-76.8,46.08l-76.8-46.08V64.57z M17.067,209.365l68.502-45.668l57.07,34.242l19.495,11.699v92.73l-74.422,44.653 l-2.139,1.283l-68.506-45.67V209.365z M170.667,493.515l-76.8-46.08v-84.197l76.801-46.081l76.799,46.079v84.198L170.667,493.515z M341.333,493.515l-76.8-46.08v-84.198l76.8-46.08l76.8,46.08v84.198L341.333,493.515z M494.933,302.633l-68.506,45.67 l-76.066-45.638l-0.495-0.297v-92.732l76.561-45.935l68.506,45.67V302.633z"></path> </g> </g> </g></svg>
                 </button>
             </div>
@@ -626,7 +623,9 @@ def run(protocol):
                     </span>
                 </span>
             </div>
-            <input type="range" min="1" max="15" class="range" step="0.1" bind:value={grid_spacing_mm} />
+            <div class="{Object.keys(point_colors).length > 0 ? 'tooltip tooltip-top' : ''}" data-tip="Reset Grid to Edit" >
+                <input type="range" min="1" max="15" disabled={Object.keys(point_colors).length > 0} class="range {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed blur-sm' : ''}" step="0.1" bind:value={grid_spacing_mm} />
+            </div>
         </div>
         <!-- GRID MARGIN -->
         <div class="flex flex-col w-full gap-2 mx-auto">
@@ -674,7 +673,7 @@ def run(protocol):
         <!-- </div> -->
         <button class="btn btn-sm hover:bg-neutral hover:text-white" onclick={resetValues}>
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>rotate</title> <path d="M5.966 16.767l4.090-4.090h-2.397c0.022-0.060 0.045-0.119 0.067-0.178 1.422-3.602 4.934-6.15 9.040-6.15 5.366 0 9.716 4.35 9.716 9.715s-4.35 9.716-9.716 9.716c-3.946 0-7.343-2.354-8.863-5.733-0.015-0.031-0.024-0.066-0.039-0.099l-2.605 2.589c0.018 0.030 0.030 0.064 0.048 0.096 0.004 0.007 0.008 0.014 0.012 0.020 2.299 3.972 6.594 6.643 11.513 6.643 7.342 0 13.294-5.952 13.294-13.294s-5.953-13.296-13.295-13.296c-6.138 0-11.303 4.158-12.833 9.812-0.015 0.052-0.020 0.107-0.032 0.159h-2.091l4.091 4.090z"></path> </g></svg>
-            Reset
+            Reset Grid
         </button>
     </div>
 
