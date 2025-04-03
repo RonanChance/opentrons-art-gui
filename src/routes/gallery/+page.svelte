@@ -4,7 +4,8 @@
     import { browser } from '$app/environment';
     import { well_colors } from '$lib/constants.js';
 
-    let verified_only = $state(true);
+    const filter_list = ['Media Lab', 'Approved', 'Off']
+    let filter = $state(0);
     let record_load_iteration = $state(0);
     let loadingRecords = $state(true);
     let loadedRecords = $state([]);
@@ -20,7 +21,7 @@
         const response = await fetch('../loadGallery', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ record_load_iteration, verified_only })
+            body: JSON.stringify({ record_load_iteration, filter })
         });
         const r = await response.json();
         loadedRecords = [...loadedRecords, ...r.records];
@@ -39,12 +40,8 @@
         Designer
     </a>
     <label class="ml-auto swap items-center">
-        <button aria-label='toggle verified' onclick={() => {verified_only = !verified_only; record_load_iteration = 0; loadedRecords = []; loadGallery();}}>
-            {#if verified_only}
-                Verified: ON
-            {:else}
-                Verified: OFF
-            {/if}
+        <button aria-label='toggle verified' onclick={() => {filter = ((filter + 1) % 3); record_load_iteration = 0; loadedRecords = []; loadGallery();}}>
+            Filter: <span class="opacity-75">{filter_list[filter]}</span>
         </button>
     </label>
 </div>

@@ -8,11 +8,11 @@
     let grid_style = $state('Standard'); // 'Standard' or 'Honeycomb' or 'Radial'
     let radius_mm = $state(40);
     let radius_margin_mm = $state(0.1);
-    let grid_spacing_mm = $state(3);
-    let point_size = $state(1.5);
+    let grid_spacing_mm = $state(3.3);
+    let point_size = $state(2);
     
     let points = $state({});
-    let point_colors = $state({});
+    let point_colors = $state({}); // Typical workflow: edit point_colors then call groupByColors()
     const points_by_color_defaults = {"red_points": [], "green_points": [], "orange_points": []};
     let points_by_color = $state(points_by_color_defaults);
 
@@ -312,7 +312,7 @@ def run(protocol):
         const seconds = String(now.getSeconds()).padStart(2, "0");
 
         const timestamp = `${month}-${day}-${year}_${hours}-${minutes}-${seconds}`;
-        const filename = `OT2_Art_${timestamp}.py`;
+        const filename = `Opentrons_Art_${point_size}uL_${timestamp}.py`;
 
         const blob = new Blob([scriptToCopy], { type: "text/x-python" });
         const url = URL.createObjectURL(blob);

@@ -24,8 +24,11 @@
     </button>
 
     <!-- FRONT OF CARD -->
-    <div class="flex flex-col justify-between min-w-[150px] max-w-[150px] min-h-[295px] max-h-[295px] touch-manipulation">
+    <div class="flex flex-col justify-between min-w-[150px] max-w-[150px] min-h-[295px] max-h-[350px] touch-manipulation">
         {#if !flipped}
+            <div class="flex text-sm truncate pb-2 pt-3 items-center justify-center">
+                {#if record.title} {record.title} {:else} Untitled {/if}
+            </div>
             <div class="relative border border-neutral/70 rounded-full mx-auto max-w-[150px] max-h-[150px] aspect-square bg-white"
                 style="width: {(record.radius_mm + record.radius_margin_mm) * 16}px; height: {(record.radius_mm + record.radius_margin_mm) * 16}px;">
                 {#each Object.entries(record.point_colors) as [ key, color ]}
