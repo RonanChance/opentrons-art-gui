@@ -5,7 +5,7 @@ import { PB_EMAIL, PB_PASSWORD, OPENAI_API_KEY } from '$env/static/private';
 const pb = new PocketBase("https://opentrons-art-pb.rcdonovan.com");
 
 export const POST = async ({ request }) => {
-    let { user_design, Formatted2DList } = await request.json();
+    let { user_design, dimension } = await request.json();
     const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
     let messages = [];
 
@@ -14,8 +14,9 @@ export const POST = async ({ request }) => {
         let record = await pb.collection('prompts').getOne('4709iste4li1a07', {fields: `instructions,max_tokens,temperature,model`});
         const model = record.model;
         let instructions = record.instructions;
+        instructions = instructions.replaceAll('${USER_DIMENSION}', dimension);
         instructions = instructions.replaceAll('${USER_DESIGN}', user_design);
-        instructions = instructions.replaceAll('${USER_GRID}', Formatted2DList);
+        console.log(instructions);
 
         messages.push({ role: "user", content: instructions });
 
@@ -25,6 +26,7 @@ export const POST = async ({ request }) => {
             temperature: record.temperature,
             max_tokens: record.max_tokens
         });
+        console.log(response);
 
         return new Response(JSON.stringify({ success: true, result: response?.choices?.[0]?.message?.content || null }));
     } catch (e) {

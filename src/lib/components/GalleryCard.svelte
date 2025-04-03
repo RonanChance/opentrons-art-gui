@@ -44,8 +44,9 @@
                         {record.point_size === 5 ? 'w-[10px] h-[10px]' : ''}
                         absolute rounded-full [--chkfg:invisible] transition-[box-shadow] duration-300 ease-in-out border-0"
                         style="
-                            left: calc(50% + ({key.split(", ")[0] / record.radius_mm} * 48%) - 2px); 
-                            top: calc(50% - ({key.split(", ")[1] / record.radius_mm} * 48%) - 2px); 
+                            left: calc(50% + ({key.split(", ")[0] / record.radius_mm} * 48%)); 
+                            top: calc(50% - ({key.split(", ")[1] / record.radius_mm} * 48%));
+                            transform: translate(-50%, -50%);
                             background-color: {well_colors[color] || 'transparent'};"
                         draggable="false"/>
                 {/each}

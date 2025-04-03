@@ -8,8 +8,8 @@
     let grid_style = $state('Standard'); // 'Standard' or 'Honeycomb' or 'Radial'
     let radius_mm = $state(40);
     let radius_margin_mm = $state(0.1);
-    let grid_spacing_mm = $state(4);
-    let point_size = $state(2);
+    let grid_spacing_mm = $state(3);
+    let point_size = $state(1.5);
     
     let points = $state({});
     let point_colors = $state({});
@@ -334,88 +334,78 @@ def run(protocol):
 		setTimeout(() => { isToastVisible = false; }, 3000);
 	}
 
-    let AIGenerated2DList;
-    async function generateAIDesign() {
-        try {
-            loadingAIRecord = true;
-            point_colors = {};
-            points_by_color = points_by_color_defaults;
-            
-            // sort the points
-            points.sort((a, b) => parseFloat(b.x) - parseFloat(a.x));
+    // let AIGenerated2DList;
+    // async function generateAIDesign() {
+    //     loadingAIRecord = true;
+    //     let currentX = 0;
+    //     let currentY = 0;
+    //     while (
+    //         (currentX - grid_spacing_mm) >= -(radius_mm - radius_margin_mm) &&  // Ensure X stays within negative bound
+    //         (currentY + grid_spacing_mm) <= (radius_mm - radius_margin_mm) // Ensure Y stays within positive bound
+    //     ) {
+    //         currentX -= grid_spacing_mm;  // Move left
+    //         currentY += grid_spacing_mm;  // Move up
 
-            // group the points by x value
-            const groupedPoints = points.reduce((acc, point) => {
-                if (!acc[point.x]) {
-                    acc[point.x] = [];
-                }
-                acc[point.x].push(point);
-                return acc;
-            }, {});
+    //         // Check if the new point exists in 'points'
+    //         const pointExists = points.some(point => 
+    //             point.x === currentX.toFixed(3) && point.y === currentY.toFixed(3)
+    //         );
 
-            const groupedLists = Object.values(groupedPoints);
-            groupedLists.forEach(element => {
-                console.log(element.length)
-            });
+    //         if (pointExists) {
+    //             console.log(currentX, currentY);
+    //         } else {
+    //             break;
+    //         }
+    //     }
 
-            // Step 1: Find the longest list length
-            const maxLength = Math.max(...groupedLists.map(group => group.length));
+    //     let dimension = Math.round((currentY/grid_spacing_mm)*2 - 1);
 
-            // Step 2: Create the nxn 2D array and populate it
-            const squareMatrix = groupedLists.map(group => {
-                const rowLength = group.length;
-                const paddingSize = Math.floor((maxLength - rowLength) / 2);
 
-                // Create row with "0" padding on both sides and "_" in the center
-                return Array(paddingSize).fill("0")
-                    .concat(Array(rowLength).fill("_"))
-                    .concat(Array(maxLength - rowLength - paddingSize).fill("0"));
-            });
+    //     try {
+    //         const response = await fetch('/generateWithAI', {
+    //             method: 'POST',
+    //             headers: { 'Content-Type': 'application/json' },
+    //             body: JSON.stringify({ user_design, dimension })
+    //         });
+    //         let r = await response.json();
+    //         AIGenerated2DList = JSON.parse(r.result);
+    //         console.log(AIGenerated2DList);
+    //         AIGenerated2DList = AIGenerated2DList.matrix;
+    //         console.log(AIGenerated2DList);
+    //         console.log(AIGenerated2DList.map(row => JSON.stringify(row)).join("\n"));
 
-            // Format the grid nicely to send to LLM
-            let Formatted2DList = squareMatrix.map(row => JSON.stringify(row)).join("\n");
+    //         // convertMatrixToPoints();
+    //         await tick();
+    //         groupByColors();
+    //         await tick();
+    //         loadingAIRecord = false;
+    //         showAlert("alert-success", "Loaded design successfully!");
 
-            const response = await fetch('/generateWithAI', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_design, Formatted2DList })
-            });
-            let r = await response.json();
-            AIGenerated2DList = JSON.parse(r.result);
-            AIGenerated2DList = AIGenerated2DList.grid;
-            console.log(AIGenerated2DList);
-            console.log(AIGenerated2DList.map(row => JSON.stringify(row)).join("\n"));
+    //     } catch (e) {
+    //         console.log(e);
+    //         showAlert("alert-error", "AI generation failed");
+    //         loadingAIRecord = false;
+    //     }
+    // }
 
-            convertMatrixToPoints();
-            await tick();
-            groupByColors();
-            await tick();
-            loadingAIRecord = false;
-            showAlert("alert-success", "Loaded design successfully!");
-
-        } catch (e) {
-            console.log(e);
-            showAlert("alert-error", "AI generation failed");
-            loadingAIRecord = false;
-        }
-    }
+    // loadingAIRecord = false;
     
-    function convertMatrixToPoints() {
-        const centerX = Math.floor(AIGenerated2DList[0].length / 2);
-        const centerY = Math.floor(AIGenerated2DList.length / 2);
+    // // function convertMatrixToPoints() {
+    // //     const centerX = Math.floor(AIGenerated2DList[0].length / 2);
+    // //     const centerY = Math.floor(AIGenerated2DList.length / 2);
 
-        for (let row = 0; row < AIGenerated2DList.length; row++) {
-            for (let col = 0; col < AIGenerated2DList[row].length; col++) {
-                const color = AIGenerated2DList[row][col];
-                if (color === "B" || color === "R" || color === "Y" || color === "G" || color === "C") {
-                    const x = ((col - centerX) * grid_spacing_mm).toFixed(3);
-                    const y = ((centerY - row) * grid_spacing_mm).toFixed(3);
-                    point_colors[`${x}, ${y}`] = well_colors_abbr[color];
-                }
-            }
-        }
-        return point_colors;
-    }
+    // //     for (let row = 0; row < AIGenerated2DList.length; row++) {
+    // //         for (let col = 0; col < AIGenerated2DList[row].length; col++) {
+    // //             const color = AIGenerated2DList[row][col];
+    // //             if (color === "B" || color === "R" || color === "Y" || color === "G" || color === "C") {
+    // //                 const x = ((col - centerX) * grid_spacing_mm).toFixed(3);
+    // //                 const y = ((centerY - row) * grid_spacing_mm).toFixed(3);
+    // //                 point_colors[`${x}, ${y}`] = well_colors_abbr[color];
+    // //             }
+    // //         }
+    // //     }
+    // //     return point_colors;
+    // // }
 </script>
 
 <article class="prose w-full mx-auto mt-5">
@@ -490,7 +480,7 @@ def run(protocol):
     </div>
 {/if}
 
-<div class="flex flex-row w-full max-w-[100vw] sm:max-w-[500px] mx-auto px-5 pt-4">
+<div class="flex flex-row w-full max-w-[100vw] sm:max-w-[500px] mx-auto px-5 pt-3">
     <div class="mr-auto items-center flex flex-row gap-2 opacity-70">
         <label class="swap mr-auto">
             <input type="checkbox" id="toggle-outlines" bind:checked={show_outlines} />
@@ -643,6 +633,20 @@ def run(protocol):
         </div>
     </div>
 
+    <!-- RESET/PUBLISH BUTTON -->
+    <div class="flex flex-row justify-between">
+        <!-- <div class="flex flex-col justify-start gap-1.5"> -->
+            <button class="btn btn-sm hover:bg-neutral hover:text-white" onclick={() => { if (!uploading) {upload_modal.showModal()}}}>
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 -1.5 35 35" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>upload1</title> <path d="M29.426 15.535c0 0 0.649-8.743-7.361-9.74-6.865-0.701-8.955 5.679-8.955 5.679s-2.067-1.988-4.872-0.364c-2.511 1.55-2.067 4.388-2.067 4.388s-5.576 1.084-5.576 6.768c0.124 5.677 6.054 5.734 6.054 5.734h9.351v-6h-3l5-5 5 5h-3v6h8.467c0 0 5.52 0.006 6.295-5.395 0.369-5.906-5.336-7.070-5.336-7.070z"></path> </g></svg>
+                Publish
+            </button>
+        <!-- </div> -->
+        <button class="btn btn-sm hover:bg-neutral hover:text-white" onclick={resetValues}>
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 1920 1920" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M960 0v213.333c411.627 0 746.667 334.934 746.667 746.667S1371.627 1706.667 960 1706.667 213.333 1371.733 213.333 960c0-197.013 78.4-382.507 213.334-520.747v254.08H640V106.667H53.333V320h191.04C88.64 494.08 0 720.96 0 960c0 529.28 430.613 960 960 960s960-430.72 960-960S1489.387 0 960 0" fill-rule="evenodd"></path> </g></svg>
+            Reset Grid
+        </button>
+    </div>
+
     <!-- SHOW POINTS -->
     <div class="flex flex-col w-full gap-2 mx-auto pb-2 bg-neutral-100 rounded px-2">
         <div class="flex flex-row justify-between pt-2 items-center">
@@ -670,24 +674,10 @@ def run(protocol):
         </div>
     </div>
 
-    <!-- RESET/PUBLISH BUTTON -->
-    <div class="flex flex-row justify-between">
-        <!-- <div class="flex flex-col justify-start gap-1.5"> -->
-            <button class="btn btn-sm hover:bg-neutral hover:text-white" onclick={() => { if (!uploading) {upload_modal.showModal()}}}>
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 -1.5 35 35" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>upload1</title> <path d="M29.426 15.535c0 0 0.649-8.743-7.361-9.74-6.865-0.701-8.955 5.679-8.955 5.679s-2.067-1.988-4.872-0.364c-2.511 1.55-2.067 4.388-2.067 4.388s-5.576 1.084-5.576 6.768c0.124 5.677 6.054 5.734 6.054 5.734h9.351v-6h-3l5-5 5 5h-3v6h8.467c0 0 5.52 0.006 6.295-5.395 0.369-5.906-5.336-7.070-5.336-7.070z"></path> </g></svg>
-                Publish
-            </button>
-        <!-- </div> -->
-        <button class="btn btn-sm hover:bg-neutral hover:text-white" onclick={resetValues}>
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>rotate</title> <path d="M5.966 16.767l4.090-4.090h-2.397c0.022-0.060 0.045-0.119 0.067-0.178 1.422-3.602 4.934-6.15 9.040-6.15 5.366 0 9.716 4.35 9.716 9.715s-4.35 9.716-9.716 9.716c-3.946 0-7.343-2.354-8.863-5.733-0.015-0.031-0.024-0.066-0.039-0.099l-2.605 2.589c0.018 0.030 0.030 0.064 0.048 0.096 0.004 0.007 0.008 0.014 0.012 0.020 2.299 3.972 6.594 6.643 11.513 6.643 7.342 0 13.294-5.952 13.294-13.294s-5.953-13.296-13.295-13.296c-6.138 0-11.303 4.158-12.833 9.812-0.015 0.052-0.020 0.107-0.032 0.159h-2.091l4.091 4.090z"></path> </g></svg>
-            Reset Grid
-        </button>
-    </div>
-
-    {#if grid_style === 'Standard' && grid_spacing_mm >= 3 && AIMode}
-        <div class="flex flex-row mt-3 gap-1">
-            <input type="text" placeholder="Generate with AI. Example: Apple, Cube, Leaf" class="input input-bordered rounded-sm w-full input-sm" bind:value={user_design} maxlength=150 />
-            <button class="btn rounded-sm btn-sm" aria-label="Send to AI" onclick={() => {if (!loadingAIRecord) {generateAIDesign()}}}>
+    <!-- {#if grid_style === 'Standard' && AIMode}
+        <div class="flex flex-row gap-1">
+            <input type="text" placeholder="Art Generator. Example: Apple, Leaf, Flower" class="input input-bordered w-full input-sm focus:outline-none focus:ring-0" bind:value={user_design} maxlength=150 />
+            <button class="btn btn-sm" aria-label="Send to AI" onclick={() => {if (!loadingAIRecord) {generateAIDesign()}}}>
                 {#if !loadingAIRecord}
                     <svg class="w-4 h-4" viewBox="0 0 24.00 24.00" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#000000" stroke-width="0.6"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round" stroke="#CCCCCC" stroke-width="0.192"></g><g id="SVGRepo_iconCarrier"> <path fill-rule="evenodd" clip-rule="evenodd" d="M12 3C12.2652 3 12.5196 3.10536 12.7071 3.29289L19.7071 10.2929C20.0976 10.6834 20.0976 11.3166 19.7071 11.7071C19.3166 12.0976 18.6834 12.0976 18.2929 11.7071L13 6.41421V20C13 20.5523 12.5523 21 12 21C11.4477 21 11 20.5523 11 20V6.41421L5.70711 11.7071C5.31658 12.0976 4.68342 12.0976 4.29289 11.7071C3.90237 11.3166 3.90237 10.6834 4.29289 10.2929L11.2929 3.29289C11.4804 3.10536 11.7348 3 12 3Z" fill="#000000"></path> </g></svg>
                 {:else}
@@ -695,14 +685,14 @@ def run(protocol):
                 {/if}
             </button>
         </div>
-    {/if}
+    {/if} -->
 
     <!-- ABOUT SECTION -->
     <div class="collapse collapse-arrow pt-4">
         <input type="checkbox" id="section1" class="toggle-checkbox" />
         <label for="section1" class="collapse-title text-lg font-medium">What is Opentrons Art Interface?</label>
         <div class="collapse-content text-sm">
-            <p>This website is made for the Opentrons recitation of <a class="italic underline" href="https://howtogrowalmostanything.notion.site/htgaa25">'How To Grow (Almost) Anything'</a> (HTGAA), to teach bio-enthusiasts of all backgrounds the principles and skills at the cutting edge of bioengineering and synthetic biology.</p>
+            <p>This website is made for the Opentrons lab of <a class="italic underline" href="https://howtogrowalmostanything.notion.site/htgaa25">'How To Grow (Almost) Anything'</a> (HTGAA), to teach bio-enthusiasts of all backgrounds the principles and skills at the cutting edge of bioengineering and synthetic biology.</p>
         </div>
     </div>
     <div class="collapse collapse-arrow">
