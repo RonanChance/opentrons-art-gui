@@ -45,15 +45,26 @@
         </button>
     </label>
 </div>
+
+<div class="flex flex-col max-w-[99%] mx-auto mt-3 gap-3">
+    <span class="font-semibold text-center underline">Student Designs (2025)</span>
+    <img src={`/2025_images/2025_Student_Grid.png`} alt={`question mark illustration`} class="mx-auto w-full md:max-w-[500px] lg:max-w-[750px] xl:max-w-[900px] rounded-lg"/>
+</div>
+
+<div class="flex flex-col max-w-[99%] mx-auto mt-3 gap-3">
+    <span class="font-semibold text-center underline">Media Lab Grid (2025)</span>
+    <img src={`/2025_images/2025_Media_Lab_Grid.png`} alt={`2025 Media Lab Grid`} class="mx-auto w-full md:max-w-[500px] lg:max-w-[750px] xl:max-w-[900px] rounded-lg"/>
+</div>
+
 {#if !loadingRecords}
     <!-- GALLERY -->
-    <div class="flex flex-row flex-wrap w-full max-w-[100vw] sm:max-w-[1000px] mx-auto gap-3 pt-6 justify-center mb-10">
+    <div class="flex flex-row flex-wrap w-full max-w-[100vw] sm:max-w-[1000px] mx-auto gap-3 pt-8 justify-center mb-10">
         {#each loadedRecords as record, i}
             <GalleryCard {record} {i} {well_colors} />
         {/each}
     </div>
 {:else}
-    <div class="flex flex-row flex-wrap w-full max-w-[100vw] sm:max-w-[1000px] mx-auto gap-3 pt-6 justify-center mb-10">
+    <div class="flex flex-row flex-wrap w-full max-w-[100vw] sm:max-w-[1000px] mx-auto gap-3 pt-8 justify-center mb-10">
         {#each Array(15).fill(0) as _, i}
             <div class="skeleton min-h-[350px] min-w-[175px] px-3 py-3">
             </div>
