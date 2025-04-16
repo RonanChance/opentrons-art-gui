@@ -11,7 +11,7 @@ export const POST = async ({ request }) => {
 
     try {
         await pb.admins.authWithPassword(PB_EMAIL, PB_PASSWORD);
-        let record = await pb.collection('prompts').getOne('4709iste4li1a07', {fields: `instructions,max_tokens,temperature,model`});
+        let record = await pb.collection('prompts').getOne('4709iste4li1a07', {fields: `instructions,max_completion_tokens,temperature,model`});
         const model = record.model;
         let instructions = record.instructions;
         instructions = instructions.replaceAll('${USER_DIMENSION}', dimension);
@@ -23,12 +23,14 @@ export const POST = async ({ request }) => {
         let response = await openai.chat.completions.create({ 
             model: model,
             messages,
-            temperature: record.temperature,
-            max_tokens: record.max_tokens
+            max_completion_tokens: record.max_completion_tokens
         });
+        const content = response?.choices?.[0]?.message?.content || "No content received";
         console.log(response);
+        console.log(response?.choices?.[0]?.message)
+        console.log("Response content:", content);
 
-        return new Response(JSON.stringify({ success: true, result: response?.choices?.[0]?.message?.content || null }));
+        return new Response(JSON.stringify({ success: true, result: content }));
     } catch (e) {
         console.log('Query failed', e);
         return new Response(JSON.stringify({success: false}))

@@ -4,7 +4,7 @@
     import { browser } from '$app/environment';
     import { well_colors } from '$lib/constants.js';
 
-    const filter_list = ['Media Lab', 'Approved', 'Off']
+    const filter_list = ['Approved', 'Media Lab', 'Off']
     let filter = $state(0);
     let record_load_iteration = $state(0);
     let loadingRecords = $state(true);
@@ -55,7 +55,7 @@
 {:else}
     <div class="flex flex-row flex-wrap w-full max-w-[100vw] sm:max-w-[1000px] mx-auto gap-3 pt-6 justify-center mb-10">
         {#each Array(15).fill(0) as _, i}
-            <div class="skeleton min-h-[280px] min-w-[175px] px-3 py-3">
+            <div class="skeleton min-h-[350px] min-w-[175px] px-3 py-3">
             </div>
         {/each}
     </div>

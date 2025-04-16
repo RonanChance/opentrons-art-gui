@@ -212,7 +212,7 @@ metadata = {
     'apiLevel': '2.20'
 }
 
-Z_VALUE = 11.45
+Z_VALUE = 11.90
 POINT_SIZE = ${point_size}
 red_points = ${formatPoints(points_by_color.red_points)}
 green_points = ${formatPoints(points_by_color.green_points)}
@@ -230,6 +230,29 @@ well_colors = {
     'C1' : 'Orange',
 }
 
+volume_used = {
+    'Red': 0,
+    'Green': 0,
+    'Orange': 0
+}
+
+def update_volume_remaining(current_color, quantity_to_aspirate):
+    for well, color in list(well_colors.items()):
+        if color == current_color:
+            if (volume_used[current_color] + quantity_to_aspirate) > 250:
+                # Move to next well
+                row = well[0]
+                col = int(well[1:]) + 1
+                next_well = f"{row}{col}"
+
+                # remove old and add new location
+                del well_colors[well]
+                well_colors[next_well] = current_color
+                volume_used[current_color] = quantity_to_aspirate
+            else:
+                volume_used[current_color] += quantity_to_aspirate
+            break
+
 def run(protocol):
     ###   Load labware, modules and pipettes
     protocol.home()
@@ -244,9 +267,7 @@ def run(protocol):
     temperature_module = protocol.load_module('temperature module gen2', COLORS_DECK_SLOT)
 
     # Temperature Module Plate
-    temperature_plate = temperature_module.load_labware('opentrons_96_aluminumblock_generic_pcr_strip_200ul',
-                                                        'Cold Plate')
-    temperature_plate.set_offset(x=0.00, y=0.00, z=3.0)
+    temperature_plate = temperature_module.load_labware('opentrons_96_aluminumblock_generic_pcr_strip_200ul', 'Cold Plate')
 
     # Choose where to take the colors from
     color_plate = temperature_plate
@@ -287,7 +308,10 @@ def run(protocol):
         # Get the tip for this run, set the bacteria color, and the aspirate bacteria of choice
         pipette_20ul.pick_up_tip()
         current_color = color_names[i]
-        pipette_20ul.aspirate(min(len(point_list)*POINT_SIZE, 18), location_of_color(current_color))
+        max_aspirate = int(18 // POINT_SIZE) * POINT_SIZE
+        quantity_to_aspirate = min(len(point_list[i+1:])*POINT_SIZE, max_aspirate)
+        update_volume_remaining(current_color, quantity_to_aspirate)
+        pipette_20ul.aspirate(quantity_to_aspirate, location_of_color(current_color))
 
         # Iterate over the current points list and dispense them, refilling along the way
         for i in range(len(point_list)):
@@ -297,22 +321,24 @@ def run(protocol):
             dispense_and_jog(pipette_20ul, POINT_SIZE, adjusted_location)
             
             if pipette_20ul.current_volume == 0 and len(point_list[i+1:]) > 0:
-                pipette_20ul.aspirate(min(len(point_list[i+1:])*POINT_SIZE, 18), location_of_color(current_color))
+                quantity_to_aspirate = min(len(point_list[i+1:])*POINT_SIZE, max_aspirate)
+                update_volume_remaining(current_color, quantity_to_aspirate)
+                pipette_20ul.aspirate(quantity_to_aspirate, location_of_color(current_color))
 
         # Drop tip between each color
         pipette_20ul.drop_tip()
     `   
 
         const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, "0"); // Ensure 2 digits
-        const day = String(now.getDate()).padStart(2, "0");
-        const hours = String(now.getHours()).padStart(2, "0");
+        const year = now.getFullYear().toString().slice(2);
+        const month = String(now.getMonth() + 1);
+        const day = String(now.getDate());
+        const hours = String(now.getHours());
         const minutes = String(now.getMinutes()).padStart(2, "0");
-        const seconds = String(now.getSeconds()).padStart(2, "0");
 
-        const timestamp = `${month}-${day}-${year}_${hours}-${minutes}-${seconds}`;
-        const filename = `Opentrons_Art_${point_size}uL_${timestamp}.py`;
+        const timestamp = `${month}-${day}-${year}_${hours}-${minutes}`;
+        const sanitizedPointSize = point_size.toString().replace('.', '_');
+        const filename = `Opentrons_Art_${sanitizedPointSize}uL_${timestamp}.py`;
 
         const blob = new Blob([scriptToCopy], { type: "text/x-python" });
         const url = URL.createObjectURL(blob);
@@ -381,7 +407,7 @@ def run(protocol):
     //         console.log(AIGenerated2DList);
     //         console.log(AIGenerated2DList.map(row => JSON.stringify(row)).join("\n"));
 
-    //         // convertMatrixToPoints();
+    //         convertMatrixToPoints();
     //         await tick();
     //         groupByColors();
     //         await tick();
@@ -395,24 +421,24 @@ def run(protocol):
     //     }
     // }
 
-    // loadingAIRecord = false;
+    // // loadingAIRecord = false;
     
-    // // function convertMatrixToPoints() {
-    // //     const centerX = Math.floor(AIGenerated2DList[0].length / 2);
-    // //     const centerY = Math.floor(AIGenerated2DList.length / 2);
+    // function convertMatrixToPoints() {
+    //     const centerX = Math.floor(AIGenerated2DList[0].length / 2);
+    //     const centerY = Math.floor(AIGenerated2DList.length / 2);
 
-    // //     for (let row = 0; row < AIGenerated2DList.length; row++) {
-    // //         for (let col = 0; col < AIGenerated2DList[row].length; col++) {
-    // //             const color = AIGenerated2DList[row][col];
-    // //             if (color === "B" || color === "R" || color === "Y" || color === "G" || color === "C") {
-    // //                 const x = ((col - centerX) * grid_spacing_mm).toFixed(3);
-    // //                 const y = ((centerY - row) * grid_spacing_mm).toFixed(3);
-    // //                 point_colors[`${x}, ${y}`] = well_colors_abbr[color];
-    // //             }
-    // //         }
-    // //     }
-    // //     return point_colors;
-    // // }
+    //     for (let row = 0; row < AIGenerated2DList.length; row++) {
+    //         for (let col = 0; col < AIGenerated2DList[row].length; col++) {
+    //             const color = AIGenerated2DList[row][col];
+    //             if (color === "R" || color === "G" || color === "O") {
+    //                 const x = ((col - centerX) * grid_spacing_mm).toFixed(3);
+    //                 const y = ((centerY - row) * grid_spacing_mm).toFixed(3);
+    //                 point_colors[`${x}, ${y}`] = well_colors_abbr[color];
+    //             }
+    //         }
+    //     }
+    //     return point_colors;
+    // }
 </script>
 
 <article class="prose w-full mx-auto mt-5">
@@ -487,7 +513,7 @@ def run(protocol):
     </div>
 {/if}
 
-<div class="flex flex-row w-full max-w-[100vw] sm:max-w-[500px] mx-auto px-5 pt-3">
+<div class="flex flex-row w-full max-w-[100vw] sm:max-w-[490px] mx-auto px-5 pt-3">
     <div class="mr-auto items-center flex flex-row gap-2 opacity-70">
         <label class="swap mr-auto">
             <input type="checkbox" id="toggle-outlines" bind:checked={show_outlines} />
@@ -658,7 +684,7 @@ def run(protocol):
     <div class="flex flex-col w-full gap-2 mx-auto pb-2 bg-neutral-100 rounded px-2">
         <div class="flex flex-row justify-between pt-2 items-center">
             <span class="font-semibold">Coordinates</span>
-            <div class="flex flex-row justify-right gap-2">
+            <div class="flex flex-row flex-wrap justify-end gap-2 max-w-full overflow-hidden">
                 <button class="btn btn-sm px-1 tooltip tooltip-top" aria-label="Swap Colors" data-tip="Swap Colors" onclick={swapColors}>
                     <svg class="w-6 h-6 mx-1 opacity-60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M2 6C2 3.79086 3.79086 2 6 2C8.20914 2 10 3.79086 10 6V18C10 20.2091 8.20914 22 6 22C3.79086 22 2 20.2091 2 18V6Z" stroke="#1C274C" stroke-width="1.5"></path> <path d="M9.99977 8.24268L13.3134 4.92902C14.8755 3.36692 17.4082 3.36692 18.9703 4.92902C20.5324 6.49112 20.5324 9.02378 18.9703 10.5859L9.30615 20.25" stroke="#1C274C" stroke-width="1.5"></path> <path d="M6 22L18 22C20.2091 22 22 20.2091 22 18C22 15.7909 20.2091 14 18 14L15.5 14" stroke="#1C274C" stroke-width="1.5"></path> <path d="M7 18C7 18.5523 6.55228 19 6 19C5.44772 19 5 18.5523 5 18C5 17.4477 5.44772 17 6 17C6.55228 17 7 17.4477 7 18Z" stroke="#1C274C" stroke-width="1.5"></path> </g></svg>
                 </button>
@@ -734,7 +760,6 @@ def run(protocol):
     </div>
     
     <div class="text-sm px-4 mt-5">
-        <!-- <p>This project is <a class="underline" href="https://github.com/RonanChance/opentrons-art-gui/blob/main/LICENSE">MIT Licensed</a> and I would love your help in adding new features!</p> -->
         <div class="max-w-[160px] mx-auto pt-4">
             <a href="https://github.com/RonanChance/opentrons-art-gui" target="_blank" data-value="github" style="border-radius:2px;" class="py-2 px-1 flex justify-center items-center bg-neutral-200 hover:bg-neutral hover:text-white text-neutral transition ease-in duration-100 text-center text-sm font-semibold shadow-md focus:outline-none">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="mr-2" viewBox="0 0 1792 1792">

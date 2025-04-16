@@ -26,7 +26,7 @@
     <!-- FRONT OF CARD -->
     <div class="flex flex-col justify-between min-w-[150px] max-w-[150px] min-h-[295px] max-h-[350px] touch-manipulation">
         {#if !flipped}
-            <div class="flex text-sm truncate pb-2 pt-3 items-center justify-center">
+            <div class="flex text-sm truncate mb-2 mt-3 items-center justify-center subtle-glitch">
                 {#if record.title} {record.title} {:else} Untitled {/if}
             </div>
             <div class="relative border border-neutral/70 rounded-full mx-auto max-w-[150px] max-h-[150px] aspect-square bg-white"
@@ -115,3 +115,19 @@
         {/if}
     </div>
 </div>
+
+<style>
+
+/* @keyframes subtle-glitch {
+  0% { transform: translateY(0); }
+  25% { transform: translateY(0.25px); }
+  50% { transform: translateY(-0.25px); }
+  75% { transform: translateY(0.25px); }
+  100% { transform: translateY(0); }
+}
+.subtle-glitch {
+  position: relative;
+  display: inline-block;
+  animation: subtle-glitch 1s infinite ease-in-out;
+} */
+</style>
