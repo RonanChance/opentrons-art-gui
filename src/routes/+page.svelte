@@ -5,11 +5,11 @@
     import { page } from '$app/stores';
     import { well_colors, well_colors_abbr } from '$lib/constants.js';
 
-    let grid_style = $state('Standard'); // 'Standard' or 'Honeycomb' or 'Radial'
+    let grid_style = $state('Standard'); // 'Standard' or 'Honeycomb' or 'Radial' or 'QRCode'
     let radius_mm = $state(40);
     let radius_margin_mm = $state(0.1);
     let grid_spacing_mm = $state(3.3);
-    let point_size = $state(2);
+    let point_size = $state(1.5);
     
     let points = $state({});
     let point_colors = $state({}); // Typical workflow: edit point_colors then call groupByColors()
@@ -29,7 +29,7 @@
     let current_color = $state('Red');
     let contentToCopy = $state();
 
-    let user_design = $state('');
+    let QRCode_text = $state('');
     let AIMode = $state(false);
 
     onMount(async () => {
@@ -43,13 +43,27 @@
     });
     
     $effect(() => {
-        points = generateGrid(grid_style, radius_mm, radius_margin_mm, grid_spacing_mm);
-        point_colors = {}; 
+        points = generateGrid(grid_style, radius_mm, radius_margin_mm, grid_spacing_mm, QRCode_text);
+        point_colors = {};
         points_by_color = points_by_color_defaults;
+        tick().then(() => {
+            if (grid_style === 'QRCode') {
+                    const new_colors = {};
+                    for (const point of points) {
+                        new_colors[`${point.x}, ${point.y}`] = 'Red';
+                    }
+                    point_colors = new_colors;
+                    groupByColors();
+                }
+            });
     });
 
     function resetValues() {
         point_colors = {};
+        QRCode_text = '';
+        point_size = 1.5;
+        grid_spacing_mm = 3.3;
+        point_
         points_by_color = points_by_color_defaults;
         points = {};
         grid_style = 'Standard';
@@ -398,7 +412,7 @@ def run(protocol):
     //         const response = await fetch('/generateWithAI', {
     //             method: 'POST',
     //             headers: { 'Content-Type': 'application/json' },
-    //             body: JSON.stringify({ user_design, dimension })
+    //             body: JSON.stringify({ QRCode_text, dimension })
     //         });
     //         let r = await response.json();
     //         AIGenerated2DList = JSON.parse(r.result);
@@ -463,11 +477,11 @@ def run(protocol):
 
         <div class="flex flex-col w-full gap-2 pt-5">
             <label class="input input-bordered flex items-center gap-2">
-                <svg class="h-4 w-4 opacity-70" fill="#000000" height="200px" width="200px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" enable-background="new 0 0 512 512" xml:space="preserve"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M46.5,0v139.6h23.3c0-23.3,0-69.8,23.3-93.1c23.2-23.3,46.5-23.3,69.8-23.3h46.5v395.6c0,34.9-11.6,69.8-46.5,69.8l-22.8,0 l-0.5,23.2h232.7v-23.3h-23.3c-34.9,0-46.5-34.9-46.5-69.8V23.3h46.5c23.3,0,46.5,0,69.8,23.3s23.3,69.8,23.3,93.1h23.3V0H46.5z"></path> </g></svg>
+                <svg class="h-4 w-4 opacity-70" fill="currentColor" height="200px" width="200px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" enable-background="new 0 0 512 512" xml:space="preserve"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M46.5,0v139.6h23.3c0-23.3,0-69.8,23.3-93.1c23.2-23.3,46.5-23.3,69.8-23.3h46.5v395.6c0,34.9-11.6,69.8-46.5,69.8l-22.8,0 l-0.5,23.2h232.7v-23.3h-23.3c-34.9,0-46.5-34.9-46.5-69.8V23.3h46.5c23.3,0,46.5,0,69.8,23.3s23.3,69.8,23.3,93.1h23.3V0H46.5z"></path> </g></svg>
                 <input type="text" class="grow no-autofill" placeholder="Title (optional)" autocomplete="off" maxlength="120" bind:value={title} />
             </label>
             <label class="input input-bordered flex items-center gap-2">
-                <svg class="h-4 w-4 opacity-70" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M8 7C9.65685 7 11 5.65685 11 4C11 2.34315 9.65685 1 8 1C6.34315 1 5 2.34315 5 4C5 5.65685 6.34315 7 8 7Z" fill="#000000"></path> <path d="M14 12C14 10.3431 12.6569 9 11 9H5C3.34315 9 2 10.3431 2 12V15H14V12Z" fill="#000000"></path> </g></svg>
+                <svg class="h-4 w-4 opacity-70" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M8 7C9.65685 7 11 5.65685 11 4C11 2.34315 9.65685 1 8 1C6.34315 1 5 2.34315 5 4C5 5.65685 6.34315 7 8 7Z" fill="currentColor"></path> <path d="M14 12C14 10.3431 12.6569 9 11 9H5C3.34315 9 2 10.3431 2 12V15H14V12Z" fill="#000000"></path> </g></svg>
                 <input type="text" class="grow no-autofill" placeholder="Name (optional)" autocomplete="off" maxlength="25" bind:value={author} />
             </label>
         </div>
@@ -543,21 +557,34 @@ def run(protocol):
     draggable="false"
     id="grid-container"
 >
+    {#if grid_style === 'QRCode' && QRCode_text === ''}
+        <div class="flex justify-center items-center h-full opacity-40">Insert text below</div>
+    {/if}
     {#each points as { x, y }}
         <!-- svelte-ignore a11y_mouse_events_have_key_events -->
         <input type="checkbox" id="dot-{x}-{y}"  
             class="checkbox
+                {point_size === 0.25 ? 'w-[3px] h-[3px]' : ''}
                 {point_size === 0.5 ? 'w-[6px] h-[6px]' : ''}
+                {point_size === 0.75 ? 'w-[7px] h-[7px]' : ''}
                 {point_size === 1 ? 'w-[8px] h-[8px]' : ''}
+                {point_size === 1.25 ? 'w-[9px] h-[9px]' : ''}
                 {point_size === 1.5 ? 'w-[10px] h-[10px]' : ''}
+                {point_size === 1.75 ? 'w-[11px] h-[11px]' : ''}
                 {point_size === 2 ? 'w-[12px] h-[12px]' : ''} 
+                {point_size === 2.25 ? 'w-[13px] h-[13px]' : ''}
                 {point_size === 2.5 ? 'w-[14px] h-[14px]' : ''} 
-                {point_size === 3 ? 'w-[16px] h-[16px]' : ''} 
+                {point_size === 2.75 ? 'w-[15px] h-[15px]' : ''}
+                {point_size === 3 ? 'w-[16px] h-[16px]' : ''}
+                {point_size === 3.25 ? 'w-[17px] h-[17px]' : ''}
                 {point_size === 3.5 ? 'w-[18px] h-[18px]' : ''}
+                {point_size === 3.75 ? 'w-[19px] h-[19px]' : ''}
                 {point_size === 4 ? 'w-[20px] h-[20px]' : ''}
+                {point_size === 4.25 ? 'w-[21px] h-[21px]' : ''}
                 {point_size === 4.5 ? 'w-[22px] h-[22px]' : ''}
+                {point_size === 4.75 ? 'w-[23px] h-[23px]' : ''}
                 {point_size === 5 ? 'w-[24px] h-[24px]' : ''}
-                absolute rounded-full [--chkfg:invisible] transition-[box-shadow] duration-300 ease-in-out {point_colors[`${x}, ${y}`] ? 'border-0' : ''} {show_outlines ? '' : 'border-0'}"
+                absolute rounded-full [--chkfg:invisible] transition-[box-shadow] duration-200 ease-in-out {point_colors[`${x}, ${y}`] ? 'border-0' : ''} {show_outlines ? '' : 'border-0'}"
             style=" 
                 left: calc(50% + ({x / (radius_mm + 4)} * 50%) - {point_size*2}px); 
                 top: calc(50% - ({y / (radius_mm + 4)} * 50%) - {point_size*2}px);
@@ -605,6 +632,13 @@ def run(protocol):
 
 
 <div class="flex flex-col px-5 gap-4 w-full max-w-[100vw] sm:max-w-[500px] mx-auto mb-[150px]">
+    {#if grid_style === 'QRCode'}
+        <div class="relative w-full">
+            <svg class="w-5 h-5 absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none opacity-75" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M16.4437 2.00021C14.9719 1.98733 13.5552 2.55719 12.4986 3.58488L12.4883 3.59504L11.6962 4.38801C11.3059 4.77876 11.3063 5.41192 11.697 5.80222C12.0878 6.19252 12.721 6.19216 13.1113 5.80141L13.8979 5.01386C14.5777 4.35511 15.4855 3.99191 16.4262 4.00014C17.3692 4.00839 18.2727 4.38923 18.9416 5.06286C19.6108 5.73671 19.9916 6.64971 19.9998 7.6056C20.008 8.55874 19.6452 9.47581 18.9912 10.1607L16.2346 12.9367C15.8688 13.3052 15.429 13.5897 14.9453 13.7714C14.4616 13.9531 13.945 14.0279 13.4304 13.9907C12.9159 13.9536 12.4149 13.8055 11.9616 13.5561C11.5083 13.3067 11.1129 12.9617 10.8027 12.5441C10.4734 12.1007 9.847 12.0083 9.40364 12.3376C8.96029 12.6669 8.86785 13.2933 9.19718 13.7367C9.67803 14.384 10.2919 14.9202 10.9975 15.3084C11.7032 15.6966 12.4838 15.9277 13.2866 15.9856C14.0893 16.0435 14.8949 15.9268 15.6486 15.6437C16.4022 15.3606 17.0861 14.9177 17.654 14.3457L20.4168 11.5635L20.429 11.551C21.4491 10.4874 22.0125 9.0642 21.9997 7.58834C21.987 6.11247 21.3992 4.69931 20.3607 3.65359C19.3221 2.60764 17.9155 2.01309 16.4437 2.00021Z" fill="#000000"></path> <path d="M10.7134 8.01444C9.91064 7.95655 9.10506 8.0732 8.35137 8.35632C7.59775 8.63941 6.91382 9.08232 6.34597 9.65431L3.5831 12.4365L3.57097 12.449C2.5508 13.5126 1.98748 14.9358 2.00021 16.4117C2.01295 17.8875 2.60076 19.3007 3.6392 20.3464C4.67787 21.3924 6.08439 21.9869 7.55623 21.9998C9.02807 22.0127 10.4447 21.4428 11.5014 20.4151L11.5137 20.4029L12.3012 19.6099C12.6903 19.218 12.6881 18.5849 12.2962 18.1957C11.9043 17.8066 11.2712 17.8088 10.882 18.2007L10.1011 18.9871C9.42133 19.6452 8.51402 20.0081 7.57373 19.9999C6.63074 19.9916 5.72728 19.6108 5.05834 18.9371C4.38918 18.2633 4.00839 17.3503 4.00014 16.3944C3.99191 15.4412 4.35479 14.5242 5.00874 13.8393L7.76537 11.0633C8.13118 10.6948 8.57097 10.4103 9.05467 10.2286C9.53836 10.0469 10.0549 9.97215 10.5695 10.0093C11.0841 10.0464 11.585 10.1945 12.0383 10.4439C12.4917 10.6933 12.887 11.0383 13.1972 11.4559C13.5266 11.8993 14.1529 11.9917 14.5963 11.6624C15.0397 11.3331 15.1321 10.7067 14.8028 10.2633C14.3219 9.61599 13.708 9.07982 13.0024 8.69161C12.2968 8.30338 11.5161 8.07233 10.7134 8.01444Z" fill="#000000"></path> </g></svg>
+            <input type="text" placeholder="QR Code" class="input input-bordered w-full input-sm pl-8 focus:outline-none focus:ring-0" bind:value={QRCode_text} maxlength="500" />
+        </div>
+    {/if}
+
     <div class="flex flex-row w-full gap-6">
         <!-- GRID TYPE -->
         <div class="flex flex-col w-[50%] gap-2 mx-auto">
@@ -612,14 +646,17 @@ def run(protocol):
                 <span class="font-semibold">Grid</span> <span class="opacity-70">{grid_style}</span>
             </div>
             <div class="flex flex-row justify-between {Object.keys(point_colors).length > 0 ? 'tooltip tooltip-top' : ''}" data-tip="Reset Grid to Edit">
-                <button class="btn btn-sm group {grid_style === 'Standard' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed blur-sm' : ''}" type="button" onclick={grid_style = "Standard"} aria-label="Standard" disabled={Object.keys(point_colors).length > 0}>
+                <button class="btn btn-sm px-2.5 group {grid_style === 'Standard' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed blur-sm' : ''}" type="button" onclick={() => {grid_style = "Standard"; grid_spacing_mm = 3.3; point_size = 1.5}} aria-label="Standard" disabled={Object.keys(point_colors).length > 0}>
                     <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="miter"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><line x1="5.99" y1="6" x2="6" y2="6" stroke-linecap="round" stroke-width="2"></line><line x1="11.99" y1="6" x2="12" y2="6" stroke-linecap="round" stroke-width="2"></line><line x1="17.99" y1="6" x2="18" y2="6" stroke-linecap="round" stroke-width="2"></line><line x1="5.99" y1="12" x2="6" y2="12" stroke-linecap="round" stroke-width="2"></line><line x1="11.99" y1="12" x2="12" y2="12" stroke-linecap="round" stroke-width="2"></line><line x1="17.99" y1="12" x2="18" y2="12" stroke-linecap="round" stroke-width="2"></line><line x1="5.99" y1="18" x2="6" y2="18" stroke-linecap="round" stroke-width="2"></line><line x1="11.99" y1="18" x2="12" y2="18" stroke-linecap="round" stroke-width="2"></line><line x1="17.99" y1="18" x2="18" y2="18" stroke-linecap="round" stroke-width="2"></line></g></svg>
                 </button>
-                <button class="btn btn-sm group {grid_style === 'Radial' ? 'btn-neutral' : 'btn-outline '} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed blur-sm' : ''}" type="button" onclick={grid_style = "Radial"} aria-label="Radial" disabled={Object.keys(point_colors).length > 0}>
+                <button class="btn btn-sm px-2.5 group {grid_style === 'Radial' ? 'btn-neutral' : 'btn-outline '} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed blur-sm' : ''}" type="button" onclick={() => {grid_style = "Radial"; grid_spacing_mm = 3.3; point_size = 1.5}} aria-label="Radial" disabled={Object.keys(point_colors).length > 0}>
                     <svg class="w-5 h-5" viewBox="0 0 48 48" id="a" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><defs><style>.f{fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;}</style></defs><circle id="b" class="f" cx="24" cy="24" r="8.5"></circle><circle id="c" class="f" cx="24" cy="24" r="11.8"></circle><circle id="d" class="f" cx="24" cy="24" r="18.25"></circle><circle id="e" class="f" cx="24" cy="24" r="21.5"></circle></g></svg>
                 </button>
-                <button class="btn btn-sm group {grid_style === 'Honeycomb' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed blur-sm' : ''}" type="button" onclick={grid_style = "Honeycomb"} aria-label="Honeycomb" disabled={Object.keys(point_colors).length > 0}>
+                <button class="btn btn-sm px-2.5 group {grid_style === 'Honeycomb' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed blur-sm' : ''}" type="button" onclick={() => {grid_style = "Honeycomb"; grid_spacing_mm = 3.3; point_size = 1.5}} aria-label="Honeycomb" disabled={Object.keys(point_colors).length > 0}>
                     <svg class="w-5 h-5" fill="currentColor" height="200px" width="200px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" xml:space="preserve"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <g> <path d="M508.203,197.698L435.2,149.03V59.731c0-2.995-1.579-5.769-4.139-7.313l-85.333-51.2c-2.705-1.621-6.084-1.621-8.789,0 L256,49.781L175.061,1.218c-2.705-1.621-6.084-1.621-8.789,0l-85.333,51.2c-2.56,1.544-4.139,4.318-4.139,7.313v89.3L3.797,197.7 C1.425,199.287,0,201.949,0,204.8v102.4c0,2.859,1.425,5.521,3.797,7.1L76.8,362.968v89.297c0,2.995,1.579,5.777,4.139,7.322 l85.333,51.2c1.357,0.811,2.876,1.212,4.395,1.212s3.038-0.401,4.395-1.212L256,462.223l80.939,48.563 c1.357,0.811,2.876,1.212,4.395,1.212c1.519,0,3.038-0.401,4.395-1.212l85.333-51.2c2.56-1.545,4.139-4.326,4.139-7.322v-89.298 l73.003-48.668c2.372-1.579,3.797-4.241,3.797-7.1v-102.4C512,201.948,510.575,199.285,508.203,197.698z M256,348.448 l-62.352-37.411l-14.448-8.669v-92.732l0.42-0.252L256,163.556l76.38,45.828l0.42,0.252v92.732l-14.448,8.669L256,348.448z M341.333,18.481l76.8,46.089v84.198l-76.8,46.08l-76.8-46.08V64.57L341.333,18.481z M93.867,64.57l76.8-46.089l76.8,46.089 v84.198l-76.8,46.08l-76.8-46.08V64.57z M17.067,209.365l68.502-45.668l57.07,34.242l19.495,11.699v92.73l-74.422,44.653 l-2.139,1.283l-68.506-45.67V209.365z M170.667,493.515l-76.8-46.08v-84.197l76.801-46.081l76.799,46.079v84.198L170.667,493.515z M341.333,493.515l-76.8-46.08v-84.198l76.8-46.08l76.8,46.08v84.198L341.333,493.515z M494.933,302.633l-68.506,45.67 l-76.066-45.638l-0.495-0.297v-92.732l76.561-45.935l68.506,45.67V302.633z"></path> </g> </g> </g></svg>
+                </button>
+                <button class="btn btn-sm px-2.5 group {grid_style === 'QRCode' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed blur-sm' : ''}" type="button" onclick={() => {grid_style = "QRCode"; grid_spacing_mm = 2; point_size = 0.25}} aria-label="QRCode" disabled={Object.keys(point_colors).length > 0}>
+                    <svg class="w-5 h-5 opacity-75" fill="currentColor" height="200px" width="200px" viewBox="0 0 24 24" id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <defs> <style>.cls-1{fill:none;}.cls-2{clip-path:url(#clip-path);}</style> <clipPath id="clip-path"> <rect class="cls-1" x="-0.04" width="24" height="24"></rect> </clipPath> </defs> <title>qr-alt</title> <g class="cls-2"> <path d="M9.84,11.17H7.13a1.4,1.4,0,0,1-1.4-1.39V7.07a1.4,1.4,0,0,1,1.4-1.4H9.84a1.4,1.4,0,0,1,1.39,1.4V9.78A1.39,1.39,0,0,1,9.84,11.17ZM7.23,9.67h2.5V7.17H7.23Z"></path> <path d="M16.88,11.17H14.16a1.39,1.39,0,0,1-1.39-1.39V7.07a1.4,1.4,0,0,1,1.39-1.4h2.72a1.4,1.4,0,0,1,1.39,1.4V9.78A1.39,1.39,0,0,1,16.88,11.17Zm-2.61-1.5h2.5V7.17h-2.5Z"></path> <path d="M9.84,18.33H7.13a1.4,1.4,0,0,1-1.4-1.4V14.22a1.4,1.4,0,0,1,1.4-1.39H9.84a1.39,1.39,0,0,1,1.39,1.39v2.71A1.4,1.4,0,0,1,9.84,18.33Zm-2.61-1.5h2.5v-2.5H7.23Z"></path> <path d="M16.88,18.44H14.16a1.39,1.39,0,0,1-1.39-1.39V14.33a1.39,1.39,0,0,1,1.39-1.39h2.72a1.4,1.4,0,0,1,1.39,1.39v2.72A1.39,1.39,0,0,1,16.88,18.44Zm-2.61-1.5h2.5v-2.5h-2.5Z"></path> <path d="M3,8.25a.76.76,0,0,1-.75-.75V3A.76.76,0,0,1,3,2.25H7.5a.75.75,0,0,1,0,1.5H3.75V7.5A.76.76,0,0,1,3,8.25Z"></path> <path d="M21,8.25a.76.76,0,0,1-.75-.75V3.75H16.5a.75.75,0,0,1,0-1.5H21a.76.76,0,0,1,.75.75V7.5A.76.76,0,0,1,21,8.25Z"></path> <path d="M21,21.75H16.5a.75.75,0,0,1,0-1.5h3.75V16.5a.75.75,0,0,1,1.5,0V21A.76.76,0,0,1,21,21.75Z"></path> <path d="M7.5,21.75H3A.76.76,0,0,1,2.25,21V16.5a.75.75,0,0,1,1.5,0v3.75H7.5a.75.75,0,0,1,0,1.5Z"></path> </g> </g></svg>
                 </button>
             </div>
         </div>
@@ -645,7 +682,7 @@ def run(protocol):
                 <span class="flex flex-row items-center gap-1">
                     {#if grid_spacing_mm < 2}
                         <button class="tooltip tooltip-top" aria-label="Small spacing alert" data-tip="Small spacing can cause points to merge">
-                            <svg class="w-5 h-5t" viewBox="-0.5 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M18.2202 21.25H5.78015C5.14217 21.2775 4.50834 21.1347 3.94373 20.8364C3.37911 20.5381 2.90402 20.095 2.56714 19.5526C2.23026 19.0101 2.04372 18.3877 2.02667 17.7494C2.00963 17.111 2.1627 16.4797 2.47015 15.92L8.69013 5.10999C9.03495 4.54078 9.52077 4.07013 10.1006 3.74347C10.6804 3.41681 11.3346 3.24518 12.0001 3.24518C12.6656 3.24518 13.3199 3.41681 13.8997 3.74347C14.4795 4.07013 14.9654 4.54078 15.3102 5.10999L21.5302 15.92C21.8376 16.4797 21.9907 17.111 21.9736 17.7494C21.9566 18.3877 21.7701 19.0101 21.4332 19.5526C21.0963 20.095 20.6211 20.5381 20.0565 20.8364C19.4919 21.1347 18.8581 21.2775 18.2202 21.25V21.25Z" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> <path d="M10.8809 17.15C10.8809 17.0021 10.9102 16.8556 10.9671 16.7191C11.024 16.5825 11.1074 16.4586 11.2125 16.3545C11.3175 16.2504 11.4422 16.1681 11.5792 16.1124C11.7163 16.0567 11.8629 16.0287 12.0109 16.03C12.2291 16.034 12.4413 16.1021 12.621 16.226C12.8006 16.3499 12.9398 16.5241 13.0211 16.7266C13.1023 16.9292 13.122 17.1512 13.0778 17.3649C13.0335 17.5786 12.9272 17.7745 12.7722 17.9282C12.6172 18.0818 12.4203 18.1863 12.2062 18.2287C11.9921 18.2711 11.7703 18.2494 11.5685 18.1663C11.3666 18.0833 11.1938 17.9426 11.0715 17.7618C10.9492 17.5811 10.8829 17.3683 10.8809 17.15ZM11.2409 14.42L11.1009 9.20001C11.0876 9.07453 11.1008 8.94766 11.1398 8.82764C11.1787 8.70761 11.2424 8.5971 11.3268 8.5033C11.4112 8.40949 11.5144 8.33449 11.6296 8.28314C11.7449 8.2318 11.8697 8.20526 11.9959 8.20526C12.1221 8.20526 12.2469 8.2318 12.3621 8.28314C12.4774 8.33449 12.5805 8.40949 12.6649 8.5033C12.7493 8.5971 12.8131 8.70761 12.852 8.82764C12.8909 8.94766 12.9042 9.07453 12.8909 9.20001L12.7609 14.42C12.7609 14.6215 12.6808 14.8149 12.5383 14.9574C12.3957 15.0999 12.2024 15.18 12.0009 15.18C11.7993 15.18 11.606 15.0999 11.4635 14.9574C11.321 14.8149 11.2409 14.6215 11.2409 14.42Z" fill="#000000"></path> </g></svg>
+                            <svg class="w-5 h-5t" viewBox="-0.5 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M18.2202 21.25H5.78015C5.14217 21.2775 4.50834 21.1347 3.94373 20.8364C3.37911 20.5381 2.90402 20.095 2.56714 19.5526C2.23026 19.0101 2.04372 18.3877 2.02667 17.7494C2.00963 17.111 2.1627 16.4797 2.47015 15.92L8.69013 5.10999C9.03495 4.54078 9.52077 4.07013 10.1006 3.74347C10.6804 3.41681 11.3346 3.24518 12.0001 3.24518C12.6656 3.24518 13.3199 3.41681 13.8997 3.74347C14.4795 4.07013 14.9654 4.54078 15.3102 5.10999L21.5302 15.92C21.8376 16.4797 21.9907 17.111 21.9736 17.7494C21.9566 18.3877 21.7701 19.0101 21.4332 19.5526C21.0963 20.095 20.6211 20.5381 20.0565 20.8364C19.4919 21.1347 18.8581 21.2775 18.2202 21.25V21.25Z" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> <path d="M10.8809 17.15C10.8809 17.0021 10.9102 16.8556 10.9671 16.7191C11.024 16.5825 11.1074 16.4586 11.2125 16.3545C11.3175 16.2504 11.4422 16.1681 11.5792 16.1124C11.7163 16.0567 11.8629 16.0287 12.0109 16.03C12.2291 16.034 12.4413 16.1021 12.621 16.226C12.8006 16.3499 12.9398 16.5241 13.0211 16.7266C13.1023 16.9292 13.122 17.1512 13.0778 17.3649C13.0335 17.5786 12.9272 17.7745 12.7722 17.9282C12.6172 18.0818 12.4203 18.1863 12.2062 18.2287C11.9921 18.2711 11.7703 18.2494 11.5685 18.1663C11.3666 18.0833 11.1938 17.9426 11.0715 17.7618C10.9492 17.5811 10.8829 17.3683 10.8809 17.15ZM11.2409 14.42L11.1009 9.20001C11.0876 9.07453 11.1008 8.94766 11.1398 8.82764C11.1787 8.70761 11.2424 8.5971 11.3268 8.5033C11.4112 8.40949 11.5144 8.33449 11.6296 8.28314C11.7449 8.2318 11.8697 8.20526 11.9959 8.20526C12.1221 8.20526 12.2469 8.2318 12.3621 8.28314C12.4774 8.33449 12.5805 8.40949 12.6649 8.5033C12.7493 8.5971 12.8131 8.70761 12.852 8.82764C12.8909 8.94766 12.9042 9.07453 12.8909 9.20001L12.7609 14.42C12.7609 14.6215 12.6808 14.8149 12.5383 14.9574C12.3957 15.0999 12.2024 15.18 12.0009 15.18C11.7993 15.18 11.606 15.0999 11.4635 14.9574C11.321 14.8149 11.2409 14.6215 11.2409 14.42Z" fill="currentColor"></path> </g></svg>
                         </button>
                     {/if}
                     <span class="opacity-70">
@@ -653,8 +690,8 @@ def run(protocol):
                     </span>
                 </span>
             </div>
-            <div class="{Object.keys(point_colors).length > 0 ? 'tooltip tooltip-top' : ''}" data-tip="Reset Grid to Edit" >
-                <input type="range" min="1" max="15" disabled={Object.keys(point_colors).length > 0} class="range {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed blur-sm' : ''}" step="0.1" bind:value={grid_spacing_mm} />
+            <div class="{Object.keys(point_colors).length > 0 && grid_style !== 'QRCode' ? 'tooltip tooltip-top' : ''}" data-tip="Reset Grid to Edit" >
+                <input type="range" min="1" max="15" disabled={Object.keys(point_colors).length > 0 && grid_style !== 'QRCode'} class="range {Object.keys(point_colors).length > 0 && grid_style !== 'QRCode' ? 'cursor-not-allowed blur-sm' : ''}" step="0.1" bind:value={grid_spacing_mm} />
             </div>
         </div>
         <!-- GRID MARGIN -->
@@ -662,7 +699,7 @@ def run(protocol):
             <div class="flex flex-row justify-between">
                 <span class="font-semibold">Point Size</span><span class="opacity-70">{point_size}µL</span>
             </div>
-            <input type="range" min="0.5" max="5" class="range" step="0.5" bind:value={point_size} />
+            <input type="range" min="0.25" max="5" class="range" step="0.25" bind:value={point_size} />
         </div>
     </div>
 
@@ -709,19 +746,6 @@ def run(protocol):
             {/if}
         </div>
     </div>
-
-    <!-- {#if grid_style === 'Standard' && AIMode}
-        <div class="flex flex-row gap-1">
-            <input type="text" placeholder="Art Generator. Example: Apple, Leaf, Flower" class="input input-bordered w-full input-sm focus:outline-none focus:ring-0" bind:value={user_design} maxlength=150 />
-            <button class="btn btn-sm" aria-label="Send to AI" onclick={() => {if (!loadingAIRecord) {generateAIDesign()}}}>
-                {#if !loadingAIRecord}
-                    <svg class="w-4 h-4" viewBox="0 0 24.00 24.00" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#000000" stroke-width="0.6"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round" stroke="#CCCCCC" stroke-width="0.192"></g><g id="SVGRepo_iconCarrier"> <path fill-rule="evenodd" clip-rule="evenodd" d="M12 3C12.2652 3 12.5196 3.10536 12.7071 3.29289L19.7071 10.2929C20.0976 10.6834 20.0976 11.3166 19.7071 11.7071C19.3166 12.0976 18.6834 12.0976 18.2929 11.7071L13 6.41421V20C13 20.5523 12.5523 21 12 21C11.4477 21 11 20.5523 11 20V6.41421L5.70711 11.7071C5.31658 12.0976 4.68342 12.0976 4.29289 11.7071C3.90237 11.3166 3.90237 10.6834 4.29289 10.2929L11.2929 3.29289C11.4804 3.10536 11.7348 3 12 3Z" fill="#000000"></path> </g></svg>
-                {:else}
-                    <span class="loading loading-spinner loading-sm"></span>
-                {/if}
-            </button>
-        </div>
-    {/if} -->
 
     <!-- ABOUT SECTION -->
     <div class="collapse collapse-arrow pt-4">

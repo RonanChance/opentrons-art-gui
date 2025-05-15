@@ -1,4 +1,6 @@
-export function generateGrid(grid_style, radius_mm, radius_margin_mm, grid_spacing_mm) {
+import QRCode from 'qrcode';
+
+export function generateGrid(grid_style, radius_mm, radius_margin_mm, grid_spacing_mm, QRCode_text) {
     console.log('GENERATING GRID', grid_spacing_mm)
     const points = [];
     const adjusted_radius = radius_mm - radius_margin_mm;
@@ -75,6 +77,36 @@ export function generateGrid(grid_style, radius_mm, radius_margin_mm, grid_spaci
             // Only add the center point if it's not already included
             if (Math.sqrt(xPos * xPos + centerRowY * centerRowY) <= adjusted_radius) {
                 points.push({ x: xPos.toFixed(3), y: centerRowY.toFixed(3) });
+            }
+        }
+    } else if (grid_style === 'QRCode') {
+        if (QRCode_text) {
+            const qr = QRCode.create(QRCode_text, { errorCorrectionLevel: 'H' });
+
+            const modules = qr.modules;
+            const size = modules.size;
+
+            const matrix = [];
+            for (let y = 0; y < size; y++) {
+                const row = [];
+                for (let x = 0; x < size; x++) {
+                    row.push(modules.get(x, y));
+                }
+                matrix.push(row);
+            }
+
+            const half = (size - 1) / 2;
+            for (let y = 0; y < size; y++) {
+                for (let x = 0; x < size; x++) {
+                    if (!matrix[y][x]) continue;
+
+                    const xPos = (x - half) * step;
+                    const yPos = (y - half) * step;
+
+                    if (Math.sqrt(xPos * xPos + yPos * yPos) <= adjusted_radius) {
+                        points.push({ x: xPos.toFixed(3), y: yPos.toFixed(3) });
+                    }
+                }
             }
         }
     }
