@@ -62,11 +62,8 @@
         point_colors = {};
         QRCode_text = '';
         point_size = 1.5;
-        grid_spacing_mm = 3.3;
-        point_
         points_by_color = points_by_color_defaults;
         points = {};
-        grid_style = 'Standard';
         radius_mm = 40;
         radius_margin_mm = 0.1;
         points = generateGrid(grid_style, radius_mm, radius_margin_mm, grid_spacing_mm);
@@ -456,7 +453,7 @@ def run(protocol):
 </script>
 
 <article class="prose w-full mx-auto mt-5">
-    <h2 class="text-center">Opentrons Art Interface</h2>
+    <h2 class="text-center text-neutral">Opentrons Art Interface</h2>
 </article>
 
 <dialog id="upload_modal" class="modal modal-middle">
@@ -546,8 +543,10 @@ def run(protocol):
 </div>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
+ <!-- bg-gray-300 my-4 -->
+<div class="mb-4 flex items-center mx-auto w-full max-w-[94vw] max-h-[94vw] sm:max-w-[460px] sm:max-h-[460px] aspect-square rounded-xl">
 <div 
-    class="relative border border-neutral rounded-full mx-auto w-full max-w-[94vw] max-h-[94vw] sm:max-w-[440px] sm:max-h-[440px] aspect-square mb-6 {loadingURLRecord ? 'blur' : ''} {loadingAIRecord ? 'blur' : ''}"
+    class="relative border border-neutral bg-neutral rounded-full mx-auto w-full max-w-[90vw] max-h-[90vw] sm:max-w-[440px] sm:max-h-[440px] aspect-square {loadingURLRecord ? 'blur' : ''} {loadingAIRecord ? 'blur' : ''}"
     onmousedown={() => isDrawing = true}
     onmouseup={() => isDrawing = false}
     onmouseleave={() => {isDrawing = false; current_point = {};}}
@@ -558,11 +557,11 @@ def run(protocol):
     id="grid-container"
 >
     {#if grid_style === 'QRCode' && QRCode_text === ''}
-        <div class="flex justify-center items-center h-full opacity-40">Insert text below</div>
+        <div class="flex justify-center items-center h-full opacity-40 text-white">Insert text below</div>
     {/if}
     {#each points as { x, y }}
         <!-- svelte-ignore a11y_mouse_events_have_key_events -->
-        <input type="checkbox" id="dot-{x}-{y}"  
+        <input type="checkbox" id="dot-{x}-{y}"
             class="checkbox
                 {point_size === 0.25 ? 'w-[3px] h-[3px]' : ''}
                 {point_size === 0.5 ? 'w-[6px] h-[6px]' : ''}
@@ -584,8 +583,8 @@ def run(protocol):
                 {point_size === 4.5 ? 'w-[22px] h-[22px]' : ''}
                 {point_size === 4.75 ? 'w-[23px] h-[23px]' : ''}
                 {point_size === 5 ? 'w-[24px] h-[24px]' : ''}
-                absolute rounded-full [--chkfg:invisible] transition-[box-shadow] duration-200 ease-in-out {point_colors[`${x}, ${y}`] ? 'border-0' : ''} {show_outlines ? '' : 'border-0'}"
-            style=" 
+                absolute rounded-full [--chkfg:invisible] transition-[box-shadow] duration-200 ease-in-out {point_colors[`${x}, ${y}`] ? 'border-0' : 'border-white opacity-15'} {show_outlines ? '' : 'border-0'}"
+            style="
                 left: calc(50% + ({x / (radius_mm + 4)} * 50%) - {point_size*2}px); 
                 top: calc(50% - ({y / (radius_mm + 4)} * 50%) - {point_size*2}px);
                 background-color: {well_colors[point_colors[`${x}, ${y}`]] || 'transparent'};
@@ -629,6 +628,7 @@ def run(protocol):
         />
     {/each}
 </div>
+</div>
 
 
 <div class="flex flex-col px-5 gap-4 w-full max-w-[100vw] sm:max-w-[500px] mx-auto mb-[150px]">
@@ -645,7 +645,7 @@ def run(protocol):
             <div class="flex flex-row justify-between">
                 <span class="font-semibold">Grid</span> <span class="opacity-70">{grid_style}</span>
             </div>
-            <div class="flex flex-row justify-between {Object.keys(point_colors).length > 0 ? 'tooltip tooltip-top' : ''}" data-tip="Reset Grid to Edit">
+            <div class="flex flex-row justify-between {Object.keys(point_colors).length > 0 ? 'tooltip tooltip-top' : ''}" data-tip="Erase Grid to Edit">
                 <button class="btn btn-sm px-2.5 group {grid_style === 'Standard' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed blur-sm' : ''}" type="button" onclick={() => {grid_style = "Standard"; grid_spacing_mm = 3.3; point_size = 1.5}} aria-label="Standard" disabled={Object.keys(point_colors).length > 0}>
                     <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="miter"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><line x1="5.99" y1="6" x2="6" y2="6" stroke-linecap="round" stroke-width="2"></line><line x1="11.99" y1="6" x2="12" y2="6" stroke-linecap="round" stroke-width="2"></line><line x1="17.99" y1="6" x2="18" y2="6" stroke-linecap="round" stroke-width="2"></line><line x1="5.99" y1="12" x2="6" y2="12" stroke-linecap="round" stroke-width="2"></line><line x1="11.99" y1="12" x2="12" y2="12" stroke-linecap="round" stroke-width="2"></line><line x1="17.99" y1="12" x2="18" y2="12" stroke-linecap="round" stroke-width="2"></line><line x1="5.99" y1="18" x2="6" y2="18" stroke-linecap="round" stroke-width="2"></line><line x1="11.99" y1="18" x2="12" y2="18" stroke-linecap="round" stroke-width="2"></line><line x1="17.99" y1="18" x2="18" y2="18" stroke-linecap="round" stroke-width="2"></line></g></svg>
                 </button>
@@ -663,7 +663,7 @@ def run(protocol):
         <!-- BACTERIA COLOR & CONTROLS -->
         <div class="flex flex-col w-[50%] gap-2 mx-auto">
             <div class="flex flex-row justify-between">
-                <span class="font-semibold">Bacteria Color</span><span class="opacity-70">{current_color}</span>
+                <span class="font-semibold">Bacteria</span><span class="opacity-70">{current_color}</span>
             </div>
             <div class="flex flex-row justify-around my-auto">
                 <input type="radio" class="radio checked:bg-red-400 border-red-400" value="Red" id="radio-red" bind:group={current_color} />
@@ -678,7 +678,7 @@ def run(protocol):
         <!-- GRID SPACING -->
         <div class="flex flex-col w-full gap-2 mx-auto">
             <div class="flex flex-row justify-between">
-                <span class="font-semibold">Grid Spacing</span>
+                <span class="font-semibold">Spacing</span>
                 <span class="flex flex-row items-center gap-1">
                     {#if grid_spacing_mm < 2}
                         <button class="tooltip tooltip-top" aria-label="Small spacing alert" data-tip="Small spacing can cause points to merge">
@@ -690,20 +690,20 @@ def run(protocol):
                     </span>
                 </span>
             </div>
-            <div class="{Object.keys(point_colors).length > 0 && grid_style !== 'QRCode' ? 'tooltip tooltip-top' : ''}" data-tip="Reset Grid to Edit" >
+            <div class="{Object.keys(point_colors).length > 0 && grid_style !== 'QRCode' ? 'tooltip tooltip-top' : ''}" data-tip="Erase Grid to Edit" >
                 <input type="range" min="1" max="15" disabled={Object.keys(point_colors).length > 0 && grid_style !== 'QRCode'} class="range {Object.keys(point_colors).length > 0 && grid_style !== 'QRCode' ? 'cursor-not-allowed blur-sm' : ''}" step="0.1" bind:value={grid_spacing_mm} />
             </div>
         </div>
         <!-- GRID MARGIN -->
         <div class="flex flex-col w-full gap-2 mx-auto">
             <div class="flex flex-row justify-between">
-                <span class="font-semibold">Point Size</span><span class="opacity-70">{point_size}µL</span>
+                <span class="font-semibold">Size</span><span class="opacity-70">{point_size}µL</span>
             </div>
             <input type="range" min="0.25" max="5" class="range" step="0.25" bind:value={point_size} />
         </div>
     </div>
 
-    <!-- RESET/PUBLISH BUTTON -->
+    <!-- ERASE/PUBLISH BUTTON -->
     <div class="flex flex-row justify-between">
         <!-- <div class="flex flex-col justify-start gap-1.5"> -->
             <button class="btn btn-sm hover:bg-neutral hover:text-white" onclick={() => { if (!uploading) {upload_modal.showModal()}}}>
@@ -712,24 +712,24 @@ def run(protocol):
             </button>
         <!-- </div> -->
         <button class="btn btn-sm hover:bg-neutral hover:text-white" onclick={resetValues}>
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 1920 1920" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M960 0v213.333c411.627 0 746.667 334.934 746.667 746.667S1371.627 1706.667 960 1706.667 213.333 1371.733 213.333 960c0-197.013 78.4-382.507 213.334-520.747v254.08H640V106.667H53.333V320h191.04C88.64 494.08 0 720.96 0 960c0 529.28 430.613 960 960 960s960-430.72 960-960S1489.387 0 960 0" fill-rule="evenodd"></path> </g></svg>
-            Reset Grid
+            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path fill-rule="evenodd" clip-rule="evenodd" d="M15.0722 3.9967L20.7508 9.83395L17.0544 13.5304L13.0758 17.5H21.0041V19H7.93503L4.00195 15.0669L15.0722 3.9967ZM10.952 17.5L15.4628 12.9994L11.8268 9.3634L6.12327 15.0669L8.55635 17.5H10.952Z" fill="currentColor"></path> </g></svg>
+            Erase Grid
         </button>
     </div>
 
     <!-- SHOW POINTS -->
-    <div class="flex flex-col w-full gap-2 mx-auto pb-2 bg-neutral-100 rounded px-2">
+    <div class="flex flex-col w-full gap-2 mx-auto pb-2 bg-gray-100 rounded px-2">
         <div class="flex flex-row justify-between pt-2 items-center">
             <span class="font-semibold">Coordinates</span>
             <div class="flex flex-row flex-wrap justify-end gap-2 max-w-full overflow-hidden">
                 <button class="btn btn-sm px-1 tooltip tooltip-top" aria-label="Swap Colors" data-tip="Swap Colors" onclick={swapColors}>
-                    <svg class="w-6 h-6 mx-1 opacity-60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M2 6C2 3.79086 3.79086 2 6 2C8.20914 2 10 3.79086 10 6V18C10 20.2091 8.20914 22 6 22C3.79086 22 2 20.2091 2 18V6Z" stroke="#1C274C" stroke-width="1.5"></path> <path d="M9.99977 8.24268L13.3134 4.92902C14.8755 3.36692 17.4082 3.36692 18.9703 4.92902C20.5324 6.49112 20.5324 9.02378 18.9703 10.5859L9.30615 20.25" stroke="#1C274C" stroke-width="1.5"></path> <path d="M6 22L18 22C20.2091 22 22 20.2091 22 18C22 15.7909 20.2091 14 18 14L15.5 14" stroke="#1C274C" stroke-width="1.5"></path> <path d="M7 18C7 18.5523 6.55228 19 6 19C5.44772 19 5 18.5523 5 18C5 17.4477 5.44772 17 6 17C6.55228 17 7 17.4477 7 18Z" stroke="#1C274C" stroke-width="1.5"></path> </g></svg>
+                    <svg class="w-6 h-6 mx-1 opacity-50" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M2 6C2 3.79086 3.79086 2 6 2C8.20914 2 10 3.79086 10 6V18C10 20.2091 8.20914 22 6 22C3.79086 22 2 20.2091 2 18V6Z" stroke="currentColor" stroke-width="1.5"></path> <path d="M9.99977 8.24268L13.3134 4.92902C14.8755 3.36692 17.4082 3.36692 18.9703 4.92902C20.5324 6.49112 20.5324 9.02378 18.9703 10.5859L9.30615 20.25" stroke="currentColor" stroke-width="1.5"></path> <path d="M6 22L18 22C20.2091 22 22 20.2091 22 18C22 15.7909 20.2091 14 18 14L15.5 14" stroke="currentColor" stroke-width="1.5"></path> <path d="M7 18C7 18.5523 6.55228 19 6 19C5.44772 19 5 18.5523 5 18C5 17.4477 5.44772 17 6 17C6.55228 17 7 17.4477 7 18Z" stroke="currentColor" stroke-width="1.5"></path> </g></svg>
                 </button>
                 <button class="btn btn-sm px-1 tooltip tooltip-top" aria-label="Copy Points" data-tip="Copy To Clipboard" onclick={copyPointsToClipboard}>
-                    <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M10 8V7C10 6.05719 10 5.58579 10.2929 5.29289C10.5858 5 11.0572 5 12 5H17C17.9428 5 18.4142 5 18.7071 5.29289C19 5.58579 19 6.05719 19 7V12C19 12.9428 19 13.4142 18.7071 13.7071C18.4142 14 17.9428 14 17 14H16M7 19H12C12.9428 19 13.4142 19 13.7071 18.7071C14 18.4142 14 17.9428 14 17V12C14 11.0572 14 10.5858 13.7071 10.2929C13.4142 10 12.9428 10 12 10H7C6.05719 10 5.58579 10 5.29289 10.2929C5 10.5858 5 11.0572 5 12V17C5 17.9428 5 18.4142 5.29289 18.7071C5.58579 19 6.05719 19 7 19Z" stroke="#464455" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>
+                    <svg class="w-7 h-7 opacity-70" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M10 8V7C10 6.05719 10 5.58579 10.2929 5.29289C10.5858 5 11.0572 5 12 5H17C17.9428 5 18.4142 5 18.7071 5.29289C19 5.58579 19 6.05719 19 7V12C19 12.9428 19 13.4142 18.7071 13.7071C18.4142 14 17.9428 14 17 14H16M7 19H12C12.9428 19 13.4142 19 13.7071 18.7071C14 18.4142 14 17.9428 14 17V12C14 11.0572 14 10.5858 13.7071 10.2929C13.4142 10 12.9428 10 12 10H7C6.05719 10 5.58579 10 5.29289 10.2929C5 10.5858 5 11.0572 5 12V17C5 17.9428 5 18.4142 5.29289 18.7071C5.58579 19 6.05719 19 7 19Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>
                 </button>
                 <button class="btn btn-sm px-1 tooltip tooltip-top" aria-label="Download Python File" data-tip="Download Python File" onclick={downloadPythonFile}>
-                    <svg class="w-7 h-7 opacity-60" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.25" d="M12 5v8.5m0 0l3-3m-3 3l-3-3M5 15v2a2 2 0 002 2h10a2 2 0 002-2v-2"></path> </g></svg>
+                    <svg class="w-7 h-7 opacity-60" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.25" d="M12 5v8.5m0 0l3-3m-3 3l-3-3M5 15v2a2 2 0 002 2h10a2 2 0 002-2v-2"></path> </g></svg>
                 </button>
             </div>
         </div>
@@ -785,7 +785,7 @@ def run(protocol):
     
     <div class="text-sm px-4 mt-5">
         <div class="max-w-[160px] mx-auto pt-4">
-            <a href="https://github.com/RonanChance/opentrons-art-gui" target="_blank" data-value="github" style="border-radius:2px;" class="py-2 px-1 flex justify-center items-center bg-neutral-200 hover:bg-neutral hover:text-white text-neutral transition ease-in duration-100 text-center text-sm font-semibold shadow-md focus:outline-none">
+            <a href="https://github.com/RonanChance/opentrons-art-gui" target="_blank" data-value="github" style="border-radius:2px;" class="py-2 px-1 flex justify-center items-center bg-gray-100 hover:bg-neutral hover:text-white text-neutral transition ease-in duration-100 text-center text-sm font-semibold shadow-md focus:outline-none">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="mr-2" viewBox="0 0 1792 1792">
                 <path d="M896 128q209 0 385.5 103t279.5 279.5 103 385.5q0 251-146.5 451.5t-378.5 277.5q-27 5-40-7t-13-30q0-3 .5-76.5t.5-134.5q0-97-52-142 57-6 102.5-18t94-39 81-66.5 53-105 20.5-150.5q0-119-79-206 37-91-8-204-28-9-81 11t-92 44l-38 24q-93-26-192-26t-192 26q-16-11-42.5-27t-83.5-38.5-85-13.5q-45 113-8 204-79 87-79 206 0 85 20.5 150t52.5 105 80.5 67 94 39 102.5 18q-39 36-49 103-21 10-45 15t-57 5-65.5-21.5-55.5-62.5q-19-32-48.5-52t-49.5-24l-20-3q-21 0-29 4.5t-5 11.5 9 14 13 12l7 5q22 10 43.5 38t31.5 51l10 23q13 38 44 61.5t67 30 69.5 7 55.5-3.5l23-4q0 38 .5 88.5t.5 54.5q0 18-13 30t-40 7q-232-77-378.5-277.5t-146.5-451.5q0-209 103-385.5t279.5-279.5 385.5-103zm-477 1103q3-7-7-12-10-3-13 2-3 7 7 12 9 6 13-2zm31 34q7-5-2-16-10-9-16-3-7 5 2 16 10 10 16 3zm30 45q9-7 0-19-8-13-17-6-9 5 0 18t17 7zm42 42q8-8-4-19-12-12-20-3-9 8 4 19 12 12 20 3zm57 25q3-11-13-16-15-4-19 7t13 15q15 6 19-6zm63 5q0-13-17-11-16 0-16 11 0 13 17 11 16 0 16-11zm58-10q-2-11-18-9-16 3-14 15t18 8 14-14z"></path>
                 </svg>
