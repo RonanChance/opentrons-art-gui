@@ -12,7 +12,7 @@
 
 </script>
 
-<div class="card shadow-xl px-3 py-3 outline outline-1 outline-neutral/10 max-w-[175px] ">
+<div class="card shadow-xl px-3 py-3 outline outline-1 outline-neutral/10 max-w-[175px] overflow-hidden">
     <!-- VERIFICATION MARK + INFO BUTTON -->
     {#if record.verified}
         <div class="absolute left-2 top-2 touch-manipulation tooltip tooltip-right" data-tip="Verified by admin" aria-label="info-button">
@@ -24,9 +24,9 @@
     </button>
 
     <!-- FRONT OF CARD -->
-    <div class="flex flex-col justify-between min-w-[150px] max-w-[150px] min-h-[295px] max-h-[350px] touch-manipulation">
+    <div class="flex flex-col justify-between min-w-[150px] max-w-[150px] min-h-[275px] max-h-[300px] touch-manipulation">
         {#if !flipped}
-            <div class="flex text-sm truncate mb-2 mt-3 items-center justify-center subtle-glitch">
+            <div class="flex text-sm truncate mt-3 items-center justify-center subtle-glitch">
                 {#if record.title} {record.title} {:else} Untitled {/if}
             </div>
             <div class="relative border border-neutral/70 rounded-full bg-neutral mx-auto max-w-[150px] max-h-[150px] aspect-square"
@@ -34,16 +34,26 @@
                 {#each Object.entries(record.point_colors) as [ key, color ]}
                     <input type="checkbox" id="dot-{key.split(", ")[0]}-{key.split(", ")[1]}-{i}"
                         class="checkbox 
-                        {record.point_size === 0 ? 'w-[8px] h-[8px]' : ''}
+                        {record.point_size === 0 ? 'w-[4px] h-[4px]' : ''}
+                        {record.point_size === 0.25 ? 'w-[1px] h-[1px]' : ''}
                         {record.point_size === 0.5 ? 'w-[2px] h-[2px]' : ''}
-                        {record.point_size === 1 ? 'w-[3px] h-[3px]' : ''}
+                        {record.point_size === 0.75 ? 'w-[2px] h-[2px]' : ''}
+                        {record.point_size === 1 ? 'w-[2px] h-[2px]' : ''}
+                        {record.point_size === 1.25 ? 'w-[3px] h-[3px]' : ''}
                         {record.point_size === 1.5 ? 'w-[3px] h-[3px]' : ''}
-                        {record.point_size === 2 ? 'w-[5px] h-[5px]' : ''} 
-                        {record.point_size === 2.5 ? 'w-[5px] h-[5px]' : ''} 
-                        {record.point_size === 3 ? 'w-[7px] h-[7px]' : ''} 
+                        {record.point_size === 1.75 ? 'w-[3px] h-[3px]' : ''}
+                        {record.point_size === 2 ? 'w-[5px] h-[5px]' : ''}
+                        {record.point_size === 2.25 ? 'w-[5px] h-[5px]' : ''}
+                        {record.point_size === 2.5 ? 'w-[5px] h-[5px]' : ''}
+                        {record.point_size === 2.75 ? 'w-[5px] h-[5px]' : ''}
+                        {record.point_size === 3 ? 'w-[7px] h-[7px]' : ''}
+                        {record.point_size === 3.25 ? 'w-[7px] h-[7px]' : ''} 
                         {record.point_size === 3.5 ? 'w-[7px] h-[7px]' : ''}
+                        {record.point_size === 3.75 ? 'w-[7px] h-[7px]' : ''} 
                         {record.point_size === 4 ? 'w-[9px] h-[9px]' : ''}
+                        {record.point_size === 4.25 ? 'w-[9px] h-[9px]' : ''}
                         {record.point_size === 4.5 ? 'w-[9px] h-[9px]' : ''}
+                        {record.point_size === 4.75 ? 'w-[9px] h-[9px]' : ''}
                         {record.point_size === 5 ? 'w-[10px] h-[10px]' : ''}
                         absolute rounded-full [--chkfg:invisible] transition-[box-shadow] duration-300 ease-in-out border-0"
                         style="
@@ -54,43 +64,47 @@
                         draggable="false"/>
                 {/each}
             </div>
-            <div class="flex flex-col pt-2">
-                <div class="flex flex-row items-center gap-1">
-                    <div class="tooltip tooltip-right" data-tip="Grid Style">
-                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M4 7C4 5.34315 5.34315 4 7 4C8.65685 4 10 5.34315 10 7C10 8.65685 8.65685 10 7 10C5.34315 10 4 8.65685 4 7Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> <path d="M14 7C14 5.34315 15.3431 4 17 4C18.6569 4 20 5.34315 20 7C20 8.65685 18.6569 10 17 10C15.3431 10 14 8.65685 14 7Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> <path d="M14 17C14 15.3431 15.3431 14 17 14C18.6569 14 20 15.3431 20 17C20 18.6569 18.6569 20 17 20C15.3431 20 14 18.6569 14 17Z" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> <path d="M4 17C4 15.3431 5.34315 14 7 14C8.65685 14 10 15.3431 10 17C10 18.6569 8.65685 20 7 20C5.34315 20 4 18.6569 4 17Z" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
+            <div class="flex flex-row justify-around">
+                <div class="flex flex-col">
+                    <div class="flex flex-row items-center gap-1">
+                        <div class="tooltip tooltip-right" data-tip="Grid Style">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M4 7C4 5.34315 5.34315 4 7 4C8.65685 4 10 5.34315 10 7C10 8.65685 8.65685 10 7 10C5.34315 10 4 8.65685 4 7Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> <path d="M14 7C14 5.34315 15.3431 4 17 4C18.6569 4 20 5.34315 20 7C20 8.65685 18.6569 10 17 10C15.3431 10 14 8.65685 14 7Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> <path d="M14 17C14 15.3431 15.3431 14 17 14C18.6569 14 20 15.3431 20 17C20 18.6569 18.6569 20 17 20C15.3431 20 14 18.6569 14 17Z" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> <path d="M4 17C4 15.3431 5.34315 14 7 14C8.65685 14 10 15.3431 10 17C10 18.6569 8.65685 20 7 20C5.34315 20 4 18.6569 4 17Z" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
+                        </div>
+                        <div class="inline-flex items-baseline gap-0.5">
+                            <span class="text-sm">{record.grid_style === 'Standard' ? 'Grid' : record.grid_style}</span>
+                        </div>
                     </div>
-                    <div class="inline-flex items-baseline gap-0.5">
-                        <span class="text-base">{record.grid_style}</span>
-                    </div>
-                </div>
-                <div class="flex flex-row items-center gap-1">
-                    <div class="tooltip tooltip-right" data-tip="Point Size">
-                        <svg class="w-4 h-4" fill="#000000" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M256 56c110.532 0 200 89.451 200 200 0 110.532-89.451 200-200 200-110.532 0-200-89.451-200-200 0-110.532 89.451-200 200-200m0-48C119.033 8 8 119.033 8 256s111.033 248 248 248 248-111.033 248-248S392.967 8 256 8zm0 168c-44.183 0-80 35.817-80 80s35.817 80 80 80 80-35.817 80-80-35.817-80-80-80z"></path></g></svg>
-                    </div>
-                    <div class="inline-flex items-baseline gap-0.5">
-                        <span class="text-base">{record.point_size || 4}</span>
-                        <span class="text-sm">µL</span>
-                    </div>
-                </div>
-                <div class="flex flex-row items-center gap-1">
-                    <div class="tooltip tooltip-right" data-tip="Grid Spacing">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M6 12H18M6 12L8 9M6 12L8 15M18 12L16 9M18 12L16 15M21 21V3M3 21V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
-                    </div>
-                    <div class="inline-flex items-baseline gap-0.5">
-                        <span class="text-base">{record.grid_spacing_mm}</span>
-                        <span class="text-sm">mm</span>
+                    <div class="flex flex-row items-center gap-1">
+                        <div class="tooltip tooltip-right" data-tip="Point Size">
+                            <svg class="w-4 h-4" fill="#000000" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M256 56c110.532 0 200 89.451 200 200 0 110.532-89.451 200-200 200-110.532 0-200-89.451-200-200 0-110.532 89.451-200 200-200m0-48C119.033 8 8 119.033 8 256s111.033 248 248 248 248-111.033 248-248S392.967 8 256 8zm0 168c-44.183 0-80 35.817-80 80s35.817 80 80 80 80-35.817 80-80-35.817-80-80-80z"></path></g></svg>
+                        </div>
+                        <div class="inline-flex items-baseline gap-0.5">
+                            <span class="text-sm">{record.point_size || 4}</span>
+                            <span class="text-xs">µL</span>
+                        </div>
                     </div>
                 </div>
-                <div class="flex flex-row items-center gap-1">
-                    <div class="tooltip inline tooltip-right" data-tip="# painted / # points">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M8.99999 14C8.99999 13.4477 8.55227 13 7.99999 13C7.4477 13 6.99999 13.4477 6.99999 14C6.99999 15.3574 7.26721 16.7375 8.08236 17.7972C8.93437 18.9048 10.2571 19.5 12 19.5C12.5523 19.5 13 19.0523 13 18.5C13 17.9477 12.5523 17.5 12 17.5C10.7429 17.5 10.0656 17.0952 9.66761 16.5778C9.23276 16.0125 8.99999 15.1426 8.99999 14Z" fill="currentColor"></path> <path fill-rule="evenodd" clip-rule="evenodd" d="M13.4228 1.54267C12.6513 0.711988 11.348 0.712021 10.5766 1.54273C9.63287 2.55896 7.89116 4.5305 6.37916 6.77881C4.87045 9.02222 3.46953 11.5773 3.49416 14.3526C3.49633 14.5981 3.50939 14.9426 3.55218 15.3536C3.63717 16.17 3.84245 17.278 4.33361 18.4008C4.82693 19.5285 5.61868 20.6923 6.88173 21.5709C8.15052 22.4536 9.82552 23 11.9997 23C14.1739 23 15.8489 22.4536 17.1178 21.5709C18.3808 20.6923 19.1727 19.5286 19.6661 18.4009C20.1573 17.2781 20.3627 16.17 20.4477 15.3536C20.4905 14.9427 20.5036 14.5982 20.5058 14.3527C20.5306 11.5774 19.1293 9.02208 17.6206 6.77875C16.1084 4.53043 14.3666 2.55889 13.4228 1.54267ZM8.03877 7.89491C9.44577 5.80274 11.0797 3.94302 11.9997 2.94942C12.9198 3.94301 14.5539 5.80273 15.961 7.89491C17.2351 9.78932 18.5269 11.9805 18.5059 14.3348C18.5042 14.5268 18.4938 14.8074 18.4585 15.1464C18.3873 15.83 18.2176 16.722 17.8338 17.5992C17.4521 18.4715 16.8689 19.3078 15.9756 19.9291C15.0882 20.5465 13.8256 21 11.9997 21C10.1738 21 8.91129 20.5465 8.02387 19.9291C7.13071 19.3078 6.54754 18.4715 6.16596 17.5992C5.78221 16.722 5.61259 15.8301 5.54142 15.1465C5.50613 14.8074 5.49578 14.5269 5.49408 14.3349C5.4732 11.9806 6.76469 9.78944 8.03877 7.89491Z" fill="currentColor"></path> </g></svg>
+                <div class="flex flex-col">
+                    <div class="flex flex-row items-center gap-1">
+                        <div class="tooltip tooltip-right" data-tip="Grid Spacing">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M6 12H18M6 12L8 9M6 12L8 15M18 12L16 9M18 12L16 15M21 21V3M3 21V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
+                        </div>
+                        <div class="inline-flex items-baseline gap-0.5">
+                            <span class="text-sm">{record.grid_spacing_mm}</span>
+                            <span class="text-xs">mm</span>
+                        </div>
                     </div>
-                    <div class="inline-flex items-baseline gap-0">
-                        <span class="text-base">{record.num_drops}</span><span class="text-[7pt]">/{record.num_total}</span> 
+                    <div class="flex flex-row items-center gap-1">
+                        <div class="tooltip inline tooltip-right" data-tip="# painted / # points">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M8.99999 14C8.99999 13.4477 8.55227 13 7.99999 13C7.4477 13 6.99999 13.4477 6.99999 14C6.99999 15.3574 7.26721 16.7375 8.08236 17.7972C8.93437 18.9048 10.2571 19.5 12 19.5C12.5523 19.5 13 19.0523 13 18.5C13 17.9477 12.5523 17.5 12 17.5C10.7429 17.5 10.0656 17.0952 9.66761 16.5778C9.23276 16.0125 8.99999 15.1426 8.99999 14Z" fill="currentColor"></path> <path fill-rule="evenodd" clip-rule="evenodd" d="M13.4228 1.54267C12.6513 0.711988 11.348 0.712021 10.5766 1.54273C9.63287 2.55896 7.89116 4.5305 6.37916 6.77881C4.87045 9.02222 3.46953 11.5773 3.49416 14.3526C3.49633 14.5981 3.50939 14.9426 3.55218 15.3536C3.63717 16.17 3.84245 17.278 4.33361 18.4008C4.82693 19.5285 5.61868 20.6923 6.88173 21.5709C8.15052 22.4536 9.82552 23 11.9997 23C14.1739 23 15.8489 22.4536 17.1178 21.5709C18.3808 20.6923 19.1727 19.5286 19.6661 18.4009C20.1573 17.2781 20.3627 16.17 20.4477 15.3536C20.4905 14.9427 20.5036 14.5982 20.5058 14.3527C20.5306 11.5774 19.1293 9.02208 17.6206 6.77875C16.1084 4.53043 14.3666 2.55889 13.4228 1.54267ZM8.03877 7.89491C9.44577 5.80274 11.0797 3.94302 11.9997 2.94942C12.9198 3.94301 14.5539 5.80273 15.961 7.89491C17.2351 9.78932 18.5269 11.9805 18.5059 14.3348C18.5042 14.5268 18.4938 14.8074 18.4585 15.1464C18.3873 15.83 18.2176 16.722 17.8338 17.5992C17.4521 18.4715 16.8689 19.3078 15.9756 19.9291C15.0882 20.5465 13.8256 21 11.9997 21C10.1738 21 8.91129 20.5465 8.02387 19.9291C7.13071 19.3078 6.54754 18.4715 6.16596 17.5992C5.78221 16.722 5.61259 15.8301 5.54142 15.1465C5.50613 14.8074 5.49578 14.5269 5.49408 14.3349C5.4732 11.9806 6.76469 9.78944 8.03877 7.89491Z" fill="currentColor"></path> </g></svg>
+                        </div>
+                        <div class="inline-flex items-baseline gap-0">
+                            <span class="text-sm">{record.num_drops}</span><span class="text-[7pt]">/{record.num_total}</span> 
+                        </div>
                     </div>
                 </div>
             </div>
-            <a href="./?id={record.id}" target="_blank" rel="noreferrer noopener" class="flex w-full btn btn-sm rounded bg-neutral text-white hover:bg-neutral-200 hover:text-neutral mx-auto gap-1 mt-2 items-center">
+            <a href="./?id={record.id}" target="_blank" rel="noreferrer noopener" class="flex w-full btn btn-sm rounded bg-neutral text-white hover:bg-neutral-200 hover:text-neutral mx-auto gap-1 items-center">
                 <svg class="w-5 h-5" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M10.7071 10.7071C10.3166 11.0976 9.68342 11.0976 9.29289 10.7071C8.90237 10.3166 8.90237 9.68342 9.29289 9.29289L15.2929 3.29289C15.6834 2.90237 16.3166 2.90237 16.7071 3.29289C17.0976 3.68342 17.0976 4.31658 16.7071 4.70711L10.7071 10.7071Z" fill="currentColor"></path> <path d="M15 15V11.5C15 10.9477 15.4477 10.5 16 10.5C16.5523 10.5 17 10.9477 17 11.5V16C17 16.5523 16.5523 17 16 17H4C3.44772 17 3 16.5523 3 16V4C3 3.44772 3.44772 3 4 3H8.5C9.05228 3 9.5 3.44772 9.5 4C9.5 4.55228 9.05228 5 8.5 5H5V15H15Z" fill="currentColor"></path> <path d="M17 8C17 8.55228 16.5523 9 16 9C15.4477 9 15 8.55228 15 8V4C15 3.44772 15.4477 3 16 3C16.5523 3 17 3.44772 17 4V8Z" fill="currentColor"></path> <path d="M12 5C11.4477 5 11 4.55228 11 4C11 3.44772 11.4477 3 12 3H16C16.5523 3 17 3.44772 17 4C17 4.55228 16.5523 5 16 5H12Z" fill="currentColor"></path> </g></svg>
                 View
             </a>

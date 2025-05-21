@@ -147,6 +147,7 @@
     function groupByColors() {
         // Convert object into an array
         const entries = Object.entries(point_colors);
+        console.log(point_colors)
 
         function processPoints(colorName) {
             return entries
@@ -162,7 +163,6 @@
                     return by - ay || ax - bx;
                 });
         }
-
         points_by_color = {
             red_points: processPoints("Red"),
             green_points: processPoints("Green"),
