@@ -30,7 +30,7 @@
                 {#if record.title} {record.title} {:else} Untitled {/if}
             </div>
             <div class="relative border border-neutral/70 rounded-full bg-neutral mx-auto max-w-[150px] max-h-[150px] aspect-square"
-                style="width: {(record.radius_mm + record.radius_margin_mm) * 16}px; height: {(record.radius_mm + record.radius_margin_mm) * 16}px;">
+                style="width: {(record.radius_mm) * 16}px; height: {(record.radius_mm + record) * 16}px;">
                 {#each Object.entries(record.point_colors) as [ key, color ]}
                     <input type="checkbox" id="dot-{key.split(", ")[0]}-{key.split(", ")[1]}-{i}"
                         class="checkbox 

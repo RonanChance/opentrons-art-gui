@@ -1,9 +1,8 @@
 import QRCode from 'qrcode';
 
-export function generateGrid(grid_style, radius_mm, radius_margin_mm, grid_spacing_mm, QRCode_text) {
-    console.log('GENERATING GRID', grid_spacing_mm)
+export function generateGrid(grid_style, radius_mm, grid_spacing_mm, QRCode_text) {
     const points = [];
-    const adjusted_radius = radius_mm - radius_margin_mm;
+    const adjusted_radius = radius_mm;
     const step = grid_spacing_mm;
 
     if (grid_style === 'Standard') {

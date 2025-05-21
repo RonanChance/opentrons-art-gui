@@ -1,13 +1,14 @@
 <script>
     import { generateGrid } from './generateGrid.js';
+    import { shiftPoints } from './pointTransformations.js';
     import { onMount, tick } from 'svelte';
     import { browser } from '$app/environment';
     import { page } from '$app/stores';
     import { well_colors, well_colors_abbr } from '$lib/constants.js';
+    import { fade } from 'svelte/transition';
 
     let grid_style = $state('Standard'); // 'Standard' or 'Honeycomb' or 'Radial' or 'QRCode'
-    let radius_mm = $state(40);
-    let radius_margin_mm = $state(0.1);
+    let radius_mm = $state(39.9);
     let grid_spacing_mm = $state(3.3);
     let point_size = $state(1.5);
     
@@ -39,11 +40,44 @@
                 loadRecord(loadRecordId);
             }
             AIMode = $page.url.searchParams.get('ai');
+
+            window.addEventListener('keydown', function(event) {
+            switch (event.key) {
+                case 'ArrowUp':
+                    if (Object.keys(point_colors).length > 0 && grid_style === "Standard") {
+                        event.preventDefault();
+                        point_colors = shiftPoints("up", grid_spacing_mm, radius_mm, point_colors); 
+                        groupByColors();
+                    }
+                    break;
+                case 'ArrowDown':
+                    if (Object.keys(point_colors).length > 0 && grid_style === "Standard") {
+                        event.preventDefault();
+                        point_colors = shiftPoints("down", grid_spacing_mm, radius_mm, point_colors); 
+                        groupByColors();
+                    }
+                    break;
+                case 'ArrowLeft':
+                    if (Object.keys(point_colors).length > 0 && grid_style === "Standard") {
+                        event.preventDefault();
+                        point_colors = shiftPoints("left", grid_spacing_mm, radius_mm, point_colors); 
+                        groupByColors();
+                    }
+                    break;
+                case 'ArrowRight':
+                    if (Object.keys(point_colors).length > 0 && grid_style === "Standard") {
+                        event.preventDefault();
+                        point_colors = shiftPoints("right", grid_spacing_mm, radius_mm, point_colors); 
+                        groupByColors();
+                    }
+                    break;
+                }
+            });
         }
     });
     
     $effect(() => {
-        points = generateGrid(grid_style, radius_mm, radius_margin_mm, grid_spacing_mm, QRCode_text);
+        points = generateGrid(grid_style, radius_mm, grid_spacing_mm, QRCode_text);
         point_colors = {};
         points_by_color = points_by_color_defaults;
         tick().then(() => {
@@ -65,15 +99,13 @@
         points_by_color = points_by_color_defaults;
         points = {};
         radius_mm = 40;
-        radius_margin_mm = 0.1;
-        points = generateGrid(grid_style, radius_mm, radius_margin_mm, grid_spacing_mm);
+        points = generateGrid(grid_style, radius_mm, grid_spacing_mm);
     }
 
     async function loadValues(i) {
         const record = loadedRecords[i];
         grid_style = record.grid_style;
         grid_spacing_mm = record.grid_spacing_mm;
-        radius_margin_mm = record.radius_margin_mm;
         radius_mm = record.radius_mm;
         points = record.points;
         await tick();
@@ -92,7 +124,6 @@
             const r = await response.json();
             grid_style = r.record.grid_style;
             grid_spacing_mm = r.record.grid_spacing_mm;
-            radius_margin_mm = r.record.radius_margin_mm;
             radius_mm = r.record.radius_mm;
             points = r.record.points;
             point_size = r.record.point_size || 4;
@@ -122,7 +153,6 @@
                 author,
                 grid_style,
                 radius_mm,
-                radius_margin_mm,
                 grid_spacing_mm,
                 points,
                 point_colors,
@@ -147,7 +177,6 @@
     function groupByColors() {
         // Convert object into an array
         const entries = Object.entries(point_colors);
-        console.log(point_colors)
 
         function processPoints(colorName) {
             return entries
@@ -384,8 +413,8 @@ def run(protocol):
     //     let currentX = 0;
     //     let currentY = 0;
     //     while (
-    //         (currentX - grid_spacing_mm) >= -(radius_mm - radius_margin_mm) &&  // Ensure X stays within negative bound
-    //         (currentY + grid_spacing_mm) <= (radius_mm - radius_margin_mm) // Ensure Y stays within positive bound
+    //         (currentX - grid_spacing_mm) >= -(radius_mm) &&  // Ensure X stays within negative bound
+    //         (currentY + grid_spacing_mm) <= (radius_mm) // Ensure Y stays within positive bound
     //     ) {
     //         currentX -= grid_spacing_mm;  // Move left
     //         currentY += grid_spacing_mm;  // Move up
@@ -627,6 +656,18 @@ def run(protocol):
             }}
         />
     {/each}
+    {#if Object.keys(point_colors).length > 0 && grid_style === "Standard"}
+        <div class="absolute bottom-0 right-0 scale-[60%] origin-bottom-right" transition:fade={{ duration: 200 }}>
+            <div class="flex w-full justify-center">
+                <button class="kbd" onclick={() => {point_colors = shiftPoints("up", grid_spacing_mm, radius_mm, point_colors); groupByColors();}}>▲</button>
+            </div>
+            <div class="flex w-full justify-center gap-2 pt-2">
+                <button class="kbd" onclick={() => {point_colors = shiftPoints("left", grid_spacing_mm, radius_mm, point_colors); groupByColors();}}>◀︎</button>
+                <button class="kbd" onclick={() => {point_colors = shiftPoints("down", grid_spacing_mm, radius_mm, point_colors); groupByColors();}}>▼</button>
+                <button class="kbd" onclick={() => {point_colors = shiftPoints("right", grid_spacing_mm, radius_mm, point_colors); groupByColors();}}>▶︎</button>
+            </div>
+        </div>
+    {/if}
 </div>
 </div>
 

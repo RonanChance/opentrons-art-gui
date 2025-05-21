@@ -4,7 +4,7 @@ import { PB_EMAIL, PB_PASSWORD } from '$env/static/private';
 const pb = new PocketBase("https://opentrons-art-pb.rcdonovan.com");
 
 export const POST = async ({ request }) => {
-    let { title, author, grid_style, radius_mm, radius_margin_mm, grid_spacing_mm, points, point_colors, point_size } = await request.json();
+    let { title, author, grid_style, radius_mm, grid_spacing_mm, points, point_colors, point_size } = await request.json();
     try {
         let num_drops = Object.keys(point_colors).length;
         let num_total = points.length;
@@ -25,7 +25,6 @@ export const POST = async ({ request }) => {
             num_total,
             unique_colors,
             radius_mm,
-            radius_margin_mm,
             grid_spacing_mm,
             point_size,
             points,
