@@ -7,10 +7,11 @@
     import { well_colors, well_colors_abbr } from '$lib/constants.js';
     import { fade } from 'svelte/transition';
 
-    let grid_style = $state('Standard'); // 'Standard' or 'Honeycomb' or 'Radial' or 'QRCode'
+    let grid_style = $state('Grid'); // 'Grid', 'Honeycomb', 'Radial', 'QRCode'
     let radius_mm = $state(39.9);
     let grid_spacing_mm = $state(3.3);
-    let point_size = $state(1.5);
+    let prev_grid_spacing_mm = $state(3.3);
+    let point_size = $state(1);
     
     let points = $state({});
     let point_colors = $state({}); // Typical workflow: edit point_colors then call groupByColors()
@@ -44,30 +45,30 @@
             window.addEventListener('keydown', function(event) {
             switch (event.key) {
                 case 'ArrowUp':
-                    if (Object.keys(point_colors).length > 0 && grid_style === "Standard") {
+                    if (Object.keys(point_colors).length > 0 && grid_style === "Standard" || grid_style === "Grid") {
                         event.preventDefault();
-                        point_colors = shiftPoints("up", grid_spacing_mm, radius_mm, point_colors); 
+                        point_colors = shiftPoints("up", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors); 
                         groupByColors();
                     }
                     break;
                 case 'ArrowDown':
-                    if (Object.keys(point_colors).length > 0 && grid_style === "Standard") {
+                    if (Object.keys(point_colors).length > 0 && grid_style === "Standard" || grid_style === "Grid") {
                         event.preventDefault();
-                        point_colors = shiftPoints("down", grid_spacing_mm, radius_mm, point_colors); 
+                        point_colors = shiftPoints("down", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors); 
                         groupByColors();
                     }
                     break;
                 case 'ArrowLeft':
-                    if (Object.keys(point_colors).length > 0 && grid_style === "Standard") {
+                    if (Object.keys(point_colors).length > 0 && grid_style === "Standard" || grid_style === "Grid") {
                         event.preventDefault();
-                        point_colors = shiftPoints("left", grid_spacing_mm, radius_mm, point_colors); 
+                        point_colors = shiftPoints("left", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors); 
                         groupByColors();
                     }
                     break;
                 case 'ArrowRight':
-                    if (Object.keys(point_colors).length > 0 && grid_style === "Standard") {
+                    if (Object.keys(point_colors).length > 0 && grid_style === "Standard" || grid_style === "Grid") {
                         event.preventDefault();
-                        point_colors = shiftPoints("right", grid_spacing_mm, radius_mm, point_colors); 
+                        point_colors = shiftPoints("right", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors); 
                         groupByColors();
                     }
                     break;
@@ -78,8 +79,7 @@
     
     $effect(() => {
         points = generateGrid(grid_style, radius_mm, grid_spacing_mm, QRCode_text);
-        point_colors = {};
-        points_by_color = points_by_color_defaults;
+        
         tick().then(() => {
             if (grid_style === 'QRCode') {
                     const new_colors = {};
@@ -89,28 +89,36 @@
                     point_colors = new_colors;
                     groupByColors();
                 }
-            });
+            if (grid_style === 'Standard' || grid_style === "Grid") {
+                const current = grid_spacing_mm;
+                const previous = prev_grid_spacing_mm;
+                if (current !== previous && !loadingURLRecord) {
+                    point_colors = shiftPoints("all", current, previous, radius_mm, point_colors);
+                    groupByColors();
+                    prev_grid_spacing_mm = current;
+                }
+            }
+        });
     });
+
+    function decideEnabled() {
+        // Decide if slider should be blurred
+        if (Object.keys(point_colors).length > 0) {
+            if (grid_style === 'QRCode' || grid_style === 'Standard' || grid_style === 'Grid') {
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
 
     function resetValues() {
         point_colors = {};
         QRCode_text = '';
-        point_size = 1.5;
         points_by_color = points_by_color_defaults;
         points = {};
         radius_mm = 40;
         points = generateGrid(grid_style, radius_mm, grid_spacing_mm);
-    }
-
-    async function loadValues(i) {
-        const record = loadedRecords[i];
-        grid_style = record.grid_style;
-        grid_spacing_mm = record.grid_spacing_mm;
-        radius_mm = record.radius_mm;
-        points = record.points;
-        await tick();
-        point_colors = record.point_colors;
-        groupByColors();
     }
 
     async function loadRecord(id) {
@@ -123,9 +131,8 @@
             });
             const r = await response.json();
             grid_style = r.record.grid_style;
-            grid_spacing_mm = r.record.grid_spacing_mm;
+            grid_spacing_mm = prev_grid_spacing_mm = r.record.grid_spacing_mm;
             radius_mm = r.record.radius_mm;
-            points = r.record.points;
             point_size = r.record.point_size || 4;
             await tick();
             point_colors = r.record.point_colors;
@@ -151,10 +158,10 @@
             body: JSON.stringify({
                 title,
                 author,
+                points,
                 grid_style,
                 radius_mm,
                 grid_spacing_mm,
-                points,
                 point_colors,
                 point_size
             })
@@ -246,13 +253,13 @@
         let scriptToCopy = `from opentrons import types
 
 metadata = {
-    'protocolName': 'Opentrons Art - HTGAA',
+    'protocolName': '{YOUR NAME} - Opentrons Art - HTGAA',
     'author': 'HTGAA',
     'source': 'HTGAA 2025',
     'apiLevel': '2.20'
 }
 
-Z_VALUE = 11.90
+Z_VALUE = 12.0
 POINT_SIZE = ${point_size}
 red_points = ${formatPoints(points_by_color.red_points)}
 green_points = ${formatPoints(points_by_color.green_points)}
@@ -406,79 +413,6 @@ def run(protocol):
         alertType = type;
 		setTimeout(() => { isToastVisible = false; }, 3000);
 	}
-
-    // let AIGenerated2DList;
-    // async function generateAIDesign() {
-    //     loadingAIRecord = true;
-    //     let currentX = 0;
-    //     let currentY = 0;
-    //     while (
-    //         (currentX - grid_spacing_mm) >= -(radius_mm) &&  // Ensure X stays within negative bound
-    //         (currentY + grid_spacing_mm) <= (radius_mm) // Ensure Y stays within positive bound
-    //     ) {
-    //         currentX -= grid_spacing_mm;  // Move left
-    //         currentY += grid_spacing_mm;  // Move up
-
-    //         // Check if the new point exists in 'points'
-    //         const pointExists = points.some(point => 
-    //             point.x === currentX.toFixed(3) && point.y === currentY.toFixed(3)
-    //         );
-
-    //         if (pointExists) {
-    //             console.log(currentX, currentY);
-    //         } else {
-    //             break;
-    //         }
-    //     }
-
-    //     let dimension = Math.round((currentY/grid_spacing_mm)*2 - 1);
-
-
-    //     try {
-    //         const response = await fetch('/generateWithAI', {
-    //             method: 'POST',
-    //             headers: { 'Content-Type': 'application/json' },
-    //             body: JSON.stringify({ QRCode_text, dimension })
-    //         });
-    //         let r = await response.json();
-    //         AIGenerated2DList = JSON.parse(r.result);
-    //         console.log(AIGenerated2DList);
-    //         AIGenerated2DList = AIGenerated2DList.matrix;
-    //         console.log(AIGenerated2DList);
-    //         console.log(AIGenerated2DList.map(row => JSON.stringify(row)).join("\n"));
-
-    //         convertMatrixToPoints();
-    //         await tick();
-    //         groupByColors();
-    //         await tick();
-    //         loadingAIRecord = false;
-    //         showAlert("alert-success", "Loaded design successfully!");
-
-    //     } catch (e) {
-    //         console.log(e);
-    //         showAlert("alert-error", "AI generation failed");
-    //         loadingAIRecord = false;
-    //     }
-    // }
-
-    // // loadingAIRecord = false;
-    
-    // function convertMatrixToPoints() {
-    //     const centerX = Math.floor(AIGenerated2DList[0].length / 2);
-    //     const centerY = Math.floor(AIGenerated2DList.length / 2);
-
-    //     for (let row = 0; row < AIGenerated2DList.length; row++) {
-    //         for (let col = 0; col < AIGenerated2DList[row].length; col++) {
-    //             const color = AIGenerated2DList[row][col];
-    //             if (color === "R" || color === "G" || color === "O") {
-    //                 const x = ((col - centerX) * grid_spacing_mm).toFixed(3);
-    //                 const y = ((centerY - row) * grid_spacing_mm).toFixed(3);
-    //                 point_colors[`${x}, ${y}`] = well_colors_abbr[color];
-    //             }
-    //         }
-    //     }
-    //     return point_colors;
-    // }
 </script>
 
 <article class="prose w-full mx-auto mt-5">
@@ -659,12 +593,12 @@ def run(protocol):
     {#if Object.keys(point_colors).length > 0 && grid_style === "Standard"}
         <div class="absolute bottom-0 right-0 scale-[60%] origin-bottom-right" transition:fade={{ duration: 200 }}>
             <div class="flex w-full justify-center">
-                <button class="kbd" onclick={() => {point_colors = shiftPoints("up", grid_spacing_mm, radius_mm, point_colors); groupByColors();}}>▲</button>
+                <button class="kbd" onclick={() => {point_colors = shiftPoints("up", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors); groupByColors();}}>▲</button>
             </div>
             <div class="flex w-full justify-center gap-2 pt-2">
-                <button class="kbd" onclick={() => {point_colors = shiftPoints("left", grid_spacing_mm, radius_mm, point_colors); groupByColors();}}>◀︎</button>
-                <button class="kbd" onclick={() => {point_colors = shiftPoints("down", grid_spacing_mm, radius_mm, point_colors); groupByColors();}}>▼</button>
-                <button class="kbd" onclick={() => {point_colors = shiftPoints("right", grid_spacing_mm, radius_mm, point_colors); groupByColors();}}>▶︎</button>
+                <button class="kbd" onclick={() => {point_colors = shiftPoints("left", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors); groupByColors();}}>◀︎</button>
+                <button class="kbd" onclick={() => {point_colors = shiftPoints("down", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors); groupByColors();}}>▼</button>
+                <button class="kbd" onclick={() => {point_colors = shiftPoints("right", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors); groupByColors();}}>▶︎</button>
             </div>
         </div>
     {/if}
@@ -731,11 +665,11 @@ def run(protocol):
                     </span>
                 </span>
             </div>
-            <div class="{Object.keys(point_colors).length > 0 && grid_style !== 'QRCode' ? 'tooltip tooltip-top' : ''}" data-tip="Erase Grid to Edit" >
-                <input type="range" min="1" max="15" disabled={Object.keys(point_colors).length > 0 && grid_style !== 'QRCode'} class="range {Object.keys(point_colors).length > 0 && grid_style !== 'QRCode' ? 'cursor-not-allowed blur-sm' : ''}" step="0.1" bind:value={grid_spacing_mm} />
+            <div class="{Object.keys(point_colors).length > 0 && !(grid_style === 'QRCode' || grid_style === 'Standard') ? 'tooltip tooltip-top' : ''}" data-tip="Erase Grid to Edit" >
+                <input type="range" min="1" max="15" disabled={decideEnabled()} class="range {decideEnabled() ? 'cursor-not-allowed blur-sm' : ''}" step="0.1" bind:value={grid_spacing_mm} />
             </div>
         </div>
-        <!-- GRID MARGIN -->
+        <!-- POINT SIZE -->
         <div class="flex flex-col w-full gap-2 mx-auto">
             <div class="flex flex-row justify-between">
                 <span class="font-semibold">Size</span><span class="opacity-70">{point_size}µL</span>
@@ -800,7 +734,7 @@ def run(protocol):
         <input type="checkbox" id="section2" class="toggle-checkbox" />
         <label for="section1" class="collapse-title text-lg font-medium">How To Use The Data Points</label>
         <div class="collapse-content">
-            <p class="text-left text-sm">You should write a python script that iterates over each coordinate and dispenses the correct color of bacteria into that location using the <a class="underline" href="https://docs.opentrons.com/v2/">Opentrons API</a>. Remember to switch pipette tips between each color and aspirate liquid as needed!
+            <p class="text-left text-sm">You should write a Python script that iterates over each coordinate and dispenses the correct color of bacteria into that location using the <a class="underline" href="https://docs.opentrons.com/v2/">Opentrons API</a>. Remember to switch pipette tips between each color and aspirate liquid as needed!
             <br />
             <br />
             <a class="underline" href="https://docs.google.com/document/d/1VR1ngrwncH4kW80PHKZDGITu4GJbDa7pCE9yCs4YdUU">HTGAA 2025 Opentrons Lab Protocol</a>
@@ -814,7 +748,7 @@ def run(protocol):
         <label for="section3" class="collapse-title text-lg font-medium">Tips & Tricks for Lab Day</label>
         <div class="collapse-content text-sm">
             <ul class="list-disc pl-5 space-y-2">
-                <li><span class="font-semibold">1-2µL points with 3-5mm spacing as a starting point</span>: You can experiment with different settings, but be aware that you may get unexpected results.</li>
+                <li><span class="font-semibold">0.5-2µL points with 3-5mm spacing as a starting point</span>: You can experiment with different settings, but be aware that you may get unexpected results.</li>
                 <li><span class="font-semibold">Add an offset when necessary</span>: To adjust for varying amounts of agar, apply a vertical offset after loading `agar_plate` in your `run()` function using the `set_offset` method:<br />
                     <span class="italic pl-5">agar_plate.set_offset(x=0.00, y=0.00, z=11.0)</span>
                 </li>

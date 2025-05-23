@@ -5,7 +5,7 @@
     import { well_colors } from '$lib/constants.js';
 
     const filter_list = ['Approved', 'Media Lab', 'Off']
-    let filter = $state(-1);
+    let filter = $state(0);
     let record_load_iteration = $state(0);
     let loadingRecords = $state(true);
     let loadedRecords = $state([]);
@@ -43,8 +43,8 @@
     </a>
 <div class="mx-auto bg-base-100 p-4 rounded-box">
   <div class="tabs tabs-bordered">
-    <input type="radio" name="tab" class="tab" aria-label="Images" onclick={() => {filter = -1; record_load_iteration = 0; loadedRecords = []; loadGallery();}} checked />
-    <input type="radio" name="tab" class="tab" aria-label="2025" onclick={() => {filter = 0; record_load_iteration = 0; loadedRecords = []; loadGallery();}} />
+    <input type="radio" name="tab" class="tab" aria-label="Images" onclick={() => {filter = -1; record_load_iteration = 0; loadedRecords = []; loadGallery();}} />
+    <input type="radio" name="tab" class="tab" aria-label="2025" onclick={() => {filter = 0; record_load_iteration = 0; loadedRecords = []; loadGallery();}} checked />
     <input type="radio" name="tab" class="tab" aria-label="All" onclick={() => {filter = 2; record_load_iteration = 0; loadedRecords = []; loadGallery();}} />
   </div>
 </div>
