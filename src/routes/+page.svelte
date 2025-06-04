@@ -7,7 +7,7 @@
     import { well_colors, well_colors_abbr } from '$lib/constants.js';
     import { fade } from 'svelte/transition';
 
-    let grid_style = $state('Grid'); // 'Grid', 'Honeycomb', 'Radial', 'QRCode'
+    let grid_style = $state('Image'); // 'Grid', 'Honeycomb', 'Radial', 'QRCode', 'Image'
     let radius_mm = $state(39.9);
     let grid_spacing_mm = $state(3.3);
     let prev_grid_spacing_mm = $state(3.3);
@@ -33,6 +33,13 @@
 
     let QRCode_text = $state('');
     let AIMode = $state(false);
+    
+    let pixelatedSrc = $state(null);
+    let pixelationLevel = $state(35);
+    let canvasSize = $state(35);
+    let imageColors = $state([]);
+    let file = null;
+    let img = null;
 
     onMount(async () => {
         if (browser) {
@@ -45,28 +52,28 @@
             window.addEventListener('keydown', function(event) {
             switch (event.key) {
                 case 'ArrowUp':
-                    if (Object.keys(point_colors).length > 0 && grid_style === "Standard" || grid_style === "Grid") {
+                    if (Object.keys(point_colors).length > 0 && grid_style === "Standard" || grid_style === "Grid" || grid_style === "Image") {
                         event.preventDefault();
                         point_colors = shiftPoints("up", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors); 
                         groupByColors();
                     }
                     break;
                 case 'ArrowDown':
-                    if (Object.keys(point_colors).length > 0 && grid_style === "Standard" || grid_style === "Grid") {
+                    if (Object.keys(point_colors).length > 0 && grid_style === "Standard" || grid_style === "Grid" || grid_style === "Image") {
                         event.preventDefault();
                         point_colors = shiftPoints("down", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors); 
                         groupByColors();
                     }
                     break;
                 case 'ArrowLeft':
-                    if (Object.keys(point_colors).length > 0 && grid_style === "Standard" || grid_style === "Grid") {
+                    if (Object.keys(point_colors).length > 0 && grid_style === "Standard" || grid_style === "Grid" || grid_style === "Image") {
                         event.preventDefault();
                         point_colors = shiftPoints("left", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors); 
                         groupByColors();
                     }
                     break;
                 case 'ArrowRight':
-                    if (Object.keys(point_colors).length > 0 && grid_style === "Standard" || grid_style === "Grid") {
+                    if (Object.keys(point_colors).length > 0 && grid_style === "Standard" || grid_style === "Grid" || grid_style === "Image") {
                         event.preventDefault();
                         point_colors = shiftPoints("right", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors); 
                         groupByColors();
@@ -78,8 +85,8 @@
     });
     
     $effect(() => {
-        points = generateGrid(grid_style, radius_mm, grid_spacing_mm, QRCode_text);
-        
+        points = generateGrid(grid_style, radius_mm, grid_spacing_mm, QRCode_text, imageColors);
+        console.log(imageColors);
         tick().then(() => {
             if (grid_style === 'QRCode') {
                     const new_colors = {};
@@ -89,7 +96,7 @@
                     point_colors = new_colors;
                     groupByColors();
                 }
-            if (grid_style === 'Standard' || grid_style === "Grid") {
+            if (grid_style === 'Standard' || grid_style === "Grid" || grid_style === "Image") {
                 const current = grid_spacing_mm;
                 const previous = prev_grid_spacing_mm;
                 if (current !== previous && !loadingURLRecord) {
@@ -98,13 +105,23 @@
                     prev_grid_spacing_mm = current;
                 }
             }
+            if (grid_style === 'Image') {
+                const new_colors = {};
+                for (const point of points) {
+                    const c =  closestNamedColor(point.color, well_colors);
+                    if (c !== 'White')
+                        new_colors[`${point.x}, ${point.y}`] = c;
+                }
+                point_colors = new_colors;
+                groupByColors();
+            }
         });
     });
 
     function decideEnabled() {
         // Decide if slider should be blurred
         if (Object.keys(point_colors).length > 0) {
-            if (grid_style === 'QRCode' || grid_style === 'Standard' || grid_style === 'Grid') {
+            if (grid_style === 'QRCode' || grid_style === 'Standard' || grid_style === 'Grid' || grid_style === 'Image') {
                 return false;
             }
             return true;
@@ -118,6 +135,10 @@
         points_by_color = points_by_color_defaults;
         points = {};
         radius_mm = 40;
+        img = null;
+        file = null;
+        pixelatedSrc = null;
+        imageColors = [];
         points = generateGrid(grid_style, radius_mm, grid_spacing_mm);
     }
 
@@ -259,7 +280,7 @@ metadata = {
     'apiLevel': '2.20'
 }
 
-Z_VALUE = 12.0
+Z_VALUE = 12.1
 POINT_SIZE = ${point_size}
 red_points = ${formatPoints(points_by_color.red_points)}
 green_points = ${formatPoints(points_by_color.green_points)}
@@ -356,7 +377,7 @@ def run(protocol):
         pipette_20ul.pick_up_tip()
         current_color = color_names[i]
         max_aspirate = int(18 // POINT_SIZE) * POINT_SIZE
-        quantity_to_aspirate = min(len(point_list[i+1:])*POINT_SIZE, max_aspirate)
+        quantity_to_aspirate = min(len(point_list)*POINT_SIZE, max_aspirate)
         update_volume_remaining(current_color, quantity_to_aspirate)
         pipette_20ul.aspirate(quantity_to_aspirate, location_of_color(current_color))
 
@@ -413,6 +434,104 @@ def run(protocol):
         alertType = type;
 		setTimeout(() => { isToastVisible = false; }, 3000);
 	}
+
+    $effect(() => {
+        processImage(canvasSize, pixelationLevel);
+        if (pixelationLevel > canvasSize) { pixelationLevel = canvasSize; }
+    });
+    
+    function rgbToHex(r, g, b) {
+        return "#" + r.toString(16).padStart(2, "0") + g.toString(16).padStart(2, "0") + b.toString(16).padStart(2, "0");
+    }
+
+    function getPixelHexColors(ctx, width, height) {
+        const imageData = ctx.getImageData(0, 0, width, height);
+        const data = imageData.data;
+        const hexColors = [];
+
+        for (let y = 0; y < height; y++) {
+            const row = [];
+            for (let x = 0; x < width; x++) {
+                const index = (y * width + x) * 4;
+                const r = data[index];
+                const g = data[index + 1];
+                const b = data[index + 2];
+                const hex = rgbToHex(r, g, b);
+                row.push(hex);
+            }
+            hexColors.push(row);
+        }
+
+        return hexColors;
+    }
+
+    function hexToRgb(hex) {
+        const h = hex.replace('#', '');
+        const bigint = parseInt(h, 16);
+        return [
+            (bigint >> 16) & 255,
+            (bigint >> 8) & 255,
+            bigint & 255
+        ];
+    }
+
+    function colorDistance(rgb1, rgb2) {
+        const dr = rgb1[0] - rgb2[0];
+        const dg = rgb1[1] - rgb2[1];
+        const db = rgb1[2] - rgb2[2];
+        return dr * dr + dg * dg + db * db;
+    }
+
+    export function closestNamedColor(hex, well_colors) {
+        const target = hexToRgb(hex);
+        let minDist = Infinity;
+        let closest = null;
+
+        for (const [name, colorHex] of Object.entries(well_colors)) {
+            const dist = colorDistance(target, hexToRgb(colorHex));
+            if (dist < minDist) {
+                minDist = dist;
+                closest = name;
+            }
+        }
+
+        return closest;
+    }
+
+    function handleFileChange(event) {
+        file = event.target.files[0];
+        grid_spacing_mm = 1.8;
+        point_size = 0.25;
+        canvasSize = 35;
+        pixelationLevel = 35;
+        if (!file) return;
+        img = new Image();
+        img.onload = () => { processImage(canvasSize, pixelationLevel); };
+        img.src = URL.createObjectURL(file);
+    }
+
+    function processImage(canvasSize, pixelationLevel) {
+        if (!img) return;
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = canvasSize;
+        canvas.height = canvasSize;
+
+        const temp = document.createElement('canvas');
+        temp.width = pixelationLevel;
+        temp.height = pixelationLevel;
+        const tempCtx = temp.getContext('2d');
+
+        tempCtx.drawImage(img, 0, 0, temp.width, temp.height);
+
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(temp, 0, 0, temp.width, temp.height, 0, 0, canvasSize, canvasSize);
+
+        pixelatedSrc = canvas.toDataURL();
+
+        imageColors = getPixelHexColors(ctx, canvasSize, canvasSize);
+    }
+
 </script>
 
 <article class="prose w-full mx-auto mt-5">
@@ -590,7 +709,7 @@ def run(protocol):
             }}
         />
     {/each}
-    {#if Object.keys(point_colors).length > 0 && grid_style === "Standard"}
+    {#if Object.keys(point_colors).length > 0 && (grid_style === "Standard" || grid_style === "Image")}
         <div class="absolute bottom-0 right-0 scale-[60%] origin-bottom-right" transition:fade={{ duration: 200 }}>
             <div class="flex w-full justify-center">
                 <button class="kbd" onclick={() => {point_colors = shiftPoints("up", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors); groupByColors();}}>▲</button>
@@ -614,6 +733,32 @@ def run(protocol):
         </div>
     {/if}
 
+    {#if grid_style === 'Image'}
+        <div class="relative w-[50%] mx-auto">
+            <input type="file" accept="image/*" class="file-input file-input-xs" onclick={(e) => {e.target.value = null;}} onchange={(e) => {handleFileChange(e, pixelationLevel);}} />
+        </div>
+    {/if}
+
+    {#if pixelatedSrc}
+        <div class="w-full mx-auto">
+            <img src={pixelatedSrc} class="w-[50%] mx-auto outline rounded-lg" alt="Pixelated" />
+        </div>
+        <div class="flex flex-row justify-between gap-6">
+            <div class="flex flex-col w-full gap-2 mx-auto">
+                <div class="flex flex-row justify-between">
+                    <span class="font-semibold">Canvas</span><span class="opacity-70">{canvasSize}</span>
+                </div>
+                <input type="range" min="5" max="100" class="range" step="5" bind:value={canvasSize} />
+            </div>
+            <div class="flex flex-col w-full gap-2 mx-auto">
+                <div class="flex flex-row justify-between">
+                    <span class="font-semibold">Pixelation</span><span class="opacity-70">{pixelationLevel}</span>
+                </div>
+                <input type="range" min="5" max="{canvasSize}" class="range" step="5" bind:value={pixelationLevel} />
+            </div>
+        </div>
+    {/if}
+
     <div class="flex flex-row w-full gap-6">
         <!-- GRID TYPE -->
         <div class="flex flex-col w-[50%] gap-2 mx-auto">
@@ -627,11 +772,14 @@ def run(protocol):
                 <button class="btn btn-sm px-2.5 group {grid_style === 'Radial' ? 'btn-neutral' : 'btn-outline '} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed blur-sm' : ''}" type="button" onclick={() => {grid_style = "Radial"; grid_spacing_mm = 3.3; point_size = 1.5}} aria-label="Radial" disabled={Object.keys(point_colors).length > 0}>
                     <svg class="w-5 h-5" viewBox="0 0 48 48" id="a" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><defs><style>.f{fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;}</style></defs><circle id="b" class="f" cx="24" cy="24" r="8.5"></circle><circle id="c" class="f" cx="24" cy="24" r="11.8"></circle><circle id="d" class="f" cx="24" cy="24" r="18.25"></circle><circle id="e" class="f" cx="24" cy="24" r="21.5"></circle></g></svg>
                 </button>
-                <button class="btn btn-sm px-2.5 group {grid_style === 'Honeycomb' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed blur-sm' : ''}" type="button" onclick={() => {grid_style = "Honeycomb"; grid_spacing_mm = 3.3; point_size = 1.5}} aria-label="Honeycomb" disabled={Object.keys(point_colors).length > 0}>
+                <!-- <button class="btn btn-sm px-2.5 group {grid_style === 'Honeycomb' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed blur-sm' : ''}" type="button" onclick={() => {grid_style = "Honeycomb"; grid_spacing_mm = 3.3; point_size = 1.5}} aria-label="Honeycomb" disabled={Object.keys(point_colors).length > 0}>
                     <svg class="w-5 h-5" fill="currentColor" height="200px" width="200px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" xml:space="preserve"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <g> <path d="M508.203,197.698L435.2,149.03V59.731c0-2.995-1.579-5.769-4.139-7.313l-85.333-51.2c-2.705-1.621-6.084-1.621-8.789,0 L256,49.781L175.061,1.218c-2.705-1.621-6.084-1.621-8.789,0l-85.333,51.2c-2.56,1.544-4.139,4.318-4.139,7.313v89.3L3.797,197.7 C1.425,199.287,0,201.949,0,204.8v102.4c0,2.859,1.425,5.521,3.797,7.1L76.8,362.968v89.297c0,2.995,1.579,5.777,4.139,7.322 l85.333,51.2c1.357,0.811,2.876,1.212,4.395,1.212s3.038-0.401,4.395-1.212L256,462.223l80.939,48.563 c1.357,0.811,2.876,1.212,4.395,1.212c1.519,0,3.038-0.401,4.395-1.212l85.333-51.2c2.56-1.545,4.139-4.326,4.139-7.322v-89.298 l73.003-48.668c2.372-1.579,3.797-4.241,3.797-7.1v-102.4C512,201.948,510.575,199.285,508.203,197.698z M256,348.448 l-62.352-37.411l-14.448-8.669v-92.732l0.42-0.252L256,163.556l76.38,45.828l0.42,0.252v92.732l-14.448,8.669L256,348.448z M341.333,18.481l76.8,46.089v84.198l-76.8,46.08l-76.8-46.08V64.57L341.333,18.481z M93.867,64.57l76.8-46.089l76.8,46.089 v84.198l-76.8,46.08l-76.8-46.08V64.57z M17.067,209.365l68.502-45.668l57.07,34.242l19.495,11.699v92.73l-74.422,44.653 l-2.139,1.283l-68.506-45.67V209.365z M170.667,493.515l-76.8-46.08v-84.197l76.801-46.081l76.799,46.079v84.198L170.667,493.515z M341.333,493.515l-76.8-46.08v-84.198l76.8-46.08l76.8,46.08v84.198L341.333,493.515z M494.933,302.633l-68.506,45.67 l-76.066-45.638l-0.495-0.297v-92.732l76.561-45.935l68.506,45.67V302.633z"></path> </g> </g> </g></svg>
-                </button>
+                </button> -->
                 <button class="btn btn-sm px-2.5 group {grid_style === 'QRCode' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed blur-sm' : ''}" type="button" onclick={() => {grid_style = "QRCode"; grid_spacing_mm = 2; point_size = 0.25}} aria-label="QRCode" disabled={Object.keys(point_colors).length > 0}>
                     <svg class="w-5 h-5 opacity-75" fill="currentColor" height="200px" width="200px" viewBox="0 0 24 24" id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <defs> <style>.cls-1{fill:none;}.cls-2{clip-path:url(#clip-path);}</style> <clipPath id="clip-path"> <rect class="cls-1" x="-0.04" width="24" height="24"></rect> </clipPath> </defs> <title>qr-alt</title> <g class="cls-2"> <path d="M9.84,11.17H7.13a1.4,1.4,0,0,1-1.4-1.39V7.07a1.4,1.4,0,0,1,1.4-1.4H9.84a1.4,1.4,0,0,1,1.39,1.4V9.78A1.39,1.39,0,0,1,9.84,11.17ZM7.23,9.67h2.5V7.17H7.23Z"></path> <path d="M16.88,11.17H14.16a1.39,1.39,0,0,1-1.39-1.39V7.07a1.4,1.4,0,0,1,1.39-1.4h2.72a1.4,1.4,0,0,1,1.39,1.4V9.78A1.39,1.39,0,0,1,16.88,11.17Zm-2.61-1.5h2.5V7.17h-2.5Z"></path> <path d="M9.84,18.33H7.13a1.4,1.4,0,0,1-1.4-1.4V14.22a1.4,1.4,0,0,1,1.4-1.39H9.84a1.39,1.39,0,0,1,1.39,1.39v2.71A1.4,1.4,0,0,1,9.84,18.33Zm-2.61-1.5h2.5v-2.5H7.23Z"></path> <path d="M16.88,18.44H14.16a1.39,1.39,0,0,1-1.39-1.39V14.33a1.39,1.39,0,0,1,1.39-1.39h2.72a1.4,1.4,0,0,1,1.39,1.39v2.72A1.39,1.39,0,0,1,16.88,18.44Zm-2.61-1.5h2.5v-2.5h-2.5Z"></path> <path d="M3,8.25a.76.76,0,0,1-.75-.75V3A.76.76,0,0,1,3,2.25H7.5a.75.75,0,0,1,0,1.5H3.75V7.5A.76.76,0,0,1,3,8.25Z"></path> <path d="M21,8.25a.76.76,0,0,1-.75-.75V3.75H16.5a.75.75,0,0,1,0-1.5H21a.76.76,0,0,1,.75.75V7.5A.76.76,0,0,1,21,8.25Z"></path> <path d="M21,21.75H16.5a.75.75,0,0,1,0-1.5h3.75V16.5a.75.75,0,0,1,1.5,0V21A.76.76,0,0,1,21,21.75Z"></path> <path d="M7.5,21.75H3A.76.76,0,0,1,2.25,21V16.5a.75.75,0,0,1,1.5,0v3.75H7.5a.75.75,0,0,1,0,1.5Z"></path> </g> </g></svg>
+                </button>
+                <button class="btn btn-sm px-2.5 group {grid_style === 'Image' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed blur-sm' : ''}" type="button" onclick={() => {grid_style = "Image";}} aria-label="QRCode" disabled={Object.keys(point_colors).length > 0}>
+                    <svg class="w-5 h-5 opacity-75" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M4 10V6C4 4.89543 4.89543 4 6 4H12M4.02693 18.329C4.18385 19.277 5.0075 20 6 20H18C19.1046 20 20 19.1046 20 18V14.1901M4.02693 18.329C4.00922 18.222 4 18.1121 4 18V15M4.02693 18.329L7.84762 14.5083C8.52765 13.9133 9.52219 13.8481 10.274 14.3494L10.7832 14.6888C11.5078 15.1719 12.4619 15.1305 13.142 14.5864L15.7901 12.4679C16.4651 11.9279 17.4053 11.8855 18.1228 12.3484C18.2023 12.3997 18.2731 12.4632 18.34 12.5301L20 14.1901M20 14.1901V6C20 4.89543 19.1046 4 18 4H17M11 9C11 10.1046 10.1046 11 9 11C7.89543 11 7 10.1046 7 9C7 7.89543 7.89543 7 9 7C10.1046 7 11 7.89543 11 9Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
                 </button>
             </div>
         </div>
@@ -666,7 +814,7 @@ def run(protocol):
                 </span>
             </div>
             <div class="{Object.keys(point_colors).length > 0 && !(grid_style === 'QRCode' || grid_style === 'Standard') ? 'tooltip tooltip-top' : ''}" data-tip="Erase Grid to Edit" >
-                <input type="range" min="1" max="15" disabled={decideEnabled()} class="range {decideEnabled() ? 'cursor-not-allowed blur-sm' : ''}" step="0.1" bind:value={grid_spacing_mm} />
+                <input type="range" min="1" max="10" disabled={decideEnabled()} class="range {decideEnabled() ? 'cursor-not-allowed blur-sm' : ''}" step="0.1" bind:value={grid_spacing_mm} />
             </div>
         </div>
         <!-- POINT SIZE -->

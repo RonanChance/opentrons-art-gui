@@ -1,10 +1,11 @@
 import QRCode from 'qrcode';
 
-export function generateGrid(grid_style, radius_mm, grid_spacing_mm, QRCode_text) {
+export function generateGrid(grid_style, radius_mm, grid_spacing_mm, QRCode_text, imageColors) {
     if (grid_style === 'Grid' || grid_style === 'Standard') return grid(radius_mm, grid_spacing_mm);
     else if (grid_style === 'Radial') return radial(radius_mm, grid_spacing_mm);
     else if (grid_style === 'Honeycomb') return honeycomb(radius_mm, grid_spacing_mm);
     else if (grid_style === 'QRCode') return qrcode(radius_mm, grid_spacing_mm, QRCode_text);
+    else if (grid_style === 'Image') return image(radius_mm, grid_spacing_mm, imageColors);
 }
 
 function grid(radius_mm, grid_spacing_mm) {
@@ -91,35 +92,56 @@ function honeycomb(radius_mm, grid_spacing_mm) {
 
 function qrcode(radius_mm, grid_spacing_mm, QRCode_text) {
     let points = [];
-    if (QRCode_text) {
-        console.log('theres text')
-        const qr = QRCode.create(QRCode_text, { errorCorrectionLevel: 'H' });
+    if (!QRCode_text) return points;
 
-        const modules = qr.modules;
-        const size = modules.size;
+    const qr = QRCode.create(QRCode_text, { errorCorrectionLevel: 'H' });
 
-        const matrix = [];
-        for (let y = 0; y < size; y++) {
-            const row = [];
-            for (let x = 0; x < size; x++) {
-                row.push(modules.get(x, y));
-            }
-            matrix.push(row);
+    const modules = qr.modules;
+    const size = modules.size;
+
+    const matrix = [];
+    for (let y = 0; y < size; y++) {
+        const row = [];
+        for (let x = 0; x < size; x++) {
+            row.push(modules.get(x, y));
         }
+        matrix.push(row);
+    }
 
-        const half = (size - 1) / 2;
-        for (let y = 0; y < size; y++) {
-            for (let x = 0; x < size; x++) {
-                if (!matrix[y][x]) continue;
+    const half = (size - 1) / 2;
+    for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+            if (!matrix[y][x]) continue;
 
-                const xPos = (x - half) * grid_spacing_mm;
-                const yPos = (y - half) * grid_spacing_mm;
+            const xPos = (x - half) * grid_spacing_mm;
+            const yPos = (half - y) * grid_spacing_mm;
 
-                if (Math.sqrt(xPos * xPos + yPos * yPos) <= radius_mm) {
-                    points.push({ x: xPos.toFixed(3), y: yPos.toFixed(3) });
-                }
+            if (Math.sqrt(xPos * xPos + yPos * yPos) <= radius_mm) {
+                points.push({ x: xPos.toFixed(3), y: yPos.toFixed(3) });
             }
         }
-    } 
+    }
+    return points;
+}
+
+function image(radius_mm, grid_spacing_mm, imageColors) {
+    const points = [];
+    const size = imageColors.length;
+    if (size === 0) return points;
+
+    const half = (size - 1) / 2;
+
+    for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+            const color = imageColors[y][x];
+            if (!color) continue;
+            const xPos = (x - half) * grid_spacing_mm;
+            const yPos = (half - y) * grid_spacing_mm;
+            if (Math.sqrt(xPos * xPos + yPos * yPos) <= radius_mm) {
+                points.push({ x: xPos.toFixed(3), y: yPos.toFixed(3), color: color });
+            }
+        }
+    }
+
     return points;
 }
