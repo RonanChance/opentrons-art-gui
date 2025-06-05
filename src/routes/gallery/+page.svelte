@@ -53,6 +53,16 @@
 </div>
 
 {#if filter === -1}
+    <div class="flex flex-col max-w-[99%] mx-auto gap-3">
+        <span class="font-semibold text-center underline">Lab Video (2025)</span>
+        <iframe
+        class="mx-auto w-full md:max-w-[500px] lg:max-w-[750px] xl:max-w-[900px] rounded-lg aspect-video"
+        src={`https://drive.google.com/file/d/1MHXiPh85IKux6wNkvq7fSiePwY7eT-WN/preview`}
+        title="Opentrons"
+        allowfullscreen
+        ></iframe>
+    </div>
+
     <div class="flex flex-col max-w-[99%] mx-auto mt-3 gap-3">
         <span class="font-semibold text-center underline">Student Designs (2025)</span>
         <img src={`/2025_images/2025_Student_Grid_11x6.png`} alt={`question mark illustration`} class="mx-auto w-full md:max-w-[500px] lg:max-w-[750px] xl:max-w-[900px] rounded-lg"/>

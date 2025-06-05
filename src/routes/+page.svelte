@@ -8,7 +8,7 @@
     import { well_colors, well_colors_abbr } from '$lib/constants.js';
     import { fade } from 'svelte/transition';
 
-    let grid_style = $state('Grid'); // 'Grid', 'Honeycomb', 'Radial', 'QRCode', 'Image'
+    let grid_style = $state('Standard'); // 'Standard', 'Honeycomb', 'Radial', 'QRCode', 'Image'
     let radius_mm = $state(39.9);
     let grid_spacing_mm = $state(3.3);
     let prev_grid_spacing_mm = $state(3.3);
