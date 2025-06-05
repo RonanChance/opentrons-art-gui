@@ -1,13 +1,14 @@
 <script>
     import { generateGrid } from './generateGrid.js';
     import { shiftPoints } from './pointTransformations.js';
+    import { getPixelHexColors, hexToRgb, rgbToHex, colorDistance, closestNamedColor } from './imageProcessing.js';
     import { onMount, tick } from 'svelte';
     import { browser } from '$app/environment';
     import { page } from '$app/stores';
     import { well_colors, well_colors_abbr } from '$lib/constants.js';
     import { fade } from 'svelte/transition';
 
-    let grid_style = $state('Image'); // 'Grid', 'Honeycomb', 'Radial', 'QRCode', 'Image'
+    let grid_style = $state('Grid'); // 'Grid', 'Honeycomb', 'Radial', 'QRCode', 'Image'
     let radius_mm = $state(39.9);
     let grid_spacing_mm = $state(3.3);
     let prev_grid_spacing_mm = $state(3.3);
@@ -50,35 +51,14 @@
             AIMode = $page.url.searchParams.get('ai');
 
             window.addEventListener('keydown', function(event) {
-            switch (event.key) {
-                case 'ArrowUp':
-                    if (Object.keys(point_colors).length > 0 && grid_style === "Standard" || grid_style === "Grid" || grid_style === "Image") {
+                if ( Object.keys(point_colors).length > 0 && ['Standard', 'Grid', 'Image'].includes(grid_style)) {
+                    const directions = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right'};
+                    const direction = directions[event.key];
+                    if (direction) {
                         event.preventDefault();
-                        point_colors = shiftPoints("up", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors); 
+                        point_colors = shiftPoints(direction, grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors);
                         groupByColors();
                     }
-                    break;
-                case 'ArrowDown':
-                    if (Object.keys(point_colors).length > 0 && grid_style === "Standard" || grid_style === "Grid" || grid_style === "Image") {
-                        event.preventDefault();
-                        point_colors = shiftPoints("down", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors); 
-                        groupByColors();
-                    }
-                    break;
-                case 'ArrowLeft':
-                    if (Object.keys(point_colors).length > 0 && grid_style === "Standard" || grid_style === "Grid" || grid_style === "Image") {
-                        event.preventDefault();
-                        point_colors = shiftPoints("left", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors); 
-                        groupByColors();
-                    }
-                    break;
-                case 'ArrowRight':
-                    if (Object.keys(point_colors).length > 0 && grid_style === "Standard" || grid_style === "Grid" || grid_style === "Image") {
-                        event.preventDefault();
-                        point_colors = shiftPoints("right", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors); 
-                        groupByColors();
-                    }
-                    break;
                 }
             });
         }
@@ -96,7 +76,7 @@
                     point_colors = new_colors;
                     groupByColors();
                 }
-            if (grid_style === 'Standard' || grid_style === "Grid" || grid_style === "Image") {
+            if (['Standard', 'Grid', 'Image'].includes(grid_style)) {
                 const current = grid_spacing_mm;
                 const previous = prev_grid_spacing_mm;
                 if (current !== previous && !loadingURLRecord) {
@@ -118,13 +98,10 @@
         });
     });
 
-    function decideEnabled() {
+    function sliderEnabled() {
         // Decide if slider should be blurred
         if (Object.keys(point_colors).length > 0) {
-            if (grid_style === 'QRCode' || grid_style === 'Standard' || grid_style === 'Grid' || grid_style === 'Image') {
-                return false;
-            }
-            return true;
+            return !['Standard', 'Grid', 'QRCode', 'Image'].includes(grid_style)
         }
         return false;
     }
@@ -439,64 +416,6 @@ def run(protocol):
         processImage(canvasSize, pixelationLevel);
         if (pixelationLevel > canvasSize) { pixelationLevel = canvasSize; }
     });
-    
-    function rgbToHex(r, g, b) {
-        return "#" + r.toString(16).padStart(2, "0") + g.toString(16).padStart(2, "0") + b.toString(16).padStart(2, "0");
-    }
-
-    function getPixelHexColors(ctx, width, height) {
-        const imageData = ctx.getImageData(0, 0, width, height);
-        const data = imageData.data;
-        const hexColors = [];
-
-        for (let y = 0; y < height; y++) {
-            const row = [];
-            for (let x = 0; x < width; x++) {
-                const index = (y * width + x) * 4;
-                const r = data[index];
-                const g = data[index + 1];
-                const b = data[index + 2];
-                const hex = rgbToHex(r, g, b);
-                row.push(hex);
-            }
-            hexColors.push(row);
-        }
-
-        return hexColors;
-    }
-
-    function hexToRgb(hex) {
-        const h = hex.replace('#', '');
-        const bigint = parseInt(h, 16);
-        return [
-            (bigint >> 16) & 255,
-            (bigint >> 8) & 255,
-            bigint & 255
-        ];
-    }
-
-    function colorDistance(rgb1, rgb2) {
-        const dr = rgb1[0] - rgb2[0];
-        const dg = rgb1[1] - rgb2[1];
-        const db = rgb1[2] - rgb2[2];
-        return dr * dr + dg * dg + db * db;
-    }
-
-    export function closestNamedColor(hex, well_colors) {
-        const target = hexToRgb(hex);
-        let minDist = Infinity;
-        let closest = null;
-
-        for (const [name, colorHex] of Object.entries(well_colors)) {
-            const dist = colorDistance(target, hexToRgb(colorHex));
-            if (dist < minDist) {
-                minDist = dist;
-                closest = name;
-            }
-        }
-
-        return closest;
-    }
 
     function handleFileChange(event) {
         file = event.target.files[0];
@@ -746,13 +665,13 @@ def run(protocol):
         <div class="flex flex-row justify-between gap-6">
             <div class="flex flex-col w-full gap-2 mx-auto">
                 <div class="flex flex-row justify-between">
-                    <span class="font-semibold">Canvas</span><span class="opacity-70">{canvasSize}</span>
+                    <span class="font-semibold">Canvas</span><span class="opacity-70">{canvasSize}x{canvasSize}px</span>
                 </div>
                 <input type="range" min="5" max="100" class="range" step="5" bind:value={canvasSize} />
             </div>
             <div class="flex flex-col w-full gap-2 mx-auto">
                 <div class="flex flex-row justify-between">
-                    <span class="font-semibold">Pixelation</span><span class="opacity-70">{pixelationLevel}</span>
+                    <span class="font-semibold">Resolution</span><span class="opacity-70">{pixelationLevel}px</span>
                 </div>
                 <input type="range" min="5" max="{canvasSize}" class="range" step="5" bind:value={pixelationLevel} />
             </div>
@@ -814,7 +733,7 @@ def run(protocol):
                 </span>
             </div>
             <div class="{Object.keys(point_colors).length > 0 && !(grid_style === 'QRCode' || grid_style === 'Standard') ? 'tooltip tooltip-top' : ''}" data-tip="Erase Grid to Edit" >
-                <input type="range" min="1" max="10" disabled={decideEnabled()} class="range {decideEnabled() ? 'cursor-not-allowed blur-sm' : ''}" step="0.1" bind:value={grid_spacing_mm} />
+                <input type="range" min="1" max="10" disabled={sliderEnabled()} class="range {sliderEnabled() ? 'cursor-not-allowed blur-sm' : ''}" step="0.1" bind:value={grid_spacing_mm} />
             </div>
         </div>
         <!-- POINT SIZE -->
