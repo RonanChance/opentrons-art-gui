@@ -1,43 +1,46 @@
 <script>
     import { generateGrid } from './generateGrid.js';
-    import { shiftPoints } from './pointTransformations.js';
-    import { getPixelHexColors, hexToRgb, rgbToHex, colorDistance, closestNamedColor } from './imageProcessing.js';
+    import { shiftPoints, roundPoint } from './pointTransformations.js';
+    import { getPixelHexColors, hexToRgb, rgbToHex, closestNamedColor } from './imageProcessing.js';
     import { onMount, tick } from 'svelte';
     import { browser } from '$app/environment';
     import { page } from '$app/stores';
-    import { well_colors, well_colors_abbr } from '$lib/constants.js';
+    import { current_well_colors_import, well_colors, old_well_colors } from '$lib/proteins.js';
     import { fade } from 'svelte/transition';
 
+    // LOCAL COPY
+    let current_well_colors = $state({...current_well_colors_import})
+
+    // GRID DATA
     let grid_style = $state('Standard'); // 'Standard', 'Honeycomb', 'Radial', 'QRCode', 'Image'
     let radius_mm = $state(39.9);
     let grid_spacing_mm = $state(3.3);
     let prev_grid_spacing_mm = $state(3.3);
     let point_size = $state(1);
-    
     let points = $state({});
     let point_colors = $state({}); // Typical workflow: edit point_colors then call groupByColors()
-    const points_by_color_defaults = {"red_points": [], "green_points": [], "orange_points": []};
-    let points_by_color = $state(points_by_color_defaults);
+    let points_by_color = $state({});
 
+    // USER INTERFACE
     let show_outlines = $state(true);
     let current_point = $state({});
     let isDrawing;
     let loadingURLRecord = $state(false);
     let loadingAIRecord = $state(false);
     let uploading = $state(false);
+    let current_color = $state('sfGFP');
+    let contentToCopy = $state();
+    let showBacteriaModal = $state(false);
 
+    // DESIGN METADATA
     let title = $state('');
     let author = $state('');
-
-    let current_color = $state('Red');
-    let contentToCopy = $state();
-
     let QRCode_text = $state('');
-    let AIMode = $state(false);
     
+    // IMAGE DATA
     let pixelatedSrc = $state(null);
-    let pixelationLevel = $state(35);
-    let canvasSize = $state(35);
+    let pixelationLevel = $state(40);
+    let canvasSize = $state(40);
     let imageColors = $state([]);
     let file = null;
     let img = null;
@@ -48,7 +51,6 @@
             if (loadRecordId) {
                 loadRecord(loadRecordId);
             }
-            AIMode = $page.url.searchParams.get('ai');
 
             window.addEventListener('keydown', function(event) {
                 if ( Object.keys(point_colors).length > 0 && ['Standard', 'Grid', 'Image'].includes(grid_style)) {
@@ -88,8 +90,8 @@
             if (grid_style === 'Image') {
                 const new_colors = {};
                 for (const point of points) {
-                    const c =  closestNamedColor(point.color, well_colors);
-                    if (c !== 'White')
+                    const c =  closestNamedColor(point.color, current_well_colors, well_colors);
+                    if (c !== 'White' && c !== 'Erase')
                         new_colors[`${point.x}, ${point.y}`] = c;
                 }
                 point_colors = new_colors;
@@ -98,8 +100,8 @@
         });
     });
 
-    function sliderEnabled() {
-        // Decide if slider should be blurred
+    // Toggle blur on sliders
+    function blurSlider() {
         if (Object.keys(point_colors).length > 0) {
             return !['Standard', 'Grid', 'QRCode', 'Image'].includes(grid_style)
         }
@@ -109,7 +111,7 @@
     function resetValues() {
         point_colors = {};
         QRCode_text = '';
-        points_by_color = points_by_color_defaults;
+        points_by_color = {};
         points = {};
         radius_mm = 40;
         img = null;
@@ -180,37 +182,34 @@
     }
     
     function groupByColors() {
-        // Convert object into an array
         const entries = Object.entries(point_colors);
 
-        function processPoints(colorName) {
-            return entries
-                .filter(([, color]) => color === colorName)
-                .map(([point, color]) => ({
-                    point: point.split(',').map(roundPoint), 
+        const uniqueColors = new Set(entries.map(([, color]) => color));
+
+        points_by_color = {};
+        for (const color of uniqueColors) {
+            const key = `${color.toLowerCase()}_points`;
+            points_by_color[key] = entries
+                .filter(([, c]) => c === color)
+                .map(([point]) => ({
+                    point: point.split(',').map(roundPoint),
                     color
                 }))
                 .sort((a, b) => {
-                    // Sort by Y descending, then X ascending
                     const [ax, ay] = a.point;
                     const [bx, by] = b.point;
                     return by - ay || ax - bx;
                 });
         }
-        points_by_color = {
-            red_points: processPoints("Red"),
-            green_points: processPoints("Green"),
-            orange_points: processPoints("Orange"),
-        };
     }
 
-    async function swapColors() {
-        const colorCycle = { "Red": "Green", "Green": "Orange", "Orange": "Red" };
-        Object.entries(point_colors).forEach(([key, color]) => {
-            point_colors[key] = colorCycle[color] || "Red";
-        });
-        groupByColors();
-    }
+    // async function swapColors() {
+    //     const colorCycle = { "Red": "Green", "Green": "Orange", "Orange": "Red" };
+    //     Object.entries(point_colors).forEach(([key, color]) => {
+    //         point_colors[key] = colorCycle[color] || "Red";
+    //     });
+    //     groupByColors();
+    // }
 
     async function copyPointsToClipboard() {
         try {
@@ -248,6 +247,30 @@
     }
 
     async function downloadPythonFile() {
+        // ALL INDIVIDUAL POINTS LISTS
+        let python_individual_points_lists = Object.entries(points_by_color).map(([color, points]) => `${color} = ${formatPoints(points)}`).join('\n');
+        
+        // MAPPING OF POINTS TO COLOR NAMES
+        let python_point_name_pairing = `point_name_pairing = [` + Object.entries(points_by_color).map(([color]) => { let nameWithoutSuffix = color.replace(/_points$/, ''); return `("${nameWithoutSuffix}", ${color})`;}).join(',') +`]`;
+
+        // WELL COLORS
+        const maxWells = 12;
+        const prefix = 'A';
+        let well_colors_python_dictionary = Object.entries(points_by_color).slice(0, maxWells).map(([color], i) => {
+            const well = `${prefix}${i + 1}`;
+            const nameWithoutSuffix = color.replace(/_points$/, '');
+            return `    '${well}': '${nameWithoutSuffix}'`;
+        });
+        const python_well_colors = `well_colors = {\n${well_colors_python_dictionary.join(',\n')}\n}`;
+
+        // VOLUME TRACKING
+        let volumeUsedEntries = Object.entries(points_by_color).map(([color]) => {
+            const nameWithoutSuffix = color.replace(/_points$/, '');
+            return `    '${nameWithoutSuffix}': 0`;
+        });
+        const volume_used = `volume_used = {\n${volumeUsedEntries.join(',\n')}\n}`;
+
+        
         let scriptToCopy = `from opentrons import types
 
 metadata = {
@@ -259,9 +282,10 @@ metadata = {
 
 Z_VALUE = 12.1
 POINT_SIZE = ${point_size}
-red_points = ${formatPoints(points_by_color.red_points)}
-green_points = ${formatPoints(points_by_color.green_points)}
-orange_points = ${formatPoints(points_by_color.orange_points)}
+
+${python_individual_points_lists}
+
+${python_point_name_pairing}
 
 ###   Robot deck setup constants
 TIP_RACK_DECK_SLOT = 9
@@ -269,28 +293,23 @@ COLORS_DECK_SLOT = 6
 AGAR_DECK_SLOT = 5
 PIPETTE_STARTING_TIP_WELL = 'A1'
 
-well_colors = {
-    'A1' : 'Red',
-    'B1' : 'Green',
-    'C1' : 'Orange',
-}
+${python_well_colors}
 
-volume_used = {
-    'Red': 0,
-    'Green': 0,
-    'Orange': 0
-}
+${volume_used}
 
 def update_volume_remaining(current_color, quantity_to_aspirate):
+    rows = string.ascii_uppercase
     for well, color in list(well_colors.items()):
         if color == current_color:
             if (volume_used[current_color] + quantity_to_aspirate) > 250:
-                # Move to next well
+                # Move to next well horizontally by advancing row letter, keeping column number
                 row = well[0]
-                col = int(well[1:]) + 1
-                next_well = f"{row}{col}"
-
-                # remove old and add new location
+                col = well[1:]
+                
+                # Find next row letter
+                next_row = rows[rows.index(row) + 1]
+                next_well = f"{next_row}{col}"
+                
                 del well_colors[well]
                 well_colors[next_well] = current_color
                 volume_used[current_color] = quantity_to_aspirate
@@ -344,15 +363,13 @@ def run(protocol):
         raise ValueError(f"No well found with color {color_string}")
 
     ### Create Pattern
-    color_names = ["Red", "Green", "Orange"]
-    for i, point_list in enumerate([red_points, green_points, orange_points]):
+    for current_color, (name, point_list) in enumerate(point_name_pairing):
         # Skip the rest of the loop if the list is empty
         if not point_list:
             continue
 
         # Get the tip for this run, set the bacteria color, and the aspirate bacteria of choice
         pipette_20ul.pick_up_tip()
-        current_color = color_names[i]
         max_aspirate = int(18 // POINT_SIZE) * POINT_SIZE
         quantity_to_aspirate = min(len(point_list)*POINT_SIZE, max_aspirate)
         update_volume_remaining(current_color, quantity_to_aspirate)
@@ -398,10 +415,6 @@ def run(protocol):
         URL.revokeObjectURL(url); // Clean up the URL object
     }
 
-    function roundPoint(p) {
-        return Math.round(parseFloat(p) * 1000) / 1000;
-    }
-
     let isToastVisible = $state(false);
     let alertMessage = $state('');
     let alertType = $state('');
@@ -419,10 +432,10 @@ def run(protocol):
 
     function handleFileChange(event) {
         file = event.target.files[0];
-        grid_spacing_mm = 1.8;
+        grid_spacing_mm = 1.6;
         point_size = 0.25;
-        canvasSize = 35;
-        pixelationLevel = 35;
+        canvasSize = 40;
+        pixelationLevel = 40;
         if (!file) return;
         img = new Image();
         img.onload = () => { processImage(canvasSize, pixelationLevel); };
@@ -450,7 +463,6 @@ def run(protocol):
 
         imageColors = getPixelHexColors(ctx, canvasSize, canvasSize);
     }
-
 </script>
 
 <article class="prose w-full mx-auto mt-5">
@@ -588,8 +600,8 @@ def run(protocol):
             style="
                 left: calc(50% + ({x / (radius_mm + 4)} * 50%) - {point_size*2}px); 
                 top: calc(50% - ({y / (radius_mm + 4)} * 50%) - {point_size*2}px);
-                background-color: {well_colors[point_colors[`${x}, ${y}`]] || 'transparent'};
-                box-shadow: {point_colors[`${x}, ${y}`] ? `0 0 3px 2px ${well_colors[point_colors[`${x}, ${y}`]]}` : 'none'}
+                background-color: {well_colors[point_colors[`${x}, ${y}`]] || old_well_colors[point_colors[`${x}, ${y}`]] || 'transparent'};
+                box-shadow: {point_colors[`${x}, ${y}`] ? `0 0 3px 2px ${ well_colors[point_colors[`${x}, ${y}`]] || old_well_colors[point_colors[`${x}, ${y}`]] || 'transparent'}` : 'none'};
                 "
             draggable="false"
             onmouseover={() => {
@@ -705,16 +717,67 @@ def run(protocol):
         <!-- BACTERIA COLOR & CONTROLS -->
         <div class="flex flex-col w-[50%] gap-2 mx-auto">
             <div class="flex flex-row justify-between">
-                <span class="font-semibold">Bacteria</span><span class="opacity-70">{current_color}</span>
+                <span class="font-semibold">Bacteria</span>
+                {#if current_color !== 'Erase'}
+                    <a class="opacity-70 underline" href="https://www.fpbase.org/protein/{current_color.toLowerCase()}" target="_blank" rel="noopener noreferrer">{current_color}</a>
+                {:else}
+                    <span class="opacity-70">{current_color}</span>
+                {/if}
             </div>
-            <div class="flex flex-row justify-around my-auto">
-                <input type="radio" class="radio checked:bg-red-400 border-red-400" value="Red" id="radio-red" bind:group={current_color} />
-                <input type="radio" class="radio checked:bg-green-400 border-green-400" value="Green" id="radio-green" bind:group={current_color} />
-                <input type="radio" class="radio checked:bg-orange-400 border-orange-400" value="Orange" id="radio-orange" bind:group={current_color} />
-                <input type="radio" class="radio checked:bg-gray-100" value="Erase" id="radio-erase" bind:group={current_color} />
+            <div class="grid grid-cols-6 gap-2 place-items-center my-auto">
+                {#each Object.entries(current_well_colors).filter(([name, val]) => name !== 'White' && val) as [name]}
+                    <div role="radio" tabindex="0" aria-checked={current_color === name} onclick={() => current_color = name} onkeydown={(e) => e.key === 'Enter' && (current_color = name)}
+                        class="w-[24px] h-[24px] rounded-full cursor-pointer border-[1px] transition outline-none focus:ring-2 ring-offset-2 flex items-center justify-center"
+                        style="background-color: #fffff; border-color: {well_colors[name]}; box-shadow: {current_color === name ? '0 0 0 0px #000 inset' : 'none'};"
+                        title={name}
+                    >
+                        <div
+                            class="w-[14px] h-[14px] rounded-full block"
+                            style="background-color: {current_color === name ? well_colors[name] : '000'};"
+                        ></div>
+                    </div>
+                {/each}
+                <div role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter'} onclick={() => showBacteriaModal = !showBacteriaModal}
+                    class="opacity-40 w-[24px] h-[24px] rounded-full cursor-pointer border-[1px] transition outline-none focus:ring-2 ring-offset-2 flex items-center justify-center"
+                    style="background-color: #fffff; border-color: #000; box-shadow: {'none'};">
+                    <div class="w-[14px] h-[14px] rounded-full block" style="background-color: '000';">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M13 3C13 2.44772 12.5523 2 12 2C11.4477 2 11 2.44772 11 3V11H3C2.44772 11 2 11.4477 2 12C2 12.5523 2.44772 13 3 13H11V21C11 21.5523 11.4477 22 12 22C12.5523 22 13 21.5523 13 21V13H21C21.5523 13 22 12.5523 22 12C22 11.4477 21.5523 11 21 11H13V3Z" fill="#0F0F0F"></path> </g></svg>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+
+    {#if showBacteriaModal}
+        <div class="relative overflow-y-none bg-white border rounded shadow z-10 p-2">
+            <button class="absolute -top-2 -left-2 text-gray-500 hover:text-black text-sm bg-neutral rounded-full px-1 py-1" aria-label="close" onclick={() => showBacteriaModal = false}>
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M20.7457 3.32851C20.3552 2.93798 19.722 2.93798 19.3315 3.32851L12.0371 10.6229L4.74275 3.32851C4.35223 2.93798 3.71906 2.93798 3.32854 3.32851C2.93801 3.71903 2.93801 4.3522 3.32854 4.74272L10.6229 12.0371L3.32856 19.3314C2.93803 19.722 2.93803 20.3551 3.32856 20.7457C3.71908 21.1362 4.35225 21.1362 4.74277 20.7457L12.0371 13.4513L19.3315 20.7457C19.722 21.1362 20.3552 21.1362 20.7457 20.7457C21.1362 20.3551 21.1362 19.722 20.7457 19.3315L13.4513 12.0371L20.7457 4.74272C21.1362 4.3522 21.1362 3.71903 20.7457 3.32851Z" fill="#fff"></path> </g></svg>
+            </button>
+            <div class="flex justify-around items-center pb-4 pt-2 ">
+                <div class="flex italic">Fluorescent Proteins</div>
+                <div class="">
+                    <div class="join">
+                        <button class="btn join-item rounded-l btn-xs hover:bg-neutral hover:text-white" onclick={() => {current_well_colors = {...current_well_colors_import}; if (grid_style === 'Image') {processImage(canvasSize, pixelationLevel);}}}>Default</button>
+                        <button class="btn join-itembtn btn-xs hover:bg-neutral hover:text-white" onclick={() => {Object.keys(well_colors).forEach(key => current_well_colors[key] = true); if (grid_style === 'Image') {processImage(canvasSize, pixelationLevel);}}}>All On</button>
+                        <button class="btn join-item rounded-r btn-xs hover:bg-neutral hover:text-white" onclick={() => {Object.keys(well_colors).forEach(key => {if (key !== 'White' && key !== 'Erase') { current_well_colors[key] = false;}}); if (grid_style === 'Image') {processImage(canvasSize, pixelationLevel);}}}>All Off</button>
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                {#each Object.entries(well_colors).filter(([name, val]) => name !== 'White' && name !== 'Erase') as [key, value], i}
+                    <label class="flex items-center justify-between px-2 py-1 border-b border-5 text-sm">
+                        <span>{i+1}. {key}</span>
+                        <input
+                            type="checkbox"
+                            bind:checked={current_well_colors[key]}
+                            onchange={() => {current_well_colors = { ...current_well_colors }; if (grid_style === 'Image') {processImage(canvasSize, pixelationLevel);}}}
+                            class="checkbox checkbox-sm"
+                        />
+                    </label>
+                {/each}
+            </div>
+        </div>
+    {/if}
 
     <div class="flex flex-row w-full gap-6">
         <!-- GRID SPACING -->
@@ -733,7 +796,7 @@ def run(protocol):
                 </span>
             </div>
             <div class="{Object.keys(point_colors).length > 0 && !(grid_style === 'QRCode' || grid_style === 'Standard') ? 'tooltip tooltip-top' : ''}" data-tip="Erase Grid to Edit" >
-                <input type="range" min="1" max="10" disabled={sliderEnabled()} class="range {sliderEnabled() ? 'cursor-not-allowed blur-sm' : ''}" step="0.1" bind:value={grid_spacing_mm} />
+                <input type="range" min="1" max="10" disabled={blurSlider()} class="range {blurSlider() ? 'cursor-not-allowed blur-sm' : ''}" step="0.1" bind:value={grid_spacing_mm} />
             </div>
         </div>
         <!-- POINT SIZE -->
@@ -760,13 +823,13 @@ def run(protocol):
     </div>
 
     <!-- SHOW POINTS -->
-    <div class="flex flex-col w-full gap-2 mx-auto pb-2 bg-gray-100 rounded px-2">
+    <div class="flex flex-col w-full gap-2 mx-auto bg-gray-100 rounded px-2 {Object.keys(points_by_color).length >= 1 ? 'pb-2' : ''}">
         <div class="flex flex-row justify-between pt-2 items-center">
             <span class="font-semibold">Coordinates</span>
             <div class="flex flex-row flex-wrap justify-end gap-2 max-w-full overflow-hidden">
-                <button class="btn btn-sm px-1 tooltip tooltip-top" aria-label="Swap Colors" data-tip="Swap Colors" onclick={swapColors}>
+                <!-- <button class="btn btn-sm px-1 tooltip tooltip-top" aria-label="Swap Colors" data-tip="Swap Colors" onclick={swapColors}>
                     <svg class="w-6 h-6 mx-1 opacity-50" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M2 6C2 3.79086 3.79086 2 6 2C8.20914 2 10 3.79086 10 6V18C10 20.2091 8.20914 22 6 22C3.79086 22 2 20.2091 2 18V6Z" stroke="currentColor" stroke-width="1.5"></path> <path d="M9.99977 8.24268L13.3134 4.92902C14.8755 3.36692 17.4082 3.36692 18.9703 4.92902C20.5324 6.49112 20.5324 9.02378 18.9703 10.5859L9.30615 20.25" stroke="currentColor" stroke-width="1.5"></path> <path d="M6 22L18 22C20.2091 22 22 20.2091 22 18C22 15.7909 20.2091 14 18 14L15.5 14" stroke="currentColor" stroke-width="1.5"></path> <path d="M7 18C7 18.5523 6.55228 19 6 19C5.44772 19 5 18.5523 5 18C5 17.4477 5.44772 17 6 17C6.55228 17 7 17.4477 7 18Z" stroke="currentColor" stroke-width="1.5"></path> </g></svg>
-                </button>
+                </button> -->
                 <button class="btn btn-sm px-1 tooltip tooltip-top" aria-label="Copy Points" data-tip="Copy To Clipboard" onclick={copyPointsToClipboard}>
                     <svg class="w-7 h-7 opacity-70" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M10 8V7C10 6.05719 10 5.58579 10.2929 5.29289C10.5858 5 11.0572 5 12 5H17C17.9428 5 18.4142 5 18.7071 5.29289C19 5.58579 19 6.05719 19 7V12C19 12.9428 19 13.4142 18.7071 13.7071C18.4142 14 17.9428 14 17 14H16M7 19H12C12.9428 19 13.4142 19 13.7071 18.7071C14 18.4142 14 17.9428 14 17V12C14 11.0572 14 10.5858 13.7071 10.2929C13.4142 10 12.9428 10 12 10H7C6.05719 10 5.58579 10 5.29289 10.2929C5 10.5858 5 11.0572 5 12V17C5 17.9428 5 18.4142 5.29289 18.7071C5.58579 19 6.05719 19 7 19Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>
                 </button>
@@ -784,7 +847,7 @@ def run(protocol):
                             ({point[0]}, {point[1]}){#if i < points.length - 1},{/if}
                         {/each}]
                     </div>
-                {/each} 
+                {/each}
             {/if}
         </div>
     </div>
@@ -794,7 +857,7 @@ def run(protocol):
         <input type="checkbox" id="section1" class="toggle-checkbox" />
         <label for="section1" class="collapse-title text-lg font-medium">What is Opentrons Art Interface?</label>
         <div class="collapse-content text-sm">
-            <p>This website is made for the Opentrons lab of <a class="italic underline" href="https://howtogrowalmostanything.notion.site/htgaa25">'How To Grow (Almost) Anything'</a> (HTGAA), to teach bio-enthusiasts of all backgrounds the principles and skills at the cutting edge of bioengineering and synthetic biology.</p>
+            <p>This website is made for the Opentrons lab of <a class="italic underline" href="https://howtogrowalmostanything.notion.site/htgaa25" target="_blank" rel="noopener noreferrer">'How To Grow (Almost) Anything'</a> (HTGAA), to teach bio-enthusiasts of all backgrounds the principles and skills at the cutting edge of bioengineering and synthetic biology.</p>
         </div>
     </div>
     <div class="collapse collapse-arrow">
@@ -804,10 +867,10 @@ def run(protocol):
             <p class="text-left text-sm">You should write a Python script that iterates over each coordinate and dispenses the correct color of bacteria into that location using the <a class="underline" href="https://docs.opentrons.com/v2/">Opentrons API</a>. Remember to switch pipette tips between each color and aspirate liquid as needed!
             <br />
             <br />
-            <a class="underline" href="https://docs.google.com/document/d/1VR1ngrwncH4kW80PHKZDGITu4GJbDa7pCE9yCs4YdUU">HTGAA 2025 Opentrons Lab Protocol</a>
+            <a class="underline" href="https://docs.google.com/document/d/1VR1ngrwncH4kW80PHKZDGITu4GJbDa7pCE9yCs4YdUU" target="_blank" rel="noopener noreferrer">HTGAA 2025 Opentrons Lab Protocol</a>
             <br />
             <br />
-            <a class="underline" href="https://colab.research.google.com/drive/1VoouRH0nqlk09g50rHxOElaLD-SVknYY">HTGAA 2025 Opentrons Lab Colab</a>
+            <a class="underline" href="https://colab.research.google.com/drive/1VoouRH0nqlk09g50rHxOElaLD-SVknYY" target="_blank" rel="noopener noreferrer">HTGAA 2025 Opentrons Lab Colab</a>
         </div>
     </div>
     <div class="collapse collapse-arrow">
@@ -827,7 +890,7 @@ def run(protocol):
     
     <div class="text-sm px-4 mt-5">
         <div class="max-w-[160px] mx-auto pt-4">
-            <a href="https://github.com/RonanChance/opentrons-art-gui" target="_blank" data-value="github" style="border-radius:2px;" class="py-2 px-1 flex justify-center items-center bg-gray-100 hover:bg-neutral hover:text-white text-neutral transition ease-in duration-100 text-center text-sm font-semibold shadow-md focus:outline-none">
+            <a href="https://github.com/RonanChance/opentrons-art-gui" target="_blank" rel="noopener noreferrer" data-value="github" style="border-radius:2px;" class="py-2 px-1 flex justify-center items-center bg-gray-100 hover:bg-neutral hover:text-white text-neutral transition ease-in duration-100 text-center text-sm font-semibold shadow-md focus:outline-none">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="mr-2" viewBox="0 0 1792 1792">
                 <path d="M896 128q209 0 385.5 103t279.5 279.5 103 385.5q0 251-146.5 451.5t-378.5 277.5q-27 5-40-7t-13-30q0-3 .5-76.5t.5-134.5q0-97-52-142 57-6 102.5-18t94-39 81-66.5 53-105 20.5-150.5q0-119-79-206 37-91-8-204-28-9-81 11t-92 44l-38 24q-93-26-192-26t-192 26q-16-11-42.5-27t-83.5-38.5-85-13.5q-45 113-8 204-79 87-79 206 0 85 20.5 150t52.5 105 80.5 67 94 39 102.5 18q-39 36-49 103-21 10-45 15t-57 5-65.5-21.5-55.5-62.5q-19-32-48.5-52t-49.5-24l-20-3q-21 0-29 4.5t-5 11.5 9 14 13 12l7 5q22 10 43.5 38t31.5 51l10 23q13 38 44 61.5t67 30 69.5 7 55.5-3.5l23-4q0 38 .5 88.5t.5 54.5q0 18-13 30t-40 7q-232-77-378.5-277.5t-146.5-451.5q0-209 103-385.5t279.5-279.5 385.5-103zm-477 1103q3-7-7-12-10-3-13 2-3 7 7 12 9 6 13-2zm31 34q7-5-2-16-10-9-16-3-7 5 2 16 10 10 16 3zm30 45q9-7 0-19-8-13-17-6-9 5 0 18t17 7zm42 42q8-8-4-19-12-12-20-3-9 8 4 19 12 12 20 3zm57 25q3-11-13-16-15-4-19 7t13 15q15 6 19-6zm63 5q0-13-17-11-16 0-16 11 0 13 17 11 16 0 16-11zm58-10q-2-11-18-9-16 3-14 15t18 8 14-14z"></path>
                 </svg>

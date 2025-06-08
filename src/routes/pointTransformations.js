@@ -38,3 +38,7 @@ export function shiftPoints(direction, new_spacing, old_spacing, radius_mm, poin
     }
 	return shifted;
 }
+
+export function roundPoint(p) {
+    return Math.round(parseFloat(p) * 1000) / 1000;
+}

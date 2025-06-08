@@ -40,13 +40,14 @@ export function colorDistance(rgb1, rgb2) {
     return dr * dr + dg * dg + db * db;
 }
 
-export function closestNamedColor(hex, well_colors) {
+export function closestNamedColor(hex, current_well_colors, well_colors) {
     const target = hexToRgb(hex);
     let minDist = Infinity;
     let closest = null;
 
-    for (const [name, colorHex] of Object.entries(well_colors)) {
-        const dist = colorDistance(target, hexToRgb(colorHex));
+    for (const [name, val] of Object.entries(current_well_colors)) {
+        if (!val) continue;
+        const dist = colorDistance(target, hexToRgb(well_colors[name]));
         if (dist < minDist) {
             minDist = dist;
             closest = name;

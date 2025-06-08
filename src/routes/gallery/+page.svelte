@@ -2,10 +2,10 @@
     import GalleryCard from '$lib/components/GalleryCard.svelte';
     import { onMount } from 'svelte';
     import { browser } from '$app/environment';
-    import { well_colors } from '$lib/constants.js';
+    import { well_colors, old_well_colors } from '$lib/proteins.js';
 
     const filter_list = ['Approved', 'Media Lab', 'Off']
-    let filter = $state(0);
+    let filter = $state(-1);
     let record_load_iteration = $state(0);
     let loadingRecords = $state(true);
     let loadedRecords = $state([]);
@@ -43,8 +43,8 @@
     </a>
 <div class="mx-auto bg-base-100 p-4 rounded-box">
   <div class="tabs tabs-bordered">
-    <input type="radio" name="tab" class="tab" aria-label="Images" onclick={() => {filter = -1; record_load_iteration = 0; loadedRecords = []; loadGallery();}} />
-    <input type="radio" name="tab" class="tab" aria-label="2025" onclick={() => {filter = 0; record_load_iteration = 0; loadedRecords = []; loadGallery();}} checked />
+    <input type="radio" name="tab" class="tab" aria-label="Images" onclick={() => {filter = -1; record_load_iteration = 0; loadedRecords = []; loadGallery();}} checked />
+    <input type="radio" name="tab" class="tab" aria-label="2025" onclick={() => {filter = 0; record_load_iteration = 0; loadedRecords = []; loadGallery();}} />
     <input type="radio" name="tab" class="tab" aria-label="All" onclick={() => {filter = 2; record_load_iteration = 0; loadedRecords = []; loadGallery();}} />
   </div>
 </div>
@@ -68,17 +68,17 @@
         <img src={`/2025_images/2025_Student_Grid_11x6.png`} alt={`question mark illustration`} class="mx-auto w-full md:max-w-[500px] lg:max-w-[750px] xl:max-w-[900px] rounded-lg"/>
     </div>
 
-    <div class="flex flex-col max-w-[99%] mx-auto mt-3 gap-3 mb-10">
+    <!-- <div class="flex flex-col max-w-[99%] mx-auto mt-3 gap-3 mb-10">
         <span class="font-semibold text-center underline">Media Lab Grid (2025)</span>
         <img src={`/2025_images/2025_Media_Lab_Grid.png`} alt={`2025 Media Lab Grid`} class="mx-auto w-full md:max-w-[500px] lg:max-w-[750px] xl:max-w-[900px] rounded-lg"/>
-    </div>
+    </div> -->
 {/if}
 
 {#if !loadingRecords}
     <!-- GALLERY -->
     <div class="flex flex-row flex-wrap w-full max-w-[100vw] sm:max-w-[1000px] mx-auto gap-3 pt-3 justify-center mb-10">
         {#each loadedRecords as record, i}
-            <GalleryCard {record} {i} {well_colors} />
+            <GalleryCard {record} {i} {well_colors} {old_well_colors} />
         {/each}
     </div>
 {:else}
