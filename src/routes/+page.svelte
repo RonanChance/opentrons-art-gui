@@ -44,6 +44,7 @@
     let imageColors = $state([]);
     let file = null;
     let img = null;
+    let whiteBgReplacement = $state('Invisible');
 
     onMount(async () => {
         if (browser) {
@@ -91,8 +92,11 @@
                 const new_colors = {};
                 for (const point of points) {
                     const c =  closestNamedColor(point.color, current_well_colors, well_colors);
-                    if (c !== 'White' && c !== 'Erase')
+                    if (c !== 'White' && c !== 'Erase') {
                         new_colors[`${point.x}, ${point.y}`] = c;
+                    } else if ((c === 'White' || c === 'Erase') && whiteBgReplacement !== 'Invisible') {
+                        new_colors[`${point.x}, ${point.y}`] = whiteBgReplacement;
+                    }
                 }
                 point_colors = new_colors;
                 groupByColors();
@@ -273,6 +277,8 @@
         
         let scriptToCopy = `from opentrons import types
 
+import string
+
 metadata = {
     'protocolName': '{YOUR NAME} - Opentrons Art - HTGAA',
     'author': 'HTGAA',
@@ -363,7 +369,7 @@ def run(protocol):
         raise ValueError(f"No well found with color {color_string}")
 
     ### Create Pattern
-    for current_color, (name, point_list) in enumerate(point_name_pairing):
+    for i, (current_color, point_list) in enumerate(point_name_pairing):
         # Skip the rest of the loop if the list is empty
         if not point_list:
             continue
@@ -382,8 +388,8 @@ def run(protocol):
 
             dispense_and_jog(pipette_20ul, POINT_SIZE, adjusted_location)
             
-            if pipette_20ul.current_volume == 0 and len(point_list[i+1:]) > 0:
-                quantity_to_aspirate = min(len(point_list[i+1:])*POINT_SIZE, max_aspirate)
+            if pipette_20ul.current_volume == 0 and len(point_list[i:]) > 0:
+                quantity_to_aspirate = min(len(point_list[i:])*POINT_SIZE, max_aspirate)
                 update_volume_remaining(current_color, quantity_to_aspirate)
                 pipette_20ul.aspirate(quantity_to_aspirate, location_of_color(current_color))
 
@@ -436,6 +442,7 @@ def run(protocol):
         point_size = 0.25;
         canvasSize = 40;
         pixelationLevel = 40;
+        whiteBgReplacement = 'Invisible';
         if (!file) return;
         img = new Image();
         img.onload = () => { processImage(canvasSize, pixelationLevel); };
@@ -671,23 +678,38 @@ def run(protocol):
     {/if}
 
     {#if pixelatedSrc}
-        <div class="w-full mx-auto">
-            <img src={pixelatedSrc} class="w-[50%] mx-auto outline rounded-lg" alt="Pixelated" />
+    <div class="flex flex-row w-full gap-4 text-sm">
+        <div class="w-[50%] mx-auto">
+            <img src={pixelatedSrc} class="w-full mx-auto outline rounded-lg" alt="Pixelated" />
         </div>
-        <div class="flex flex-row justify-between gap-6">
+        <div class="w-[50%] flex flex-col gap-4">
             <div class="flex flex-col w-full gap-2 mx-auto">
                 <div class="flex flex-row justify-between">
                     <span class="font-semibold">Canvas</span><span class="opacity-70">{canvasSize}x{canvasSize}px</span>
                 </div>
-                <input type="range" min="5" max="100" class="range" step="5" bind:value={canvasSize} />
+                <input type="range" min="5" max="100" class="range range-sm" step="5" bind:value={canvasSize} />
             </div>
             <div class="flex flex-col w-full gap-2 mx-auto">
                 <div class="flex flex-row justify-between">
                     <span class="font-semibold">Resolution</span><span class="opacity-70">{pixelationLevel}px</span>
                 </div>
-                <input type="range" min="5" max="{canvasSize}" class="range" step="5" bind:value={pixelationLevel} />
+                <input type="range" min="5" max="{canvasSize}" class="range range-sm" step="5" bind:value={pixelationLevel} />
+            </div>
+            <div class="flex flex-col w-full gap-2 mx-auto">
+                <div class="flex flex-row justify-center gap-5">
+                    <span class="font-semibold my-auto">Replace white </span>
+                    <select class="select select-sm" bind:value={whiteBgReplacement} onchange={() => {processImage(canvasSize, pixelationLevel)}} >
+                        <option selected>Invisible</option>
+                        {#each Object.entries(current_well_colors).filter(([name, val]) => name !== 'White' &&  name !== "Erase" && val) as [key, value], i}
+                            <option>
+                                {key}
+                            </option>
+                        {/each}
+                    </select>
+                </div>
             </div>
         </div>
+    </div>
     {/if}
 
     <div class="flex flex-row w-full gap-6">
