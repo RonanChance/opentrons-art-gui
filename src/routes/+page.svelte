@@ -39,8 +39,11 @@
     
     // IMAGE DATA
     let pixelatedSrc = $state(null);
-    let pixelationLevel = $state(40);
     let canvasSize = $state(40);
+    let pixelationLevel = $state(40);
+    let brightness = $state(100);
+    let contrast = $state(100);
+    let saturation = $state(100);
     let imageColors = $state([]);
     let file = null;
     let img = null;
@@ -69,7 +72,6 @@
     
     $effect(() => {
         points = generateGrid(grid_style, radius_mm, grid_spacing_mm, QRCode_text, imageColors);
-        console.log(imageColors);
         tick().then(() => {
             if (grid_style === 'QRCode') {
                     const new_colors = {};
@@ -135,12 +137,23 @@
             });
             const r = await response.json();
             grid_style = r.record.grid_style;
+            if (grid_style === 'Image') {
+                img = new Image();
+                processImage(canvasSize, pixelationLevel);
+                pixelationLevel = r.record.pixelation_level;
+                canvasSize = r.record.canvas_size;
+                contrast = r.record.contrast;
+                brightness = r.record.brightness;
+                saturation = r.record.saturation;
+                point_colors = {};
+            }
             grid_spacing_mm = prev_grid_spacing_mm = r.record.grid_spacing_mm;
             radius_mm = r.record.radius_mm;
-            point_size = r.record.point_size || 4;
+            point_size = r.record.point_size || 1;
             await tick();
             point_colors = r.record.point_colors;
             groupByColors();
+            console.log("point-colors",r.record.point_colors);
             showAlert("alert-success", "Loaded design successfully!");
         } catch (error) {
             showAlert("alert-warning", "Failed to load design.");
@@ -167,7 +180,12 @@
                 radius_mm,
                 grid_spacing_mm,
                 point_colors,
-                point_size
+                point_size,
+                canvasSize,
+                pixelationLevel,
+                brightness,
+                contrast,
+                saturation
             })
         });
         let r = await response.json();
@@ -432,13 +450,13 @@ def run(protocol):
 	}
 
     $effect(() => {
-        processImage(canvasSize, pixelationLevel);
+        processImage(canvasSize, pixelationLevel, brightness, contrast, saturation);
         if (pixelationLevel > canvasSize) { pixelationLevel = canvasSize; }
     });
 
     function handleFileChange(event) {
         file = event.target.files[0];
-        grid_spacing_mm = 1.6;
+        grid_spacing_mm = 1.8;
         point_size = 0.25;
         canvasSize = 40;
         pixelationLevel = 40;
@@ -459,8 +477,9 @@ def run(protocol):
         const temp = document.createElement('canvas');
         temp.width = pixelationLevel;
         temp.height = pixelationLevel;
+        
         const tempCtx = temp.getContext('2d');
-
+        tempCtx.filter = `contrast(${contrast}%) brightness(${brightness}%) saturate(${saturation}%)`;
         tempCtx.drawImage(img, 0, 0, temp.width, temp.height);
 
         ctx.imageSmoothingEnabled = false;
@@ -683,21 +702,44 @@ def run(protocol):
             <img src={pixelatedSrc} class="w-full mx-auto outline rounded-lg" alt="Pixelated" />
         </div>
         <div class="w-[50%] flex flex-col gap-4">
+            <!-- CANVAS SIZE -->
             <div class="flex flex-col w-full gap-2 mx-auto">
                 <div class="flex flex-row justify-between">
                     <span class="font-semibold">Canvas</span><span class="opacity-70">{canvasSize}x{canvasSize}px</span>
                 </div>
                 <input type="range" min="5" max="100" class="range range-sm" step="5" bind:value={canvasSize} />
             </div>
+            <!-- RESOLUTION (PIXELATION LEVEL) -->
             <div class="flex flex-col w-full gap-2 mx-auto">
                 <div class="flex flex-row justify-between">
                     <span class="font-semibold">Resolution</span><span class="opacity-70">{pixelationLevel}px</span>
                 </div>
                 <input type="range" min="5" max="{canvasSize}" class="range range-sm" step="5" bind:value={pixelationLevel} />
             </div>
+            <!-- BRIGHTNESS -->
+            <div class="flex flex-col w-full gap-2 mx-auto">
+                <div class="flex flex-row justify-between">
+                    <span class="font-semibold">Brightness</span><span class="opacity-70">{brightness}%</span>
+                </div>
+                <input type="range" min="10" max="400" class="range range-sm" step="10" bind:value={brightness} />
+            </div>
+            <!-- CONTRAST -->
+            <div class="flex flex-col w-full gap-2 mx-auto">
+                <div class="flex flex-row justify-between">
+                    <span class="font-semibold">Contrast</span><span class="opacity-70">{contrast}%</span>
+                </div>
+                <input type="range" min="10" max="400" class="range range-sm" step="10" bind:value={contrast} />
+            </div>
+            <!-- SATURATION -->
+            <div class="flex flex-col w-full gap-2 mx-auto">
+                <div class="flex flex-row justify-between">
+                    <span class="font-semibold">Saturation</span><span class="opacity-70">{saturation}%</span>
+                </div>
+                <input type="range" min="10" max="400" class="range range-sm" step="10" bind:value={saturation} />
+            </div>
             <div class="flex flex-col w-full gap-2 mx-auto">
                 <div class="flex flex-row justify-center gap-5">
-                    <span class="font-semibold my-auto">Replace white </span>
+                    <span class="font-semibold my-auto">Replace White</span>
                     <select class="select select-sm" bind:value={whiteBgReplacement} onchange={() => {processImage(canvasSize, pixelationLevel)}} >
                         <option selected>Invisible</option>
                         {#each Object.entries(current_well_colors).filter(([name, val]) => name !== 'White' &&  name !== "Erase" && val) as [key, value], i}
