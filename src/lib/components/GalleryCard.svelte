@@ -1,69 +1,71 @@
 
 <script>
+    import { onMount } from 'svelte';
+    import { browser } from '$app/environment';
+    import { flip } from 'svelte/animate';
+
     export let record;
     export let i;
     export let well_colors;
     export let old_well_colors;
     let flipped = false;
+    let canvas;
+
+    onMount(async () => {
+        if (browser) {
+            drawPoints();
+        }
+    });
+
+    function drawPoints() {
+        if (!canvas || !record?.point_colors) return;
+
+        const ctx = canvas.getContext('2d');
+        const radius_px = record.radius_mm * 4;
+        canvas.width = radius_px;
+        canvas.height = radius_px;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const center = radius_px / 2;
+        const scale = center / record.radius_mm - (0.1);
+
+        for (const [key, colorName] of Object.entries(record.point_colors)) {
+        const [x, y] = key.split(', ').map(Number);
+        const color = well_colors[colorName] || old_well_colors[colorName] || 'transparent';
+
+        ctx.beginPath();
+        ctx.arc(center + x * scale, center - y * scale, Math.max(record.point_size, 1.5), 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+        }
+    }
 
     function formatLocalTime(utcString) {
         const date = new Date(utcString);
         return date.toLocaleString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).replace(',', ' -');
     }
-
 </script>
 
-<div class="card shadow-xl px-3 py-3 outline outline-1 outline-neutral/10 max-w-[175px] overflow-hidden">
+<div class="card shadow-xl px-3 py-3 outline outline-1 outline-neutral/10 max-w-[175px] overflow-hidden cursor-default" onclick={() => {flipped = !flipped}} aria-label="Art button" tabindex="0" role="button" onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') {e.preventDefault(); flipped = !flipped;} }}>
     <!-- VERIFICATION MARK + INFO BUTTON -->
     {#if record.verified}
-        <div class="absolute left-2 top-2 touch-manipulation tooltip tooltip-right" data-tip="Verified by admin" aria-label="info-button">
+        <div class="absolute left-2 top-2 touch-manipulation tooltip tooltip-right" data-tip="Verified" aria-label="info-button">
             <svg class="w-4 h-4 opacity-65" viewBox="0 0 24 24" fill="#1DA1F2" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M9.78133 3.89027C10.3452 3.40974 10.6271 3.16948 10.9219 3.02859C11.6037 2.70271 12.3963 2.70271 13.0781 3.02859C13.3729 3.16948 13.6548 3.40974 14.2187 3.89027C14.4431 4.08152 14.5553 4.17715 14.6752 4.25747C14.9499 4.4416 15.2584 4.56939 15.5828 4.63344C15.7244 4.66139 15.8713 4.67312 16.1653 4.69657C16.9038 4.7555 17.273 4.78497 17.5811 4.89378C18.2936 5.14546 18.8541 5.70591 19.1058 6.41844C19.2146 6.72651 19.244 7.09576 19.303 7.83426C19.3264 8.12819 19.3381 8.27515 19.3661 8.41669C19.4301 8.74114 19.5579 9.04965 19.7421 9.32437C19.8224 9.44421 19.918 9.55642 20.1093 9.78084C20.5898 10.3447 20.8301 10.6267 20.971 10.9214C21.2968 11.6032 21.2968 12.3958 20.971 13.0776C20.8301 13.3724 20.5898 13.6543 20.1093 14.2182C19.918 14.4426 19.8224 14.5548 19.7421 14.6747C19.5579 14.9494 19.4301 15.2579 19.3661 15.5824C19.3381 15.7239 19.3264 15.8709 19.303 16.1648C19.244 16.9033 19.2146 17.2725 19.1058 17.5806C18.8541 18.2931 18.2936 18.8536 17.5811 19.1053C17.273 19.2141 16.9038 19.2435 16.1653 19.3025C15.8713 19.3259 15.7244 19.3377 15.5828 19.3656C15.2584 19.4297 14.9499 19.5574 14.6752 19.7416C14.5553 19.8219 14.4431 19.9175 14.2187 20.1088C13.6548 20.5893 13.3729 20.8296 13.0781 20.9705C12.3963 21.2963 11.6037 21.2963 10.9219 20.9705C10.6271 20.8296 10.3452 20.5893 9.78133 20.1088C9.55691 19.9175 9.44469 19.8219 9.32485 19.7416C9.05014 19.5574 8.74163 19.4297 8.41718 19.3656C8.27564 19.3377 8.12868 19.3259 7.83475 19.3025C7.09625 19.2435 6.72699 19.2141 6.41893 19.1053C5.7064 18.8536 5.14594 18.2931 4.89427 17.5806C4.78546 17.2725 4.75599 16.9033 4.69706 16.1648C4.6736 15.8709 4.66188 15.7239 4.63393 15.5824C4.56988 15.2579 4.44209 14.9494 4.25796 14.6747C4.17764 14.5548 4.08201 14.4426 3.89076 14.2182C3.41023 13.6543 3.16997 13.3724 3.02907 13.0776C2.7032 12.3958 2.7032 11.6032 3.02907 10.9214C3.16997 10.6266 3.41023 10.3447 3.89076 9.78084C4.08201 9.55642 4.17764 9.44421 4.25796 9.32437C4.44209 9.04965 4.56988 8.74114 4.63393 8.41669C4.66188 8.27515 4.6736 8.12819 4.69706 7.83426C4.75599 7.09576 4.78546 6.72651 4.89427 6.41844C5.14594 5.70591 5.7064 5.14546 6.41893 4.89378C6.72699 4.78497 7.09625 4.7555 7.83475 4.69657C8.12868 4.67312 8.27564 4.66139 8.41718 4.63344C8.74163 4.56939 9.05014 4.4416 9.32485 4.25747C9.4447 4.17715 9.55691 4.08152 9.78133 3.89027Z" stroke="#1DA1F2" stroke-width="1.5"></path> <path d="M8.5 12.5L10.5 14.5L15.5 9.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
         </div>
     {/if}
-    <button class="absolute right-2 top-2 opacity-50 touch-manipulation" aria-label="info-button" onclick={() => {flipped = !flipped}}>
+    <!-- <button class="absolute right-2 top-2 opacity-50 touch-manipulation" aria-label="info-button" onclick={() => {flipped = !flipped}}>
         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M12 16V12M12 8H12.01M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
-    </button>
+    </button> -->
 
     <!-- FRONT OF CARD -->
-    <div class="flex flex-col justify-between min-w-[150px] max-w-[150px] min-h-[275px] max-h-[300px] touch-manipulation">
-        {#if !flipped}
-            <div class="flex text-sm truncate mt-3 items-center justify-center subtle-glitch">
-                {#if record.title} {record.title} {:else} Untitled {/if}
+    <div class="flex flex-col justify-between min-w-[150px] max-w-[150px] min-h-[265px] max-h-[265px] touch-manipulation">
+        <div class="flex flex-col justify-between min-w-[150px] max-w-[150px] min-h-[265px] max-h-[265px] {flipped ? 'hidden' : ''}">
+            <div class="relative border border-neutral/70 rounded-full bg-neutral mx-auto aspect-square max-w-[150px] max-h-[150px]">
+                <canvas bind:this={canvas} class="w-full h-full rounded-full"></canvas>
             </div>
-            <div class="relative border border-neutral/70 rounded-full bg-neutral mx-auto max-w-[150px] max-h-[150px] aspect-square"
-                style="width: {(record.radius_mm) * 16}px; height: {(record.radius_mm + record) * 16}px;">
-                {#each Object.entries(record.point_colors) as [ key, color ]}
-                    <input type="checkbox" id="dot-{key.split(", ")[0]}-{key.split(", ")[1]}-{i}"
-                        class="checkbox 
-                        {record.point_size === 0 ? 'w-[4px] h-[4px]' : ''}
-                        {record.point_size === 0.25 ? 'w-[1px] h-[1px]' : ''}
-                        {record.point_size === 0.5 ? 'w-[2px] h-[2px]' : ''}
-                        {record.point_size === 0.75 ? 'w-[2px] h-[2px]' : ''}
-                        {record.point_size === 1 ? 'w-[2px] h-[2px]' : ''}
-                        {record.point_size === 1.25 ? 'w-[3px] h-[3px]' : ''}
-                        {record.point_size === 1.5 ? 'w-[3px] h-[3px]' : ''}
-                        {record.point_size === 1.75 ? 'w-[3px] h-[3px]' : ''}
-                        {record.point_size === 2 ? 'w-[5px] h-[5px]' : ''}
-                        {record.point_size === 2.25 ? 'w-[5px] h-[5px]' : ''}
-                        {record.point_size === 2.5 ? 'w-[5px] h-[5px]' : ''}
-                        {record.point_size === 2.75 ? 'w-[5px] h-[5px]' : ''}
-                        {record.point_size === 3 ? 'w-[7px] h-[7px]' : ''}
-                        {record.point_size === 3.25 ? 'w-[7px] h-[7px]' : ''} 
-                        {record.point_size === 3.5 ? 'w-[7px] h-[7px]' : ''}
-                        {record.point_size === 3.75 ? 'w-[7px] h-[7px]' : ''} 
-                        {record.point_size === 4 ? 'w-[9px] h-[9px]' : ''}
-                        {record.point_size === 4.25 ? 'w-[9px] h-[9px]' : ''}
-                        {record.point_size === 4.5 ? 'w-[9px] h-[9px]' : ''}
-                        {record.point_size === 4.75 ? 'w-[9px] h-[9px]' : ''}
-                        {record.point_size === 5 ? 'w-[10px] h-[10px]' : ''}
-                        absolute rounded-full [--chkfg:invisible] transition-[box-shadow] duration-300 ease-in-out border-0"
-                        style="
-                            left: calc(50% + ({key.split(", ")[0] / record.radius_mm} * 48%)); 
-                            top: calc(50% - ({key.split(", ")[1] / record.radius_mm} * 48%));
-                            transform: translate(-50%, -50%);
-                            background-color: {well_colors[color] || old_well_colors[color] || 'transparent'};"
-                        draggable="false"/>
-                {/each}
+            <div class="flex text-sm font-bold items-center justify-center overflow-x-auto whitespace-nowrap">
+                {#if record.title} {record.title} {:else} Untitled {/if}
             </div>
             <div class="flex flex-row justify-around">
                 <div class="flex flex-col">
@@ -109,8 +111,9 @@
                 <svg class="w-5 h-5" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M10.7071 10.7071C10.3166 11.0976 9.68342 11.0976 9.29289 10.7071C8.90237 10.3166 8.90237 9.68342 9.29289 9.29289L15.2929 3.29289C15.6834 2.90237 16.3166 2.90237 16.7071 3.29289C17.0976 3.68342 17.0976 4.31658 16.7071 4.70711L10.7071 10.7071Z" fill="currentColor"></path> <path d="M15 15V11.5C15 10.9477 15.4477 10.5 16 10.5C16.5523 10.5 17 10.9477 17 11.5V16C17 16.5523 16.5523 17 16 17H4C3.44772 17 3 16.5523 3 16V4C3 3.44772 3.44772 3 4 3H8.5C9.05228 3 9.5 3.44772 9.5 4C9.5 4.55228 9.05228 5 8.5 5H5V15H15Z" fill="currentColor"></path> <path d="M17 8C17 8.55228 16.5523 9 16 9C15.4477 9 15 8.55228 15 8V4C15 3.44772 15.4477 3 16 3C16.5523 3 17 3.44772 17 4V8Z" fill="currentColor"></path> <path d="M12 5C11.4477 5 11 4.55228 11 4C11 3.44772 11.4477 3 12 3H16C16.5523 3 17 3.44772 17 4C17 4.55228 16.5523 5 16 5H12Z" fill="currentColor"></path> </g></svg>
                 View
             </a>
+        </div>
         <!-- BACK OF CARD -->
-        {:else}
+        {#if flipped}
             <div class="text-wrap overflow-auto max-h-[220px] truncate font-medium w-full mt-3">
                 {#if record.title} {record.title} {:else} Untitled {/if}
             </div>
@@ -130,19 +133,3 @@
         {/if}
     </div>
 </div>
-
-<style>
-
-/* @keyframes subtle-glitch {
-  0% { transform: translateY(0); }
-  25% { transform: translateY(0.25px); }
-  50% { transform: translateY(-0.25px); }
-  75% { transform: translateY(0.25px); }
-  100% { transform: translateY(0); }
-}
-.subtle-glitch {
-  position: relative;
-  display: inline-block;
-  animation: subtle-glitch 1s infinite ease-in-out;
-} */
-</style>

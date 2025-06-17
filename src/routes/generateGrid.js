@@ -1,6 +1,7 @@
 import QRCode from 'qrcode';
 
 export function generateGrid(grid_style, radius_mm, grid_spacing_mm, QRCode_text, imageColors) {
+    console.log('generate grid called');
     if (grid_style === 'Grid' || grid_style === 'Standard') return grid(radius_mm, grid_spacing_mm);
     else if (grid_style === 'Radial') return radial(radius_mm, grid_spacing_mm);
     else if (grid_style === 'Honeycomb') return honeycomb(radius_mm, grid_spacing_mm);

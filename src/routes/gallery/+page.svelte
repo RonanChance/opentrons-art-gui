@@ -63,15 +63,10 @@
         ></iframe>
     </div>
 
-    <div class="flex flex-col max-w-[99%] mx-auto mt-3 gap-3">
+    <div class="flex flex-col max-w-[99%] mx-auto mt-3 gap-3 pb-10">
         <span class="font-semibold text-center underline">Student Designs (2025)</span>
         <img src={`/2025_images/2025_Student_Grid_11x6.png`} alt={`question mark illustration`} class="mx-auto w-full md:max-w-[500px] lg:max-w-[750px] xl:max-w-[900px] rounded-lg"/>
     </div>
-
-    <!-- <div class="flex flex-col max-w-[99%] mx-auto mt-3 gap-3 mb-10">
-        <span class="font-semibold text-center underline">Media Lab Grid (2025)</span>
-        <img src={`/2025_images/2025_Media_Lab_Grid.png`} alt={`2025 Media Lab Grid`} class="mx-auto w-full md:max-w-[500px] lg:max-w-[750px] xl:max-w-[900px] rounded-lg"/>
-    </div> -->
 {/if}
 
 {#if !loadingRecords}
