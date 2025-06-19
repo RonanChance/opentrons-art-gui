@@ -142,9 +142,9 @@
             grid_spacing_mm = prev_grid_spacing_mm = r.record.grid_spacing_mm;
             radius_mm = r.record.radius_mm;
             point_size = r.record.point_size || 1;
+            grid_style = r.record.grid_style;
             
             if (r.record.grid_style === 'Image') {
-                grid_style = 'Image';
                 brightness = r.record.brightness;
                 contrast = r.record.contrast;
                 saturation = r.record.saturation;
@@ -317,12 +317,13 @@ ${python_individual_points_lists}
 
 ${python_point_name_pairing}
 
-###   Robot deck setup constants
+# Robot deck setup constants
 TIP_RACK_DECK_SLOT = 9
 COLORS_DECK_SLOT = 6
 AGAR_DECK_SLOT = 5
 PIPETTE_STARTING_TIP_WELL = 'A1'
 
+# Place the PCR tubes in this order
 ${python_well_colors}
 
 ${volume_used}
@@ -348,7 +349,7 @@ def update_volume_remaining(current_color, quantity_to_aspirate):
             break
 
 def run(protocol):
-    ###   Load labware, modules and pipettes
+    # Load labware, modules and pipettes
     protocol.home()
 
     # Tips
@@ -375,7 +376,7 @@ def run(protocol):
 
     pipette_20ul.starting_tip = tips_20ul.well(PIPETTE_STARTING_TIP_WELL)
     
-    ### Helper functions
+    # Helper function (dispensing)
     def dispense_and_jog(pipette, volume, location):
         assert(isinstance(volume, (int, float)))
         # Go above the location
@@ -386,13 +387,14 @@ def run(protocol):
         # Go upwards to avoid smearing
         pipette.move_to(above_location)
 
+    # Helper function (color location)
     def location_of_color(color_string):
         for well,color in well_colors.items():
             if color.lower() == color_string.lower():
                 return color_plate[well]
         raise ValueError(f"No well found with color {color_string}")
 
-    ### Create Pattern
+    # Print pattern by iterating over lists
     for i, (current_color, point_list) in enumerate(point_name_pairing):
         # Skip the rest of the loop if the list is empty
         if not point_list:
@@ -423,14 +425,14 @@ def run(protocol):
 
         const now = new Date();
         const year = now.getFullYear().toString().slice(2);
-        const month = String(now.getMonth() + 1);
-        const day = String(now.getDate());
-        const hours = String(now.getHours());
+        const month = String(now.getMonth() + 1).padStart(2, "0");
+        const day = String(now.getDate()).padStart(2, "0");
+        const hours = String(now.getHours()).padStart(2, "0");
         const minutes = String(now.getMinutes()).padStart(2, "0");
+        const seconds = String(now.getSeconds()).padStart(2, "0");
 
-        const timestamp = `${month}-${day}-${year}_${hours}-${minutes}`;
-        const sanitizedPointSize = point_size.toString().replace('.', '_');
-        const filename = `Opentrons_Art_${sanitizedPointSize}uL_${timestamp}.py`;
+        const timestamp = `${month}-${day}-${year}_${hours}-${minutes}-${seconds}`;
+        const filename = `OTDesign_${timestamp}.py`;
 
         const blob = new Blob([scriptToCopy], { type: "text/x-python" });
         const url = URL.createObjectURL(blob);
@@ -565,7 +567,7 @@ def run(protocol):
         </div>
 
         <p class="pt-2 flex flex-row gap-2 items-center justify-center italic text-xs">
-            Note: designs are in the 'unverified' tab until approved by an admin
+            Note: designs are posted the 'All' tab until approved by an admin
         </p>
 
         <div class="modal-action">
@@ -923,15 +925,13 @@ def run(protocol):
 
     <!-- ERASE/PUBLISH BUTTON -->
     <div class="flex flex-row justify-between">
-        <!-- <div class="flex flex-col justify-start gap-1.5"> -->
-            <button class="btn btn-sm hover:bg-neutral hover:text-white" onclick={() => { if (!uploading) {upload_modal.showModal()}}}>
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 -1.5 35 35" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>upload1</title> <path d="M29.426 15.535c0 0 0.649-8.743-7.361-9.74-6.865-0.701-8.955 5.679-8.955 5.679s-2.067-1.988-4.872-0.364c-2.511 1.55-2.067 4.388-2.067 4.388s-5.576 1.084-5.576 6.768c0.124 5.677 6.054 5.734 6.054 5.734h9.351v-6h-3l5-5 5 5h-3v6h8.467c0 0 5.52 0.006 6.295-5.395 0.369-5.906-5.336-7.070-5.336-7.070z"></path> </g></svg>
-                Publish
-            </button>
-        <!-- </div> -->
         <button class="btn btn-sm hover:bg-neutral hover:text-white" onclick={resetValues}>
-            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path fill-rule="evenodd" clip-rule="evenodd" d="M15.0722 3.9967L20.7508 9.83395L17.0544 13.5304L13.0758 17.5H21.0041V19H7.93503L4.00195 15.0669L15.0722 3.9967ZM10.952 17.5L15.4628 12.9994L11.8268 9.3634L6.12327 15.0669L8.55635 17.5H10.952Z" fill="currentColor"></path> </g></svg>
-            Erase Grid
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path transform="scale(1.2) translate(-3 -2.5)" fill-rule="evenodd" clip-rule="evenodd" d="M15.0722 3.9967L20.7508 9.83395L17.0544 13.5304L13.0758 17.5H21.0041V19H7.93503L4.00195 15.0669L15.0722 3.9967ZM10.952 17.5L15.4628 12.9994L11.8268 9.3634L6.12327 15.0669L8.55635 17.5H10.952Z" fill="currentColor"></path> </g></svg>
+            Reset
+        </button>
+        <button class="btn btn-sm hover:bg-neutral hover:text-white" onclick={() => { if (!uploading) {upload_modal.showModal()}}}>
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 35 35" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>upload1</title> <path d="M29.426 15.535c0 0 0.649-8.743-7.361-9.74-6.865-0.701-8.955 5.679-8.955 5.679s-2.067-1.988-4.872-0.364c-2.511 1.55-2.067 4.388-2.067 4.388s-5.576 1.084-5.576 6.768c0.124 5.677 6.054 5.734 6.054 5.734h9.351v-6h-3l5-5 5 5h-3v6h8.467c0 0 5.52 0.006 6.295-5.395 0.369-5.906-5.336-7.070-5.336-7.070z"></path> </g></svg>
+            Publish
         </button>
     </div>
 

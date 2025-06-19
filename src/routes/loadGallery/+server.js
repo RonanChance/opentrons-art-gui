@@ -11,9 +11,9 @@ export const POST = async ({ request }) => {
     try {
         await pb.admins.authWithPassword(PB_EMAIL, PB_PASSWORD);
         if (filter === 0) {
-            records = await pb.collection('designs').getList(start, end, { sort: '-created', filter: 'verified=true' });
+            records = await pb.collection('designs').getList(start, end, { sort: '-created', filter: 'demo=false' });
         } else if (filter === 1){
-            records = await pb.collection('designs').getList(start, end, { sort: 'title', filter: 'demo=true'});
+            records = await pb.collection('designs').getList(start, end, { sort: '-created', filter: 'verified=true'});
         } else {
             records = await pb.collection('designs').getList(start, end, { sort: '-created', filter: 'demo=false' });
         }

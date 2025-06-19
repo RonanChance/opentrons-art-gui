@@ -3,43 +3,13 @@
     import { onMount } from 'svelte';
     import { browser } from '$app/environment';
     import { flip } from 'svelte/animate';
+    import PlateImage from '$lib/components/PlateImage.svelte';
 
     export let record;
-    export let i;
     export let well_colors;
     export let old_well_colors;
     let flipped = false;
     let canvas;
-
-    onMount(async () => {
-        if (browser) {
-            drawPoints();
-        }
-    });
-
-    function drawPoints() {
-        if (!canvas || !record?.point_colors) return;
-
-        const ctx = canvas.getContext('2d');
-        const radius_px = record.radius_mm * 4;
-        canvas.width = radius_px;
-        canvas.height = radius_px;
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        const center = radius_px / 2;
-        const scale = center / record.radius_mm - (0.1);
-
-        for (const [key, colorName] of Object.entries(record.point_colors)) {
-        const [x, y] = key.split(', ').map(Number);
-        const color = well_colors[colorName] || old_well_colors[colorName] || 'transparent';
-
-        ctx.beginPath();
-        ctx.arc(center + x * scale, center - y * scale, Math.max(record.point_size, 1.5), 0, Math.PI * 2);
-        ctx.fillStyle = color;
-        ctx.fill();
-        }
-    }
 
     function formatLocalTime(utcString) {
         const date = new Date(utcString);
@@ -60,10 +30,8 @@
 
     <!-- FRONT OF CARD -->
     <div class="flex flex-col justify-between min-w-[150px] max-w-[150px] min-h-[265px] max-h-[265px] touch-manipulation">
-        <div class="flex flex-col justify-between min-w-[150px] max-w-[150px] min-h-[265px] max-h-[265px] {flipped ? 'hidden' : ''}">
-            <div class="relative border border-neutral/70 rounded-full bg-neutral mx-auto aspect-square max-w-[150px] max-h-[150px]">
-                <canvas bind:this={canvas} class="w-full h-full rounded-full"></canvas>
-            </div>
+        <div class="flex flex-col justify-between min-w-[150px] max-w-[150px] min-h-[265px] max-h-[265px] pt-2 {flipped ? 'hidden' : ''}">
+            <PlateImage {record} {well_colors} {old_well_colors} />
             <div class="flex text-sm font-bold items-center justify-center overflow-x-auto whitespace-nowrap">
                 {#if record.title} {record.title} {:else} Untitled {/if}
             </div>
