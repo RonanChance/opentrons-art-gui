@@ -14,8 +14,8 @@
     // GRID DATA
     let grid_style = $state('Standard'); // 'Standard', 'Honeycomb', 'Radial', 'QRCode', 'Image'
     let radius_mm = $state(39.9);
-    let grid_spacing_mm = $state(3.3);
-    let prev_grid_spacing_mm = $state(3.3);
+    let grid_spacing_mm = $state(3);
+    let prev_grid_spacing_mm = $state(3);
     let point_size = $state(1);
     let points = $state({});
     let point_colors = $state({}); // Typical workflow: edit point_colors then call groupByColors()
@@ -607,6 +607,7 @@ def run(protocol):
     </div>
 {/if}
 
+<!-- MENU BAR -->
 <div class="flex flex-row w-full max-w-[100vw] sm:max-w-[490px] mx-auto px-5 pt-3">
     <div class="mr-auto items-center flex flex-row gap-2 opacity-70">
         <label class="swap mr-auto">
@@ -618,194 +619,202 @@ def run(protocol):
             {roundPoint(current_point.x)}, {roundPoint(current_point.y)}
         {/if}
     </div>
-    <a href='/gallery' class="mr-0 flex flex-row gap-2 items-center opacity-70">
-        Gallery
-        <svg class="w-5 h-5" fill="currentColor" viewBox="0 -0.5 33 33" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>pictures1</title> <path d="M26.604 29.587l-2.624-0.72-0.006-7.258 2.51 0.706 3.619-13.509-18.332-4.912-1.208 4.506h-2.068l1.863-6.952 22.193 5.946-5.947 22.193zM23.039 32h-23.039v-22.977h23.039v22.977zM21.041 11.021h-19.043v13.985h19.043v-13.985zM7.849 20.993l2.283-3.692 2.283 2.301 3.139-4.727 3.283 8.134h-14.556l1.855-3.71 1.713 1.694zM6.484 17.086c-0.828 0-1.499-0.67-1.499-1.498s0.671-1.498 1.499-1.498 1.498 0.67 1.498 1.498-0.67 1.498-1.498 1.498z"></path> </g></svg>
-        <!-- <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path fill-rule="evenodd" clip-rule="evenodd" d="M12.2929 4.29289C12.6834 3.90237 13.3166 3.90237 13.7071 4.29289L20.7071 11.2929C21.0976 11.6834 21.0976 12.3166 20.7071 12.7071L13.7071 19.7071C13.3166 20.0976 12.6834 20.0976 12.2929 19.7071C11.9024 19.3166 11.9024 18.6834 12.2929 18.2929L17.5858 13H4C3.44772 13 3 12.5523 3 12C3 11.4477 3.44772 11 4 11H17.5858L12.2929 5.70711C11.9024 5.31658 11.9024 4.68342 12.2929 4.29289Z" fill="#000000"></path> </g></svg> -->
-    </a>
+    <a href='/gallery' class="mr-0 flex flex-row gap-2 items-center opacity-70"> Gallery <svg class="w-5 h-5" fill="currentColor" viewBox="0 -0.5 33 33" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>pictures1</title> <path d="M26.604 29.587l-2.624-0.72-0.006-7.258 2.51 0.706 3.619-13.509-18.332-4.912-1.208 4.506h-2.068l1.863-6.952 22.193 5.946-5.947 22.193zM23.039 32h-23.039v-22.977h23.039v22.977zM21.041 11.021h-19.043v13.985h19.043v-13.985zM7.849 20.993l2.283-3.692 2.283 2.301 3.139-4.727 3.283 8.134h-14.556l1.855-3.71 1.713 1.694zM6.484 17.086c-0.828 0-1.499-0.67-1.499-1.498s0.671-1.498 1.499-1.498 1.498 0.67 1.498 1.498-0.67 1.498-1.498 1.498z"></path> </g></svg></a>
 </div>
 
+<!-- AGAR PLATE -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
- <!-- bg-gray-300 my-4 -->
 <div class="mb-4 flex items-center mx-auto w-full max-w-[94vw] max-h-[94vw] sm:max-w-[460px] sm:max-h-[460px] aspect-square rounded-xl">
-<div 
-    class="relative border border-neutral bg-neutral rounded-full mx-auto w-full max-w-[90vw] max-h-[90vw] sm:max-w-[440px] sm:max-h-[440px] aspect-square {loadingURLRecord ? 'blur' : ''} {loadingAIRecord ? 'blur' : ''}"
-    onmousedown={() => isDrawing = true}
-    onmouseup={() => isDrawing = false}
-    onmouseleave={() => {isDrawing = false; current_point = {};}}
-    ontouchstart={() => isDrawing = true}
-    ontouchend={() => isDrawing = false}
-    ontouchcancel={() => isDrawing = false}
-    draggable="false"
-    id="grid-container"
->
-    {#if grid_style === 'QRCode' && QRCode_text === ''}
-        <div class="flex justify-center items-center h-full opacity-40 text-white">Insert text below</div>
-    {/if}
-    {#each points as { x, y }}
-        <!-- svelte-ignore a11y_mouse_events_have_key_events -->
-        <input type="checkbox" id="dot-{x}-{y}"
-            class="checkbox
-                {point_size === 0.25 ? 'w-[3px] h-[3px]' : ''}
-                {point_size === 0.5 ? 'w-[6px] h-[6px]' : ''}
-                {point_size === 0.75 ? 'w-[7px] h-[7px]' : ''}
-                {point_size === 1 ? 'w-[8px] h-[8px]' : ''}
-                {point_size === 1.25 ? 'w-[9px] h-[9px]' : ''}
-                {point_size === 1.5 ? 'w-[10px] h-[10px]' : ''}
-                {point_size === 1.75 ? 'w-[11px] h-[11px]' : ''}
-                {point_size === 2 ? 'w-[12px] h-[12px]' : ''} 
-                {point_size === 2.25 ? 'w-[13px] h-[13px]' : ''}
-                {point_size === 2.5 ? 'w-[14px] h-[14px]' : ''} 
-                {point_size === 2.75 ? 'w-[15px] h-[15px]' : ''}
-                {point_size === 3 ? 'w-[16px] h-[16px]' : ''}
-                {point_size === 3.25 ? 'w-[17px] h-[17px]' : ''}
-                {point_size === 3.5 ? 'w-[18px] h-[18px]' : ''}
-                {point_size === 3.75 ? 'w-[19px] h-[19px]' : ''}
-                {point_size === 4 ? 'w-[20px] h-[20px]' : ''}
-                {point_size === 4.25 ? 'w-[21px] h-[21px]' : ''}
-                {point_size === 4.5 ? 'w-[22px] h-[22px]' : ''}
-                {point_size === 4.75 ? 'w-[23px] h-[23px]' : ''}
-                {point_size === 5 ? 'w-[24px] h-[24px]' : ''}
-                absolute rounded-full [--chkfg:invisible] transition-[box-shadow] duration-200 ease-in-out {point_colors[`${x}, ${y}`] ? 'border-0' : 'border-white opacity-15'} {show_outlines ? '' : 'border-0'}"
-            style="
-                left: calc(50% + ({x / (radius_mm + 4)} * 50%) - {point_size*2}px); 
-                top: calc(50% - ({y / (radius_mm + 4)} * 50%) - {point_size*2}px);
-                background-color: {well_colors[point_colors[`${x}, ${y}`]] || old_well_colors[point_colors[`${x}, ${y}`]] || 'transparent'};
-                box-shadow: {point_colors[`${x}, ${y}`] ? `0 0 3px 2px ${ well_colors[point_colors[`${x}, ${y}`]] || old_well_colors[point_colors[`${x}, ${y}`]] || 'transparent'}` : 'none'};
-                "
-            draggable="false"
-            onmouseover={() => {
-                if (isDrawing) {
+    <div class="relative border border-neutral bg-neutral rounded-full mx-auto w-full max-w-[90vw] max-h-[90vw] sm:max-w-[440px] sm:max-h-[440px] aspect-square {loadingURLRecord ? 'blur' : ''} {loadingAIRecord ? 'blur' : ''}"
+        onmousedown={() => isDrawing = true}
+        onmouseup={() => isDrawing = false}
+        onmouseleave={() => {isDrawing = false; current_point = {};}}
+        ontouchstart={() => isDrawing = true}
+        ontouchend={() => isDrawing = false}
+        ontouchcancel={() => isDrawing = false}
+        draggable="false"
+        id="grid-container"
+    >
+        {#if grid_style === 'QRCode' && QRCode_text === ''} <div class="flex justify-center items-center h-full opacity-40 text-white">Insert text below</div> {/if}
+        
+        {#each points as { x, y }}
+            <!-- svelte-ignore a11y_mouse_events_have_key_events -->
+            <input type="checkbox" id="dot-{x}-{y}"
+                class="checkbox
+                    {point_size === 0.25 ? 'w-[3px] h-[3px]' : ''}
+                    {point_size === 0.5 ? 'w-[6px] h-[6px]' : ''}
+                    {point_size === 0.75 ? 'w-[7px] h-[7px]' : ''}
+                    {point_size === 1 ? 'w-[8px] h-[8px]' : ''}
+                    {point_size === 1.25 ? 'w-[9px] h-[9px]' : ''}
+                    {point_size === 1.5 ? 'w-[10px] h-[10px]' : ''}
+                    {point_size === 1.75 ? 'w-[11px] h-[11px]' : ''}
+                    {point_size === 2 ? 'w-[12px] h-[12px]' : ''} 
+                    {point_size === 2.25 ? 'w-[13px] h-[13px]' : ''}
+                    {point_size === 2.5 ? 'w-[14px] h-[14px]' : ''} 
+                    {point_size === 2.75 ? 'w-[15px] h-[15px]' : ''}
+                    {point_size === 3 ? 'w-[16px] h-[16px]' : ''}
+                    {point_size === 3.25 ? 'w-[17px] h-[17px]' : ''}
+                    {point_size === 3.5 ? 'w-[18px] h-[18px]' : ''}
+                    {point_size === 3.75 ? 'w-[19px] h-[19px]' : ''}
+                    {point_size === 4 ? 'w-[20px] h-[20px]' : ''}
+                    {point_size === 4.25 ? 'w-[21px] h-[21px]' : ''}
+                    {point_size === 4.5 ? 'w-[22px] h-[22px]' : ''}
+                    {point_size === 4.75 ? 'w-[23px] h-[23px]' : ''}
+                    {point_size === 5 ? 'w-[24px] h-[24px]' : ''}
+                    absolute rounded-full [--chkfg:invisible] transition-[box-shadow] duration-200 ease-in-out {point_colors[`${x}, ${y}`] ? 'border-0' : 'border-white opacity-15'} {show_outlines ? '' : 'border-0'}"
+                style="
+                    left: calc(50% + ({x / (radius_mm + 4)} * 50%) - {point_size*2}px); 
+                    top: calc(50% - ({y / (radius_mm + 4)} * 50%) - {point_size*2}px);
+                    background-color: {well_colors[point_colors[`${x}, ${y}`]] || old_well_colors[point_colors[`${x}, ${y}`]] || 'transparent'};
+                    box-shadow: {point_colors[`${x}, ${y}`] ? `0 0 3px 2px ${ well_colors[point_colors[`${x}, ${y}`]] || old_well_colors[point_colors[`${x}, ${y}`]] || 'transparent'}` : 'none'};
+                    "
+                draggable="false"
+                onmouseover={() => {
+                    if (isDrawing) {
+                        if (current_color === 'Erase') {
+                            delete point_colors[`${x}, ${y}`];
+                        }
+                        else {
+                            point_colors[`${x}, ${y}`] = current_color;
+                        }
+                        groupByColors();
+                    }
+                    current_point = {x, y}
+                }}
+                ontouchmove={(e) => {
+                    // e.preventDefault(); // Prevent scrolling while drawing
+                    const touch = e.touches[0];
+                    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+                    if (target && target.id.startsWith("dot-")) {
+                        point_colors[`${x}, ${y}`] = current_color;
+                        groupByColors();
+                    }
+                }}
+                onclick={() => {
                     if (current_color === 'Erase') {
                         delete point_colors[`${x}, ${y}`];
                     }
-                    else {
+                    else if (point_colors[`${x}, ${y}`] === current_color) {
+                        delete point_colors[`${x}, ${y}`];
+                        current_point = {};
+                    } else {
                         point_colors[`${x}, ${y}`] = current_color;
+                        current_point = {x, y}
                     }
                     groupByColors();
-                }
-                current_point = {x, y}
-            }}
-            ontouchmove={(e) => {
-                // e.preventDefault(); // Prevent scrolling while drawing
-                const touch = e.touches[0];
-                const target = document.elementFromPoint(touch.clientX, touch.clientY);
-                if (target && target.id.startsWith("dot-")) {
-                    point_colors[`${x}, ${y}`] = current_color;
-                    groupByColors();
-                }
-            }}
-            onclick={() => {
-                if (current_color === 'Erase') {
-                    delete point_colors[`${x}, ${y}`];
-                }
-                else if (point_colors[`${x}, ${y}`] === current_color) {
-                    delete point_colors[`${x}, ${y}`];
-                    current_point = {};
-                } else {
-                    point_colors[`${x}, ${y}`] = current_color;
-                    current_point = {x, y}
-                }
-                groupByColors();
-            }}
-        />
-    {/each}
-    {#if Object.keys(point_colors).length > 0}
-        <div class="flex flex-row items-center gap-1 justify-center align-middle absolute bottom-0 left-0 origin-bottom-left opacity-50 tooltip tooltip-bottom" data-tip="Estimated Print Duration" transition:fade={{ duration: 200 }}>
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M23 12C23 18.0751 18.0751 23 12 23C5.92487 23 1 18.0751 1 12C1 5.92487 5.92487 1 12 1C18.0751 1 23 5.92487 23 12ZM3.00683 12C3.00683 16.9668 7.03321 20.9932 12 20.9932C16.9668 20.9932 20.9932 16.9668 20.9932 12C20.9932 7.03321 16.9668 3.00683 12 3.00683C7.03321 3.00683 3.00683 7.03321 3.00683 12Z" fill="#0F0F0F"></path> <path d="M12 5C11.4477 5 11 5.44771 11 6V12.4667C11 12.4667 11 12.7274 11.1267 12.9235C11.2115 13.0898 11.3437 13.2343 11.5174 13.3346L16.1372 16.0019C16.6155 16.278 17.2271 16.1141 17.5032 15.6358C17.7793 15.1575 17.6155 14.5459 17.1372 14.2698L13 11.8812V6C13 5.44772 12.5523 5 12 5Z" fill="#0F0F0F"></path> </g></svg>
-            <div class="">{formatSeconds(estimatedPrintDuration)}</div>
-        </div>
-    {/if}
-    {#if Object.keys(point_colors).length > 0 && (grid_style === "Standard" || grid_style === "Image")}
-        <div class="absolute bottom-0 right-0 scale-[60%] origin-bottom-right" transition:fade={{ duration: 200 }}>
-            <div class="flex w-full justify-center">
-                <button class="kbd" onclick={() => {point_colors = shiftPoints("up", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors); groupByColors();}}>▲</button>
+                }}
+            />
+        {/each}
+        <!-- TIME ESTIMATION -->
+        {#if Object.keys(point_colors).length > 0}
+            <div class="flex flex-row items-center gap-1 justify-center align-middle absolute top-0 left-0 origin-bottom-left opacity-50 tooltip tooltip-bottom" data-tip="Estimated Print Duration" transition:fade={{ duration: 200 }}>
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M23 12C23 18.0751 18.0751 23 12 23C5.92487 23 1 18.0751 1 12C1 5.92487 5.92487 1 12 1C18.0751 1 23 5.92487 23 12ZM3.00683 12C3.00683 16.9668 7.03321 20.9932 12 20.9932C16.9668 20.9932 20.9932 16.9668 20.9932 12C20.9932 7.03321 16.9668 3.00683 12 3.00683C7.03321 3.00683 3.00683 7.03321 3.00683 12Z" fill="#0F0F0F"></path> <path d="M12 5C11.4477 5 11 5.44771 11 6V12.4667C11 12.4667 11 12.7274 11.1267 12.9235C11.2115 13.0898 11.3437 13.2343 11.5174 13.3346L16.1372 16.0019C16.6155 16.278 17.2271 16.1141 17.5032 15.6358C17.7793 15.1575 17.6155 14.5459 17.1372 14.2698L13 11.8812V6C13 5.44772 12.5523 5 12 5Z" fill="#0F0F0F"></path> </g></svg>
+                <div class="">{formatSeconds(estimatedPrintDuration)}</div>
             </div>
-            <div class="flex w-full justify-center gap-2 pt-2">
-                <button class="kbd" onclick={() => {point_colors = shiftPoints("left", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors); groupByColors();}}>◀︎</button>
-                <button class="kbd" onclick={() => {point_colors = shiftPoints("down", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors); groupByColors();}}>▼</button>
-                <button class="kbd" onclick={() => {point_colors = shiftPoints("right", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors); groupByColors();}}>▶︎</button>
+        {/if}
+        <!-- MOVEMENT KEYS -->
+        {#if Object.keys(point_colors).length > 0 && (grid_style === "Standard" || grid_style === "Image")}
+            <div class="absolute bottom-0 right-0 scale-[60%] origin-bottom-right" transition:fade={{ duration: 200 }}>
+                <div class="flex w-full justify-center">
+                    <button class="kbd" onclick={() => {point_colors = shiftPoints("up", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors); groupByColors();}}>▲</button>
+                </div>
+                <div class="flex w-full justify-center gap-2 pt-2">
+                    <button class="kbd" onclick={() => {point_colors = shiftPoints("left", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors); groupByColors();}}>◀︎</button>
+                    <button class="kbd" onclick={() => {point_colors = shiftPoints("down", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors); groupByColors();}}>▼</button>
+                    <button class="kbd" onclick={() => {point_colors = shiftPoints("right", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors); groupByColors();}}>▶︎</button>
+                </div>
             </div>
-        </div>
-    {/if}
-</div>
+        {/if}
+    </div>
 </div>
 
 
 <div class="flex flex-col px-5 gap-4 w-full max-w-[100vw] sm:max-w-[500px] mx-auto mb-[150px]">
+    
     {#if grid_style === 'QRCode'}
         <div class="relative w-full">
             <svg class="w-5 h-5 absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none opacity-75" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M16.4437 2.00021C14.9719 1.98733 13.5552 2.55719 12.4986 3.58488L12.4883 3.59504L11.6962 4.38801C11.3059 4.77876 11.3063 5.41192 11.697 5.80222C12.0878 6.19252 12.721 6.19216 13.1113 5.80141L13.8979 5.01386C14.5777 4.35511 15.4855 3.99191 16.4262 4.00014C17.3692 4.00839 18.2727 4.38923 18.9416 5.06286C19.6108 5.73671 19.9916 6.64971 19.9998 7.6056C20.008 8.55874 19.6452 9.47581 18.9912 10.1607L16.2346 12.9367C15.8688 13.3052 15.429 13.5897 14.9453 13.7714C14.4616 13.9531 13.945 14.0279 13.4304 13.9907C12.9159 13.9536 12.4149 13.8055 11.9616 13.5561C11.5083 13.3067 11.1129 12.9617 10.8027 12.5441C10.4734 12.1007 9.847 12.0083 9.40364 12.3376C8.96029 12.6669 8.86785 13.2933 9.19718 13.7367C9.67803 14.384 10.2919 14.9202 10.9975 15.3084C11.7032 15.6966 12.4838 15.9277 13.2866 15.9856C14.0893 16.0435 14.8949 15.9268 15.6486 15.6437C16.4022 15.3606 17.0861 14.9177 17.654 14.3457L20.4168 11.5635L20.429 11.551C21.4491 10.4874 22.0125 9.0642 21.9997 7.58834C21.987 6.11247 21.3992 4.69931 20.3607 3.65359C19.3221 2.60764 17.9155 2.01309 16.4437 2.00021Z" fill="#000000"></path> <path d="M10.7134 8.01444C9.91064 7.95655 9.10506 8.0732 8.35137 8.35632C7.59775 8.63941 6.91382 9.08232 6.34597 9.65431L3.5831 12.4365L3.57097 12.449C2.5508 13.5126 1.98748 14.9358 2.00021 16.4117C2.01295 17.8875 2.60076 19.3007 3.6392 20.3464C4.67787 21.3924 6.08439 21.9869 7.55623 21.9998C9.02807 22.0127 10.4447 21.4428 11.5014 20.4151L11.5137 20.4029L12.3012 19.6099C12.6903 19.218 12.6881 18.5849 12.2962 18.1957C11.9043 17.8066 11.2712 17.8088 10.882 18.2007L10.1011 18.9871C9.42133 19.6452 8.51402 20.0081 7.57373 19.9999C6.63074 19.9916 5.72728 19.6108 5.05834 18.9371C4.38918 18.2633 4.00839 17.3503 4.00014 16.3944C3.99191 15.4412 4.35479 14.5242 5.00874 13.8393L7.76537 11.0633C8.13118 10.6948 8.57097 10.4103 9.05467 10.2286C9.53836 10.0469 10.0549 9.97215 10.5695 10.0093C11.0841 10.0464 11.585 10.1945 12.0383 10.4439C12.4917 10.6933 12.887 11.0383 13.1972 11.4559C13.5266 11.8993 14.1529 11.9917 14.5963 11.6624C15.0397 11.3331 15.1321 10.7067 14.8028 10.2633C14.3219 9.61599 13.708 9.07982 13.0024 8.69161C12.2968 8.30338 11.5161 8.07233 10.7134 8.01444Z" fill="#000000"></path> </g></svg>
-            <input type="text" placeholder="QR Code" class="input input-bordered w-full input-sm pl-8 focus:outline-none focus:ring-0" bind:value={QRCode_text} maxlength="500" />
+            <input type="text" placeholder="QR Code" class="input input-bordered w-full input-sm pl-8 rounded focus:outline-none focus:ring-0" bind:value={QRCode_text} maxlength="500" />
         </div>
     {/if}
 
     {#if grid_style === 'Image'}
-        <div class="relative w-[50%] mx-auto">
+        <div class="relative w-[50%] mr-auto">
             <input type="file" accept="image/*" class="file-input file-input-xs" onclick={(e) => {e.target.value = null;}} onchange={(e) => {handleFileChange(e, pixelationLevel);}} />
         </div>
     {/if}
 
     {#if pixelatedSrc}
-    <div class="flex flex-row w-full gap-4 text-sm pt-4">
-        <div class="w-[50%] mx-auto">
-            <img src={pixelatedSrc} class="w-full mx-auto outline rounded-lg" alt="Pixelated" />
-            <div class="flex flex-col gap-4 pt-6">
-                <!-- BRIGHTNESS -->
-                <div class="flex flex-col w-full gap-2 mx-auto">
-                    <div class="flex flex-row justify-between">
-                        <span class="font-semibold">Brightness</span><span class="opacity-70">{brightness}%</span>
+        <div class="flex flex-row w-full gap-4 text-xs bg-gray-100 rounded px-2 py-2">
+            <div class="w-[25%] mx-auto my-auto">
+                <img src={pixelatedSrc} class="w-full mx-auto outline outline-neutral outline-2 rounded" alt="Pixelated" />
+            </div>
+            <div class="w-[75%] flex flex-col">
+                <div class="flex flex-row w-full gap-3 justify-between">
+                    <!-- CANVAS SIZE -->
+                    <div class="flex flex-col justify-between items-center gap-1 w-1/3">
+                        <span class="font-semibold mr-auto">Canvas</span>
+                        <div class="flex items-center gap-2 mr-auto">
+                            <span class="opacity-70">{canvasSize}x{canvasSize}px</span>
+                            <div class="flex flex-col h-full opacity-70">
+                                <button class="button flex-1 p-0 leading-none" onclick={() => {canvasSize += 5}}>▲</button>
+                                <button class="button flex-1 p-0 leading-none" onclick={() => {canvasSize -= 5}}>▼</button>
+                            </div>
+                        </div>
                     </div>
-                    <input type="range" min="10" max="400" class="range range-sm" step="10" bind:value={brightness} />
+                    <!-- RESOLUTION -->
+                    <div class="flex flex-col justify-between items-center gap-1 w-1/3">
+                        <span class="font-semibold mr-auto">Resolution</span>
+                        <div class="flex items-center gap-2 mr-auto">
+                            <span class="opacity-70">{pixelationLevel}px</span>
+                            <div class="flex flex-col h-full opacity-70">
+                                <button class="button flex-1 p-0 leading-none" onclick={() => {pixelationLevel += 5}}>▲</button>
+                                <button class="button flex-1 p-0 leading-none" onclick={() => {pixelationLevel -= 5}}>▼</button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- REPLACE WHITE -->
+                    <div class="flex flex-col gap-1 w-1/3">
+                        <span class="font-semibold my-auto mr-auto">White</span>
+                        <select class="select select-xs mr-auto truncate max-w-24" bind:value={whiteBgReplacement} onchange={() => {processImage(canvasSize, pixelationLevel)}} >
+                            <option selected>Invisible</option>
+                            {#each Object.entries(current_well_colors).filter(([name, val]) => name !== 'White' &&  name !== "Erase" && val) as [key, value], i}
+                                <option>
+                                    {key}
+                                </option>
+                            {/each}
+                        </select>
+                    </div>
                 </div>
-                <!-- CONTRAST -->
-                <div class="flex flex-col w-full gap-2 mx-auto">
-                    <div class="flex flex-row justify-between">
-                        <span class="font-semibold">Contrast</span><span class="opacity-70">{contrast}%</span>
+
+                <div class="divider my-0"></div>
+
+                <!-- IMAGE PROCESSING -->
+                <div class="flex flex-row w-full gap-3 text-xs">
+                    <!-- BRIGHTNESS -->
+                    <div class="flex flex-col gap-2 w-1/3">
+                        <div class="flex flex-row justify-between">
+                            <span class="font-semibold">Brightness</span><span class="opacity-70">{brightness}%</span>
+                        </div>
+                        <input type="range" min="10" max="300" class="range range-xs" step="10" bind:value={brightness} />
                     </div>
-                    <input type="range" min="10" max="400" class="range range-sm" step="10" bind:value={contrast} />
-                </div>
-                <!-- SATURATION -->
-                <div class="flex flex-col w-full gap-2 mx-auto">
-                    <div class="flex flex-row justify-between">
-                        <span class="font-semibold">Saturation</span><span class="opacity-70">{saturation}%</span>
+                    <!-- CONTRAST -->
+                    <div class="flex flex-col gap-2 w-1/3">
+                        <div class="flex flex-row justify-between">
+                            <span class="font-semibold">Contrast</span><span class="opacity-70">{contrast}%</span>
+                        </div>
+                        <input type="range" min="10" max="300" class="range range-xs" step="10" bind:value={contrast} />
                     </div>
-                    <input type="range" min="10" max="400" class="range range-sm" step="10" bind:value={saturation} />
+                    <!-- SATURATION -->
+                    <div class="flex flex-col gap-2 w-1/3">
+                        <div class="flex flex-row justify-between">
+                            <span class="font-semibold">Saturation</span><span class="opacity-70">{saturation}%</span>
+                        </div>
+                        <input type="range" min="10" max="300" class="range range-xs" step="10" bind:value={saturation} />
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="w-[50%] flex flex-col gap-4">
-            <!-- CANVAS SIZE -->
-            <div class="flex flex-col w-full gap-2 mx-auto">
-                <div class="flex flex-row justify-between">
-                    <span class="font-semibold">Canvas</span><span class="opacity-70">{canvasSize}x{canvasSize}px</span>
-                </div>
-                <input type="range" min="5" max="100" class="range range-sm" step="5" bind:value={canvasSize} />
-            </div>
-            <!-- RESOLUTION (PIXELATION LEVEL) -->
-            <div class="flex flex-col w-full gap-2 mx-auto">
-                <div class="flex flex-row justify-between">
-                    <span class="font-semibold">Resolution</span><span class="opacity-70">{pixelationLevel}px</span>
-                </div>
-                <input type="range" min="5" max="{canvasSize}" class="range range-sm" step="5" bind:value={pixelationLevel} />
-            </div>
-
-            <!-- REPLACE WHITE -->
-            <div class="flex flex-row justify-center gap-5">
-                <span class="font-semibold my-auto">Replace White</span>
-                <select class="select select-sm" bind:value={whiteBgReplacement} onchange={() => {processImage(canvasSize, pixelationLevel)}} >
-                    <option selected>Invisible</option>
-                    {#each Object.entries(current_well_colors).filter(([name, val]) => name !== 'White' &&  name !== "Erase" && val) as [key, value], i}
-                        <option>
-                            {key}
-                        </option>
-                    {/each}
-                </select>
-            </div>
-        </div>
-    </div>
-
-    <div class="divider my-2"></div>
     {/if}
 
     <div class="flex flex-row w-full gap-6">
@@ -815,17 +824,17 @@ def run(protocol):
                 <span class="font-semibold">Grid</span> <span class="opacity-70">{grid_style}</span>
             </div>
             <div class="flex flex-row justify-between {Object.keys(point_colors).length > 0 ? 'tooltip tooltip-top' : ''}" data-tip="Erase Grid to Edit">
-                <button class="btn btn-sm px-2.5 group {grid_style === 'Standard' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "Standard"; grid_spacing_mm = 3.3; point_size = 1.5}} aria-label="Standard" disabled={Object.keys(point_colors).length > 0}>
-                    <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="miter"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><line x1="5.99" y1="6" x2="6" y2="6" stroke-linecap="round" stroke-width="2"></line><line x1="11.99" y1="6" x2="12" y2="6" stroke-linecap="round" stroke-width="2"></line><line x1="17.99" y1="6" x2="18" y2="6" stroke-linecap="round" stroke-width="2"></line><line x1="5.99" y1="12" x2="6" y2="12" stroke-linecap="round" stroke-width="2"></line><line x1="11.99" y1="12" x2="12" y2="12" stroke-linecap="round" stroke-width="2"></line><line x1="17.99" y1="12" x2="18" y2="12" stroke-linecap="round" stroke-width="2"></line><line x1="5.99" y1="18" x2="6" y2="18" stroke-linecap="round" stroke-width="2"></line><line x1="11.99" y1="18" x2="12" y2="18" stroke-linecap="round" stroke-width="2"></line><line x1="17.99" y1="18" x2="18" y2="18" stroke-linecap="round" stroke-width="2"></line></g></svg>
+                <button class="btn btn-sm px-2.5 group {grid_style === 'Standard' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "Standard"; grid_spacing_mm = 3; point_size = 1.5;}} aria-label="Standard" disabled={Object.keys(point_colors).length > 0}>
+                   <svg class="w-5 h-5 opacity-75" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><circle cx="8" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="12" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="16" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="8" cy="12" r="1" fill="currentColor" stroke="none" /><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" /><circle cx="16" cy="12" r="1" fill="currentColor" stroke="none" /><circle cx="8" cy="16" r="1" fill="currentColor" stroke="none" /><circle cx="12" cy="16" r="1" fill="currentColor" stroke="none" /><circle cx="16" cy="16" r="1" fill="currentColor" stroke="none" /></svg>
                 </button>
-                <button class="btn btn-sm px-2.5 group {grid_style === 'Radial' ? 'btn-neutral' : 'btn-outline '} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "Radial"; grid_spacing_mm = 3.3; point_size = 1.5}} aria-label="Radial" disabled={Object.keys(point_colors).length > 0}>
-                    <svg class="w-5 h-5" viewBox="0 0 48 48" id="a" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><defs><style>.f{fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;}</style></defs><circle id="b" class="f" cx="24" cy="24" r="8.5"></circle><circle id="c" class="f" cx="24" cy="24" r="11.8"></circle><circle id="d" class="f" cx="24" cy="24" r="18.25"></circle><circle id="e" class="f" cx="24" cy="24" r="21.5"></circle></g></svg>
+                <button class="btn btn-sm px-2.5 group {grid_style === 'Radial' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "Radial"; grid_spacing_mm = 3; point_size = 1.5;}} aria-label="Radial" disabled={Object.keys(point_colors).length > 0}>
+                   <svg class="w-5 h-5 opacity-75" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"> <circle cx="12" cy="12" r="10" /> <circle cx="12" cy="7" r="1" fill="currentColor" stroke="none" /> <circle cx="15.8" cy="8.8" r="1" fill="currentColor" stroke="none" /> <circle cx="17" cy="12" r="1" fill="currentColor" stroke="none" /> <circle cx="15.8" cy="15.2" r="1" fill="currentColor" stroke="none" /> <circle cx="12" cy="17" r="1" fill="currentColor" stroke="none" />  <circle cx="8.2" cy="15.2" r="1" fill="currentColor" stroke="none" /> <circle cx="7" cy="12" r="1" fill="currentColor" stroke="none" /> <circle cx="8.2" cy="8.8" r="1" fill="currentColor" stroke="none" /> <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" /> </svg>
                 </button>
-                <button class="btn btn-sm px-2.5 group {grid_style === 'QRCode' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "QRCode"; grid_spacing_mm = 2; point_size = 0.25}} aria-label="QRCode" disabled={Object.keys(point_colors).length > 0}>
+                <button class="btn btn-sm px-2.5 group {grid_style === 'QRCode' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "QRCode"; grid_spacing_mm = 2; point_size = 0.25;}} aria-label="QRCode" disabled={Object.keys(point_colors).length > 0}>
                     <svg class="w-5 h-5 opacity-75" fill="currentColor" height="200px" width="200px" viewBox="0 0 24 24" id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <defs> <style>.cls-1{fill:none;}.cls-2{clip-path:url(#clip-path);}</style> <clipPath id="clip-path"> <rect class="cls-1" x="-0.04" width="24" height="24"></rect> </clipPath> </defs> <title>qr-alt</title> <g class="cls-2"> <path d="M9.84,11.17H7.13a1.4,1.4,0,0,1-1.4-1.39V7.07a1.4,1.4,0,0,1,1.4-1.4H9.84a1.4,1.4,0,0,1,1.39,1.4V9.78A1.39,1.39,0,0,1,9.84,11.17ZM7.23,9.67h2.5V7.17H7.23Z"></path> <path d="M16.88,11.17H14.16a1.39,1.39,0,0,1-1.39-1.39V7.07a1.4,1.4,0,0,1,1.39-1.4h2.72a1.4,1.4,0,0,1,1.39,1.4V9.78A1.39,1.39,0,0,1,16.88,11.17Zm-2.61-1.5h2.5V7.17h-2.5Z"></path> <path d="M9.84,18.33H7.13a1.4,1.4,0,0,1-1.4-1.4V14.22a1.4,1.4,0,0,1,1.4-1.39H9.84a1.39,1.39,0,0,1,1.39,1.39v2.71A1.4,1.4,0,0,1,9.84,18.33Zm-2.61-1.5h2.5v-2.5H7.23Z"></path> <path d="M16.88,18.44H14.16a1.39,1.39,0,0,1-1.39-1.39V14.33a1.39,1.39,0,0,1,1.39-1.39h2.72a1.4,1.4,0,0,1,1.39,1.39v2.72A1.39,1.39,0,0,1,16.88,18.44Zm-2.61-1.5h2.5v-2.5h-2.5Z"></path> <path d="M3,8.25a.76.76,0,0,1-.75-.75V3A.76.76,0,0,1,3,2.25H7.5a.75.75,0,0,1,0,1.5H3.75V7.5A.76.76,0,0,1,3,8.25Z"></path> <path d="M21,8.25a.76.76,0,0,1-.75-.75V3.75H16.5a.75.75,0,0,1,0-1.5H21a.76.76,0,0,1,.75.75V7.5A.76.76,0,0,1,21,8.25Z"></path> <path d="M21,21.75H16.5a.75.75,0,0,1,0-1.5h3.75V16.5a.75.75,0,0,1,1.5,0V21A.76.76,0,0,1,21,21.75Z"></path> <path d="M7.5,21.75H3A.76.76,0,0,1,2.25,21V16.5a.75.75,0,0,1,1.5,0v3.75H7.5a.75.75,0,0,1,0,1.5Z"></path> </g> </g></svg>
                 </button>
-                <button class="btn btn-sm px-2.5 group {grid_style === 'Image' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "Image";}} aria-label="QRCode" disabled={Object.keys(point_colors).length > 0}>
-                    <svg class="w-5 h-5 opacity-75" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M4 10V6C4 4.89543 4.89543 4 6 4H12M4.02693 18.329C4.18385 19.277 5.0075 20 6 20H18C19.1046 20 20 19.1046 20 18V14.1901M4.02693 18.329C4.00922 18.222 4 18.1121 4 18V15M4.02693 18.329L7.84762 14.5083C8.52765 13.9133 9.52219 13.8481 10.274 14.3494L10.7832 14.6888C11.5078 15.1719 12.4619 15.1305 13.142 14.5864L15.7901 12.4679C16.4651 11.9279 17.4053 11.8855 18.1228 12.3484C18.2023 12.3997 18.2731 12.4632 18.34 12.5301L20 14.1901M20 14.1901V6C20 4.89543 19.1046 4 18 4H17M11 9C11 10.1046 10.1046 11 9 11C7.89543 11 7 10.1046 7 9C7 7.89543 7.89543 7 9 7C10.1046 7 11 7.89543 11 9Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
+                <button class="btn btn-sm px-2 group {grid_style === 'Image' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "Image"; grid_spacing_mm = 1.8; point_size = 0.25;}} aria-label="Image" disabled={Object.keys(point_colors).length > 0}>
+                    <svg class="w-6 h-6 opacity-75" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M4 10V6C4 4.89543 4.89543 4 6 4H12M4.02693 18.329C4.18385 19.277 5.0075 20 6 20H18C19.1046 20 20 19.1046 20 18V14.1901M4.02693 18.329C4.00922 18.222 4 18.1121 4 18V15M4.02693 18.329L7.84762 14.5083C8.52765 13.9133 9.52219 13.8481 10.274 14.3494L10.7832 14.6888C11.5078 15.1719 12.4619 15.1305 13.142 14.5864L15.7901 12.4679C16.4651 11.9279 17.4053 11.8855 18.1228 12.3484C18.2023 12.3997 18.2731 12.4632 18.34 12.5301L20 14.1901M20 14.1901V6C20 4.89543 19.1046 4 18 4H17M11 9C11 10.1046 10.1046 11 9 11C7.89543 11 7 10.1046 7 9C7 7.89543 7.89543 7 9 7C10.1046 7 11 7.89543 11 9Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
                 </button>
             </div>
         </div>
@@ -911,7 +920,7 @@ def run(protocol):
                 </span>
             </div>
             <div class="{Object.keys(point_colors).length > 0 && !(grid_style === 'QRCode' || grid_style === 'Standard') ? 'tooltip tooltip-top' : ''}" data-tip="Erase Grid to Edit" >
-                <input type="range" min="1" max="10" disabled={blurSlider()} class="range {blurSlider() ? 'cursor-not-allowed blur-sm' : ''}" step="0.1" bind:value={grid_spacing_mm} />
+                <input type="range" min="1" max="7.5" disabled={blurSlider()} class="range {blurSlider() ? 'cursor-not-allowed blur-sm' : ''}" step="0.1" bind:value={grid_spacing_mm} />
             </div>
         </div>
         <!-- POINT SIZE -->
@@ -929,10 +938,16 @@ def run(protocol):
             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path transform="scale(1.2) translate(-3 -2.5)" fill-rule="evenodd" clip-rule="evenodd" d="M15.0722 3.9967L20.7508 9.83395L17.0544 13.5304L13.0758 17.5H21.0041V19H7.93503L4.00195 15.0669L15.0722 3.9967ZM10.952 17.5L15.4628 12.9994L11.8268 9.3634L6.12327 15.0669L8.55635 17.5H10.952Z" fill="currentColor"></path> </g></svg>
             Reset
         </button>
-        <button class="btn btn-sm hover:bg-neutral hover:text-white" onclick={() => { if (!uploading) {upload_modal.showModal()}}}>
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 35 35" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>upload1</title> <path d="M29.426 15.535c0 0 0.649-8.743-7.361-9.74-6.865-0.701-8.955 5.679-8.955 5.679s-2.067-1.988-4.872-0.364c-2.511 1.55-2.067 4.388-2.067 4.388s-5.576 1.084-5.576 6.768c0.124 5.677 6.054 5.734 6.054 5.734h9.351v-6h-3l5-5 5 5h-3v6h8.467c0 0 5.52 0.006 6.295-5.395 0.369-5.906-5.336-7.070-5.336-7.070z"></path> </g></svg>
-            Publish
-        </button>
+        <div class="flex flex-row gap-2">
+            <button class="btn btn-sm hover:bg-neutral hover:text-white" onclick={downloadPythonFile}>
+                <svg class="w-5 h-5 inline-block align-middle" transform="scale(1.3) translate(-0.5 0)" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"> <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 5v8.5m0 0l3-3m-3 3l-3-3M5 15v2a2 2 0 002 2h10a2 2 0 002-2v-2" /></svg>
+                Python Script
+            </button>
+            <button class="btn btn-sm hover:bg-neutral hover:text-white" onclick={() => { if (!uploading) {upload_modal.showModal()}}}>
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 35 35" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>upload1</title> <path d="M29.426 15.535c0 0 0.649-8.743-7.361-9.74-6.865-0.701-8.955 5.679-8.955 5.679s-2.067-1.988-4.872-0.364c-2.511 1.55-2.067 4.388-2.067 4.388s-5.576 1.084-5.576 6.768c0.124 5.677 6.054 5.734 6.054 5.734h9.351v-6h-3l5-5 5 5h-3v6h8.467c0 0 5.52 0.006 6.295-5.395 0.369-5.906-5.336-7.070-5.336-7.070z"></path> </g></svg>
+                Publish
+            </button>
+        </div>
     </div>
 
     <!-- SHOW POINTS -->
@@ -945,9 +960,6 @@ def run(protocol):
                 </button> -->
                 <button class="btn btn-sm px-1 tooltip tooltip-top" aria-label="Copy Points" data-tip="Copy To Clipboard" onclick={copyPointsToClipboard}>
                     <svg class="w-7 h-7 opacity-70" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M10 8V7C10 6.05719 10 5.58579 10.2929 5.29289C10.5858 5 11.0572 5 12 5H17C17.9428 5 18.4142 5 18.7071 5.29289C19 5.58579 19 6.05719 19 7V12C19 12.9428 19 13.4142 18.7071 13.7071C18.4142 14 17.9428 14 17 14H16M7 19H12C12.9428 19 13.4142 19 13.7071 18.7071C14 18.4142 14 17.9428 14 17V12C14 11.0572 14 10.5858 13.7071 10.2929C13.4142 10 12.9428 10 12 10H7C6.05719 10 5.58579 10 5.29289 10.2929C5 10.5858 5 11.0572 5 12V17C5 17.9428 5 18.4142 5.29289 18.7071C5.58579 19 6.05719 19 7 19Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>
-                </button>
-                <button class="btn btn-sm px-1 tooltip tooltip-top" aria-label="Download Python File" data-tip="Download Python File" onclick={downloadPythonFile}>
-                    <svg class="w-7 h-7 opacity-60" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.25" d="M12 5v8.5m0 0l3-3m-3 3l-3-3M5 15v2a2 2 0 002 2h10a2 2 0 002-2v-2"></path> </g></svg>
                 </button>
             </div>
         </div>
