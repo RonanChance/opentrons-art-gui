@@ -294,7 +294,7 @@
         const volume_used = `volume_used = {\n${volumeUsedEntries.join(',\n')}\n}`;
         let scriptToCopy;
 
-        // WITH THERMOCYCLER SCRIPT
+        // WITH TEMPERATURE PLATE SCRIPT
         if (scriptType === 'MIT') {
             scriptToCopy = `from opentrons import types
 
@@ -417,7 +417,7 @@ def run(protocol):
         pipette_20ul.drop_tip()
     `
     }
-    // WITHOUT THERMOCYCLER SCRIPT
+    // WITHOUT TEMPERATURE PLATE SCRIPT
     if (scriptType === 'LEAHKnox') {
         scriptToCopy = `from opentrons import types
 
@@ -709,11 +709,11 @@ def run(protocol):
         <div class="flex flex-col gap-2 pt-5">
             <button class="btn flex items-center gap-2" onclick={() => {scriptType="MIT"; downloadPythonFile();}}>
                 <svg class="w-5 h-5 inline-block align-middle" transform="scale(1.3) translate(-0.5 0)" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"> <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 5v8.5m0 0l3-3m-3 3l-3-3M5 15v2a2 2 0 002 2h10a2 2 0 002-2v-2" /></svg>
-                E14 Media Lab - With Thermocycler
+                E14 Media Lab - With Temperature Plate
             </button>
             <button class="btn flex items-center gap-2" onclick={() => {scriptType="LEAHKnox"; downloadPythonFile();}}>
                 <svg class="w-5 h-5 inline-block align-middle" transform="scale(1.3) translate(-0.5 0)" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"> <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 5v8.5m0 0l3-3m-3 3l-3-3M5 15v2a2 2 0 002 2h10a2 2 0 002-2v-2" /></svg>
-                68 Project Lab - Without Thermocycler
+                68 Project Lab - Without Temperature Plate
             </button>
         </div>
     </div>
