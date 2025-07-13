@@ -50,6 +50,9 @@
     let img = null;
     let whiteBgReplacement = $state('Invisible');
 
+    // DOWNLOAD DATA
+    let scriptType = 'MIT';
+
     onMount(async () => {
         if (browser) {
             let loadRecordId = $page.url.searchParams.get('id');
@@ -77,7 +80,7 @@
             if (grid_style === 'QRCode') {
                     const new_colors = {};
                     for (const point of points) {
-                        new_colors[`${point.x}, ${point.y}`] = 'Red';
+                        new_colors[`${point.x}, ${point.y}`] = 'sfGFP';
                     }
                     point_colors = new_colors;
                     groupByColors();
@@ -231,14 +234,6 @@
         }
     }
 
-    // async function swapColors() {
-    //     const colorCycle = { "Red": "Green", "Green": "Orange", "Orange": "Red" };
-    //     Object.entries(point_colors).forEach(([key, color]) => {
-    //         point_colors[key] = colorCycle[color] || "Red";
-    //     });
-    //     groupByColors();
-    // }
-
     async function copyPointsToClipboard() {
         try {
             // Get the content to copy
@@ -297,9 +292,11 @@
             return `    '${nameWithoutSuffix}': 0`;
         });
         const volume_used = `volume_used = {\n${volumeUsedEntries.join(',\n')}\n}`;
+        let scriptToCopy;
 
-        
-        let scriptToCopy = `from opentrons import types
+        // WITH THERMOCYCLER SCRIPT
+        if (scriptType === 'MIT') {
+            scriptToCopy = `from opentrons import types
 
 import string
 
@@ -310,7 +307,7 @@ metadata = {
     'apiLevel': '2.20'
 }
 
-Z_VALUE = 12.1
+Z_VALUE_AGAR = 12.1
 POINT_SIZE = ${point_size}
 
 ${python_individual_points_lists}
@@ -364,12 +361,9 @@ def run(protocol):
     # Temperature Module Plate
     temperature_plate = temperature_module.load_labware('opentrons_96_aluminumblock_generic_pcr_strip_200ul', 'Cold Plate')
 
-    # Choose where to take the colors from
-    color_plate = temperature_plate
-
     # Agar Plate
-    agar_plate = protocol.load_labware('htgaa_agar_plate', AGAR_DECK_SLOT, 'Agar Plate')  ## TA MUST CALIBRATE EACH PLATE!
-    agar_plate.set_offset(x=0.00, y=0.00, z=Z_VALUE)
+    agar_plate = protocol.load_labware('htgaa_agar_plate', AGAR_DECK_SLOT, 'Agar Plate')
+    agar_plate.set_offset(x=0.00, y=0.00, z=Z_VALUE_AGAR)
 
     # Get the top-center of the plate, make sure the plate was calibrated before running this
     center_location = agar_plate['A1'].top()
@@ -391,7 +385,7 @@ def run(protocol):
     def location_of_color(color_string):
         for well,color in well_colors.items():
             if color.lower() == color_string.lower():
-                return color_plate[well]
+                return temperature_plate[well]
         raise ValueError(f"No well found with color {color_string}")
 
     # Print pattern by iterating over lists
@@ -421,7 +415,128 @@ def run(protocol):
 
         # Drop tip between each color
         pipette_20ul.drop_tip()
-    `   
+    `
+    }
+    // WITHOUT THERMOCYCLER SCRIPT
+    if (scriptType === 'LEAHKnox') {
+        scriptToCopy = `from opentrons import types
+
+import string
+
+metadata = {
+    'protocolName': '{YOUR NAME} - Opentrons Art - HTGAA',
+    'author': 'HTGAA',
+    'source': 'HTGAA 2025',
+    'apiLevel': '2.20'
+}
+
+Z_VALUE_AGAR = 2.7
+POINT_SIZE = ${point_size}
+
+${python_individual_points_lists}
+
+${python_point_name_pairing}
+
+# Robot deck setup constants
+TIP_RACK_DECK_SLOT = 9
+COLORS_DECK_SLOT = 6
+AGAR_DECK_SLOT = 5
+PIPETTE_STARTING_TIP_WELL = 'A1'
+
+# Place the PCR tubes in this order
+${python_well_colors}
+
+${volume_used}
+
+def update_volume_remaining(current_color, quantity_to_aspirate):
+    rows = string.ascii_uppercase
+    for well, color in list(well_colors.items()):
+        if color == current_color:
+            if (volume_used[current_color] + quantity_to_aspirate) > 250:
+                # Move to next well horizontally by advancing row letter, keeping column number
+                row = well[0]
+                col = well[1:]
+                
+                # Find next row letter
+                next_row = rows[rows.index(row) + 1]
+                next_well = f"{next_row}{col}"
+                
+                del well_colors[well]
+                well_colors[next_well] = current_color
+                volume_used[current_color] = quantity_to_aspirate
+            else:
+                volume_used[current_color] += quantity_to_aspirate
+            break
+
+def run(protocol):
+    # Load labware, modules and pipettes
+    protocol.home()
+
+    # Tips
+    tips_20ul = protocol.load_labware('opentrons_96_tiprack_20ul', TIP_RACK_DECK_SLOT, 'Opentrons 20uL Tips')
+
+    # Pipettes
+    pipette_20ul = protocol.load_instrument("p20_single_gen2", "right", [tips_20ul])
+
+    # Modules
+    temperature_plate = protocol.load_labware('opentrons_96_aluminumblock_generic_pcr_strip_200ul', 6)
+
+    # Agar Plate
+    agar_plate = protocol.load_labware('htgaa_agar_plate', AGAR_DECK_SLOT, 'Agar Plate')
+    agar_plate.set_offset(x=0.00, y=0.00, z=Z_VALUE_AGAR)
+
+    # Get the top-center of the plate, make sure the plate was calibrated before running this
+    center_location = agar_plate['A1'].top()
+
+    pipette_20ul.starting_tip = tips_20ul.well(PIPETTE_STARTING_TIP_WELL)
+    
+    # Helper function (dispensing)
+    def dispense_and_jog(pipette, volume, location):
+        assert(isinstance(volume, (int, float)))
+        # Go above the location
+        above_location = location.move(types.Point(z=location.point.z + 2))
+        pipette.move_to(above_location)
+        # Go downwards and dispense
+        pipette.dispense(volume, location)
+        # Go upwards to avoid smearing
+        pipette.move_to(above_location)
+
+    # Helper function (color location)
+    def location_of_color(color_string):
+        for well,color in well_colors.items():
+            if color.lower() == color_string.lower():
+                return temperature_plate[well]
+        raise ValueError(f"No well found with color {color_string}")
+
+    # Print pattern by iterating over lists
+    for i, (current_color, point_list) in enumerate(point_name_pairing):
+        # Skip the rest of the loop if the list is empty
+        if not point_list:
+            continue
+
+        # Get the tip for this run, set the bacteria color, and the aspirate bacteria of choice
+        pipette_20ul.pick_up_tip()
+        max_aspirate = int(18 // POINT_SIZE) * POINT_SIZE
+        quantity_to_aspirate = min(len(point_list)*POINT_SIZE, max_aspirate)
+        update_volume_remaining(current_color, quantity_to_aspirate)
+        pipette_20ul.aspirate(quantity_to_aspirate, location_of_color(current_color))
+
+        # Iterate over the current points list and dispense them, refilling along the way
+        for i in range(len(point_list)):
+            x, y = point_list[i]
+            adjusted_location = center_location.move(types.Point(x, y))
+
+            dispense_and_jog(pipette_20ul, POINT_SIZE, adjusted_location)
+            
+            if pipette_20ul.current_volume == 0 and len(point_list[i:]) > 0:
+                quantity_to_aspirate = min(len(point_list[i:])*POINT_SIZE, max_aspirate)
+                update_volume_remaining(current_color, quantity_to_aspirate)
+                pipette_20ul.aspirate(quantity_to_aspirate, location_of_color(current_color))
+
+        # Drop tip between each color
+        pipette_20ul.drop_tip()
+    `
+    }
 
         const now = new Date();
         const year = now.getFullYear().toString().slice(2);
@@ -581,6 +696,25 @@ def run(protocol):
                     Publish
                 </button>
             </form>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+</dialog>
+
+<dialog id="download_modal" class="modal modal-middle">
+    <div class="modal-box">
+        <h3 class="text-lg font-bold ">Downloads</h3>
+        <div class="flex flex-col gap-2 pt-5">
+            <button class="btn flex items-center gap-2" onclick={() => {scriptType="MIT"; downloadPythonFile();}}>
+                <svg class="w-5 h-5 inline-block align-middle" transform="scale(1.3) translate(-0.5 0)" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"> <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 5v8.5m0 0l3-3m-3 3l-3-3M5 15v2a2 2 0 002 2h10a2 2 0 002-2v-2" /></svg>
+                E14 Media Lab - With Thermocycler
+            </button>
+            <button class="btn flex items-center gap-2" onclick={() => {scriptType="LEAHKnox"; downloadPythonFile();}}>
+                <svg class="w-5 h-5 inline-block align-middle" transform="scale(1.3) translate(-0.5 0)" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"> <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 5v8.5m0 0l3-3m-3 3l-3-3M5 15v2a2 2 0 002 2h10a2 2 0 002-2v-2" /></svg>
+                68 Project Lab - Without Thermocycler
+            </button>
         </div>
     </div>
     <form method="dialog" class="modal-backdrop">
@@ -843,7 +977,7 @@ def run(protocol):
             <div class="flex flex-row justify-between">
                 <span class="font-semibold">Bacteria</span>
                 {#if current_color !== 'Erase'}
-                    <a class="opacity-70 underline" href="https://www.fpbase.org/protein/{current_color.toLowerCase()}" target="_blank" rel="noopener noreferrer">{current_color}</a>
+                    <a class="opacity-70 underline" href={!["sfGFP_mKO2"].includes(current_color) ? `https://www.fpbase.org/protein/${current_color.toLowerCase()}`: null} target="_blank" rel="noopener noreferrer">{current_color}</a>
                 {:else}
                     <span class="opacity-70">{current_color}</span>
                 {/if}
@@ -939,7 +1073,7 @@ def run(protocol):
             Reset
         </button>
         <div class="flex flex-row gap-2">
-            <button class="btn btn-sm hover:bg-neutral hover:text-white" onclick={downloadPythonFile}>
+            <button class="btn btn-sm hover:bg-neutral hover:text-white" onclick={download_modal.showModal()}>
                 <svg class="w-5 h-5 inline-block align-middle" transform="scale(1.3) translate(-0.5 0)" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"> <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 5v8.5m0 0l3-3m-3 3l-3-3M5 15v2a2 2 0 002 2h10a2 2 0 002-2v-2" /></svg>
                 Python Script
             </button>
