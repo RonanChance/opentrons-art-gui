@@ -160,6 +160,10 @@
             }
 
             point_colors = r.record.point_colors;
+            // map old colors onto new colors
+            for (const [k, v] of Object.entries(r.record.point_colors)) {
+                point_colors[k] = { Green: 'sfGFP', Red: 'mRFP1', Orange: 'mKO2' }[v] || v;
+            }
             groupByColors();
 
             console.log("point-colors", point_colors);
