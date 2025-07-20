@@ -279,12 +279,25 @@
         // WELL COLORS
         const maxWells = 12;
         const prefix = 'A';
-        let well_colors_python_dictionary = Object.entries(points_by_color).slice(0, maxWells).map(([color], i) => {
-            const well = `${prefix}${i + 1}`;
-            const nameWithoutSuffix = color.replace(/_points$/, '');
-            return `    '${well}': '${nameWithoutSuffix}'`;
-        });
-        const python_well_colors = `well_colors = {\n${well_colors_python_dictionary.join(',\n')}\n}`;
+        // DYNAMIC WAY TO ASSIGN COLORS TO COLUMNS
+        // let well_colors_python_dictionary = Object.entries(points_by_color).slice(0, maxWells).map(([color], i) => {
+        //     const well = `${prefix}${i + 1}`;
+        //     const nameWithoutSuffix = color.replace(/_points$/, '');
+        //     return `    '${well}': '${nameWithoutSuffix}'`;
+        // });
+        // const python_well_colors = `well_colors = {\n${well_colors_python_dictionary.join(',\n')}\n}`;
+
+        // HARD CODED COLOR ASSIGNMENT FOR CONVENIENCE
+        let well_colors_python_dictionary = {
+            'A1': 'sfgfp',
+            'A3': 'mrfp1',
+            'A5': 'mko2',
+            'A7': 'mkate2',
+            'A9': 'sfgfp_mko2'
+        }
+        const python_well_colors = `well_colors = {\n${Object.entries(well_colors_python_dictionary)
+            .map(([key, value]) => `    '${key}': '${value}'`)
+            .join(',\n')}\n}`;
 
         // VOLUME TRACKING
         let volumeUsedEntries = Object.entries(points_by_color).map(([color]) => {
