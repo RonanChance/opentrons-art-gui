@@ -160,6 +160,10 @@
             }
 
             point_colors = r.record.point_colors;
+            // map old colors onto new colors
+            for (const [k, v] of Object.entries(r.record.point_colors)) {
+                point_colors[k] = { Green: 'sfGFP', Red: 'mRFP1', Orange: 'mKO2' }[v] || v;
+            }
             groupByColors();
 
             console.log("point-colors", point_colors);
@@ -288,19 +292,6 @@
             const nameWithoutSuffix = color.replace(/_points$/, '');
             return `    '${well}': '${nameWithoutSuffix}'`;
         });
-
-        // custom wells
-        const historicalMapping = {
-            'H9': 'green',
-            'H10': 'red',
-            'H11': 'orange',
-            'H12': 'sfGFP_mKO2',
-        };
-
-        // append to list
-        for (const [well, color] of Object.entries(historicalMapping)) {
-        well_colors_python_dictionary.push(`    '${well}': '${color}'`);
-}
 
         const python_well_colors = `well_colors = {\n${well_colors_python_dictionary.join(',\n')}\n}`;
 
