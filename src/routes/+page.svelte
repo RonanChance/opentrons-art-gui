@@ -51,7 +51,7 @@
     let whiteBgReplacement = $state('Invisible');
 
     // DOWNLOAD DATA
-    let scriptType = 'MIT';
+    let scriptType = '96_deep_well'; // '96_deep_well' or '96_pcr'
 
     onMount(async () => {
         if (browser) {
@@ -277,27 +277,57 @@
         let python_point_name_pairing = `point_name_pairing = [` + Object.entries(points_by_color).map(([color]) => { let nameWithoutSuffix = color.replace(/_points$/, ''); return `("${nameWithoutSuffix}", ${color})`;}).join(',') +`]`;
 
         // WELL COLORS
-        const maxWells = 12;
-        const prefix = 'A';
+        const prefixes = ['A', 'B', 'C', 'D']; // row groups
+        const maxNumber = 12; // wells per row
+
         // DYNAMIC WAY TO ASSIGN COLORS TO COLUMNS
-        // let well_colors_python_dictionary = Object.entries(points_by_color).slice(0, maxWells).map(([color], i) => {
-        //     const well = `${prefix}${i + 1}`;
-        //     const nameWithoutSuffix = color.replace(/_points$/, '');
-        //     return `    '${well}': '${nameWithoutSuffix}'`;
-        // });
-        // const python_well_colors = `well_colors = {\n${well_colors_python_dictionary.join(',\n')}\n}`;
+        let well_colors_python_dictionary = Object.entries(current_well_colors_import).slice(2).map(([color], i) => {
+            const prefixIndex = Math.floor(i / maxNumber) % prefixes.length;
+            const number = (i % maxNumber) + 1;
+            const well = `${prefixes[prefixIndex]}${number}`;
+            const nameWithoutSuffix = color.replace(/_points$/, '');
+            return `    '${well}': '${nameWithoutSuffix}'`;
+        });
+
+        // custom wells
+        const historicalMapping = {
+            'H9': 'green',
+            'H10': 'red',
+            'H11': 'orange',
+            'H12': 'sfGFP_mKO2',
+        };
+
+        // append to list
+        for (const [well, color] of Object.entries(historicalMapping)) {
+        well_colors_python_dictionary.push(`    '${well}': '${color}'`);
+}
+
+        const python_well_colors = `well_colors = {\n${well_colors_python_dictionary.join(',\n')}\n}`;
 
         // HARD CODED COLOR ASSIGNMENT FOR CONVENIENCE
-        let well_colors_python_dictionary = {
-            'A1': 'sfgfp',
-            'A3': 'mrfp1',
-            'A5': 'mko2',
-            'A7': 'mkate2',
-            'A9': 'sfgfp_mko2'
-        }
-        const python_well_colors = `well_colors = {\n${Object.entries(well_colors_python_dictionary)
-            .map(([key, value]) => `    '${key}': '${value}'`)
-            .join(',\n')}\n}`;
+        // let well_colors_python_dictionary = {
+        //     'A1': 'sfGFP',
+        //     'A2': 'mRFP1',
+        //     'A3': 'mKO2',
+        //     'A4': 'Venus',
+        //     'A5': 'mRuby2',
+        //     'A6': 'mCherry',
+        //     'A7': 'mKate2_TF',
+        //     'A8': 'mLychee_TF',
+        //     'A9': 'mBanana',
+        //     'A10': 'tdTomato',
+        //     'A11': 'mScarlet_I',
+        //     'A12': 'mPapaya',
+        // }
+        // 'A1': 'sfgfp',
+        // 'A3': 'mrfp1',
+        // 'A5': 'mko2',
+        // 'A7': 'mkate2',
+        // 'A9': 'sfgfp_mko2'
+
+        // const python_well_colors = `well_colors = {\n${Object.entries(well_colors_python_dictionary)
+        //     .map(([key, value]) => `    '${key}': '${value}'`)
+        //     .join(',\n')}\n}`;
 
         // VOLUME TRACKING
         let volumeUsedEntries = Object.entries(points_by_color).map(([color]) => {
@@ -307,8 +337,8 @@
         const volume_used = `volume_used = {\n${volumeUsedEntries.join(',\n')}\n}`;
         let scriptToCopy;
 
-        // WITH TEMPERATURE PLATE SCRIPT
-        if (scriptType === 'MIT') {
+        // WITH DEEP-WELL PLATE SCRIPT
+        if (scriptType === '96_deep_well') {
             scriptToCopy = `from opentrons import types
 
 import string
@@ -320,7 +350,7 @@ metadata = {
     'apiLevel': '2.20'
 }
 
-Z_VALUE_AGAR = 12.1
+Z_VALUE_AGAR = 2.0
 POINT_SIZE = ${point_size}
 
 ${python_individual_points_lists}
@@ -368,11 +398,8 @@ def run(protocol):
     # Pipettes
     pipette_20ul = protocol.load_instrument("p20_single_gen2", "right", [tips_20ul])
 
-    # Modules
-    temperature_module = protocol.load_module('temperature module gen2', COLORS_DECK_SLOT)
-
-    # Temperature Module Plate
-    temperature_plate = temperature_module.load_labware('opentrons_96_aluminumblock_generic_pcr_strip_200ul', 'Cold Plate')
+    # Deep Well Plate
+    temperature_plate = protocol.load_labware('nest_96_wellplate_2ml_deep', 6)
 
     # Agar Plate
     agar_plate = protocol.load_labware('htgaa_agar_plate', AGAR_DECK_SLOT, 'Agar Plate')
@@ -421,7 +448,7 @@ def run(protocol):
 
             dispense_and_jog(pipette_20ul, POINT_SIZE, adjusted_location)
             
-            if pipette_20ul.current_volume == 0 and len(point_list[i:]) > 0:
+            if pipette_20ul.current_volume == 0 and len(point_list[i+1:]) > 0:
                 quantity_to_aspirate = min(len(point_list[i:])*POINT_SIZE, max_aspirate)
                 update_volume_remaining(current_color, quantity_to_aspirate)
                 pipette_20ul.aspirate(quantity_to_aspirate, location_of_color(current_color))
@@ -431,7 +458,7 @@ def run(protocol):
     `
     }
     // WITHOUT TEMPERATURE PLATE SCRIPT
-    if (scriptType === 'LEAHKnox') {
+    if (scriptType === '96_pcr') {
         scriptToCopy = `from opentrons import types
 
 import string
@@ -443,7 +470,7 @@ metadata = {
     'apiLevel': '2.20'
 }
 
-Z_VALUE_AGAR = 2.7
+Z_VALUE_AGAR = 2.0
 POINT_SIZE = ${point_size}
 
 ${python_individual_points_lists}
@@ -491,7 +518,7 @@ def run(protocol):
     # Pipettes
     pipette_20ul = protocol.load_instrument("p20_single_gen2", "right", [tips_20ul])
 
-    # Modules
+    # PCR Plate
     temperature_plate = protocol.load_labware('opentrons_96_aluminumblock_generic_pcr_strip_200ul', 6)
 
     # Agar Plate
@@ -541,7 +568,7 @@ def run(protocol):
 
             dispense_and_jog(pipette_20ul, POINT_SIZE, adjusted_location)
             
-            if pipette_20ul.current_volume == 0 and len(point_list[i:]) > 0:
+            if pipette_20ul.current_volume == 0 and len(point_list[i+1:]) > 0:
                 quantity_to_aspirate = min(len(point_list[i:])*POINT_SIZE, max_aspirate)
                 update_volume_remaining(current_color, quantity_to_aspirate)
                 pipette_20ul.aspirate(quantity_to_aspirate, location_of_color(current_color))
@@ -651,9 +678,9 @@ def run(protocol):
             }
             totalDuration += curDuration;
             // duration: switch pipette
-            totalDuration += 12;
+            totalDuration += 18;
             // duration: refill pipette
-            totalDuration +=  Math.ceil(points_by_color[key].length / 18) * 5;
+            totalDuration +=  Math.ceil(points_by_color[key].length / 18) * 4;
         }
         seconds = totalDuration;
         
@@ -720,13 +747,13 @@ def run(protocol):
     <div class="modal-box">
         <h3 class="text-lg font-bold ">Downloads</h3>
         <div class="flex flex-col gap-2 pt-5">
-            <button class="btn flex items-center gap-2" onclick={() => {scriptType="MIT"; downloadPythonFile();}}>
+            <button class="btn flex items-center gap-2" onclick={() => {scriptType="96_deep_well"; downloadPythonFile();}}>
                 <svg class="w-5 h-5 inline-block align-middle" transform="scale(1.3) translate(-0.5 0)" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"> <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 5v8.5m0 0l3-3m-3 3l-3-3M5 15v2a2 2 0 002 2h10a2 2 0 002-2v-2" /></svg>
-                E14 Media Lab - With Temperature Plate
+                96 Deep-Well Plate
             </button>
-            <button class="btn flex items-center gap-2" onclick={() => {scriptType="LEAHKnox"; downloadPythonFile();}}>
+            <button class="btn flex items-center gap-2" onclick={() => {scriptType="96_pcr"; downloadPythonFile();}}>
                 <svg class="w-5 h-5 inline-block align-middle" transform="scale(1.3) translate(-0.5 0)" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"> <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 5v8.5m0 0l3-3m-3 3l-3-3M5 15v2a2 2 0 002 2h10a2 2 0 002-2v-2" /></svg>
-                68 Project Lab - Without Temperature Plate
+                96 PCR Plate
             </button>
         </div>
     </div>
@@ -990,7 +1017,7 @@ def run(protocol):
             <div class="flex flex-row justify-between">
                 <span class="font-semibold">Bacteria</span>
                 {#if current_color !== 'Erase'}
-                    <a class="opacity-70 underline" href={!["sfGFP_mKO2"].includes(current_color) ? `https://www.fpbase.org/protein/${current_color.toLowerCase()}`: null} target="_blank" rel="noopener noreferrer">{current_color}</a>
+                    <a class="opacity-70 underline" href={`https://www.fpbase.org/protein/${current_color.toLowerCase().split('_')[0]}`} target="_blank" rel="noopener noreferrer">{current_color}</a>
                 {:else}
                     <span class="opacity-70">{current_color}</span>
                 {/if}
