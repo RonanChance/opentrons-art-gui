@@ -7,19 +7,25 @@ export function generateGrid(grid_style, radius_mm, grid_spacing_mm, QRCode_text
     else if (grid_style === 'Honeycomb') return honeycomb(radius_mm, grid_spacing_mm);
     else if (grid_style === 'QRCode') return qrcode(radius_mm, grid_spacing_mm, QRCode_text);
     else if (grid_style === 'Image') return image(radius_mm, grid_spacing_mm, imageColors);
+    else if (grid_style === 'Echo384') return echo384(grid_spacing_mm);
+    else if (grid_style === 'Echo384FromImage') return echo384FromImage(imageColors);
 }
 
 function grid(radius_mm, grid_spacing_mm) {
-    let points = [];
-    const center = { x: 0, y: 0 };
-    const start = -Math.floor(radius_mm / grid_spacing_mm) * grid_spacing_mm;
-    const end = Math.ceil(radius_mm / grid_spacing_mm) * grid_spacing_mm;
+    const points = [];
+    const radiusSquared = radius_mm * radius_mm;
+    const steps = Math.floor(radius_mm / grid_spacing_mm);
 
-    for (let y = start; y <= end; y += grid_spacing_mm) {
-        for (let x = start; x <= end; x += grid_spacing_mm) {
-            if (Math.sqrt(x * x + y * y) <= radius_mm) {
-                points.push({ x: x.toFixed(3), y: y.toFixed(3) });
-            }
+    for (let yStep = -steps; yStep <= steps; yStep++) {
+        const y = yStep * grid_spacing_mm;
+        const ySquared = y * y;
+        const xMax = Math.sqrt(Math.max(0, radiusSquared - ySquared));
+
+        // Only iterate x within circle boundary
+        const xStepMax = Math.floor(xMax / grid_spacing_mm);
+        for (let xStep = -xStepMax; xStep <= xStepMax; xStep++) {
+            const x = xStep * grid_spacing_mm;
+            points.push({ x: x.toFixed(3), y: y.toFixed(3) });
         }
     }
     return points;
@@ -131,16 +137,110 @@ function image(radius_mm, grid_spacing_mm, imageColors) {
     if (size === 0) return points;
 
     const half = (size - 1) / 2;
+    const radiusSquared = radius_mm * radius_mm;
 
     for (let y = 0; y < size; y++) {
+        const yPos = (half - y) * grid_spacing_mm;
+        const yPosSquared = yPos * yPos;
+
         for (let x = 0; x < size; x++) {
             const color = imageColors[y][x];
             if (!color) continue;
+
             const xPos = (x - half) * grid_spacing_mm;
-            const yPos = (half - y) * grid_spacing_mm;
-            if (Math.sqrt(xPos * xPos + yPos * yPos) <= radius_mm) {
-                points.push({ x: xPos.toFixed(3), y: yPos.toFixed(3), color: color });
+            const distSquared = xPos * xPos + yPosSquared;
+
+            if (distSquared <= radiusSquared) {
+                points.push({ x: xPos.toFixed(3), y: yPos.toFixed(3), color });
             }
+        }
+    }
+    return points;
+}
+
+function echo525(grid_spacing_mm) {
+    const width_mm = 128;
+    const height_mm = 86;
+    const points = [];
+
+    const x_half = width_mm / 2;
+    const y_half = height_mm / 2;
+
+    // Calculate number of steps from center to edges
+    const x_steps = Math.floor(x_half / grid_spacing_mm);
+    const y_steps = Math.floor(y_half / grid_spacing_mm);
+
+    // Layered iteration from center
+    for (let layer = 0; layer <= Math.max(x_steps, y_steps); layer++) {
+        for (let dy = -layer; dy <= layer; dy++) {
+            if (Math.abs(dy) > y_steps) continue;
+            for (let dx = -layer; dx <= layer; dx++) {
+                if (Math.abs(dx) > x_steps) continue;
+
+                // Only add points on the current layer perimeter
+                if (Math.abs(dx) === layer || Math.abs(dy) === layer) {
+                    const x = dx * grid_spacing_mm;
+                    const y = dy * grid_spacing_mm;
+                    points.push({ x: x.toFixed(3), y: y.toFixed(3) });
+                }
+            }
+        }
+    }
+
+    return points;
+}
+
+function echo384() {
+    const width_mm = 128;
+    const height_mm = 86;
+    const rows = 16;
+    const cols = 24;
+    const points = [];
+
+    // Calculate spacing between wells
+    const x_spacing = 5;
+    const y_spacing = 5;
+
+    // Fill points row by row
+    for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+            const x = col * x_spacing;
+            const y = row * y_spacing;
+            points.push({ x: x.toFixed(3), y: y.toFixed(3) });
+        }
+    }
+
+    return points;
+}
+
+function echo384FromImage(imageColors) {
+    const points = [];
+    const rows = 16;
+    const cols = 24;
+    if (!imageColors || !imageColors.length || !imageColors[0].length) return points;
+
+    const x_spacing = 5;  // mm between columns
+    const y_spacing = 5;  // mm between rows
+
+    const imgH = imageColors.length;
+    const imgW = imageColors[0].length;
+
+    for (let row = 0; row < rows; row++) {
+        const imgY = Math.round((row / (rows - 1)) * (imgH - 1));
+        const colorRow = imageColors[imgY] || [];
+
+        for (let col = 0; col < cols; col++) {
+            const imgX = Math.round((col / (cols - 1)) * (imgW - 1));
+            const color = colorRow[imgX] ?? '#FFFFFF';
+
+            const xPos = col * x_spacing;  // same as echo384
+            const yPos = row * y_spacing;  // same as echo384
+
+            points.push({
+                x: xPos.toFixed(3),
+                y: yPos.toFixed(3),
+                color
+            });
         }
     }
 
