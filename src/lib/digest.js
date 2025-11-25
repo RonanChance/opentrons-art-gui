@@ -1,16 +1,15 @@
 
 export const enzymes = [
-    { name: "EcoRI", site: "GAATTC", cutIndex: 1 },
-    { name: "EcoRV", site: "GATATC", cutIndex: 3 },
-    { name: "HindIII", site: "AAGCTT", cutIndex: 1 },
-    { name: "KpnI", site: "GGTACC", cutIndex: 1 },
-    { name: "BamHI", site: "GGATCC", cutIndex: 1 },
-    { name: "NdeI", site: "CATATG", cutIndex: 1 },
-    { name: "PvuII", site: "CAGCTG", cutIndex: 2 },
-    { name: "SacI", site: "GAGCTC", cutIndex: 1 },
-    { name: "SalI", site: "GTCGAC", cutIndex: 1 },
-    { name: "XhoI", site: "CTCGAG", cutIndex: 1 },
-    { name: "Eco32I", site: "GATATC", cutIndex: 1 },
+    { name: "EcoRI", site: "GAATTC", cutIndex: 1, enabled: true },
+    { name: "EcoRV", site: "GATATC", cutIndex: 3, enabled: true },
+    { name: "HindIII", site: "AAGCTT", cutIndex: 1, enabled: true },
+    { name: "KpnI", site: "GGTACC", cutIndex: 1, enabled: true },
+    { name: "BamHI", site: "GGATCC", cutIndex: 1, enabled: true },
+    { name: "NdeI", site: "CATATG", cutIndex: 1, enabled: true },
+    { name: "PvuII", site: "CAGCTG", cutIndex: 2, enabled: true },
+    { name: "SacI", site: "GAGCTC", cutIndex: 1, enabled: true },
+    { name: "SalI", site: "GTCGAC", cutIndex: 1, enabled: true },
+    { name: "XhoI", site: "CTCGAG", cutIndex: 1, enabled: true },
 ];
 
 // convert a motif with Ns to regex

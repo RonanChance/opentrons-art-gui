@@ -12,7 +12,7 @@
     let current_well_colors = $state({...current_well_colors_import})
 
     // GRID DATA
-    let grid_style = $state('Echo384'); // 'Standard', 'Honeycomb', 'Radial', 'QRCode', 'Image'
+    let grid_style = $state('Standard'); // 'Standard', 'Honeycomb', 'Radial', 'QRCode', 'Image'
     let radius_mm = $state(39.9);
     let grid_spacing_mm = $state(3);
     let prev_grid_spacing_mm = $state(3);
@@ -1134,16 +1134,16 @@ def run(protocol):
 
     <!-- ERASE/PUBLISH BUTTON -->
     <div class="flex flex-row justify-between">
-        <button class="btn btn-sm hover:bg-neutral hover:text-white" onclick={resetValues}>
+        <button class="btn btn-sm rounded bg-gray-100 gap-1 hover:bg-neutral hover:text-white" onclick={resetValues}>
             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path transform="scale(1.2) translate(-3 -2.5)" fill-rule="evenodd" clip-rule="evenodd" d="M15.0722 3.9967L20.7508 9.83395L17.0544 13.5304L13.0758 17.5H21.0041V19H7.93503L4.00195 15.0669L15.0722 3.9967ZM10.952 17.5L15.4628 12.9994L11.8268 9.3634L6.12327 15.0669L8.55635 17.5H10.952Z" fill="currentColor"></path> </g></svg>
             Reset
         </button>
         <div class="flex flex-row gap-2">
-            <button class="btn btn-sm hover:bg-neutral hover:text-white" onclick={download_modal.showModal()}>
+            <button class="btn btn-sm rounded bg-gray-100 gap-1 hover:bg-neutral hover:text-white" onclick={download_modal.showModal()}>
                 <svg class="w-5 h-5 inline-block align-middle" transform="scale(1.3) translate(-0.5 0)" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"> <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 5v8.5m0 0l3-3m-3 3l-3-3M5 15v2a2 2 0 002 2h10a2 2 0 002-2v-2" /></svg>
                 Python Script
             </button>
-            <button class="btn btn-sm hover:bg-neutral hover:text-white" onclick={() => { if (!uploading) {upload_modal.showModal()}}}>
+            <button class="btn btn-sm rounded bg-gray-100 gap-1 hover:bg-neutral hover:text-white" onclick={() => { if (!uploading) {upload_modal.showModal()}}}>
                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 35 35" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>upload1</title> <path d="M29.426 15.535c0 0 0.649-8.743-7.361-9.74-6.865-0.701-8.955 5.679-8.955 5.679s-2.067-1.988-4.872-0.364c-2.511 1.55-2.067 4.388-2.067 4.388s-5.576 1.084-5.576 6.768c0.124 5.677 6.054 5.734 6.054 5.734h9.351v-6h-3l5-5 5 5h-3v6h8.467c0 0 5.52 0.006 6.295-5.395 0.369-5.906-5.336-7.070-5.336-7.070z"></path> </g></svg>
                 Publish
             </button>
@@ -1158,7 +1158,7 @@ def run(protocol):
                 <!-- <button class="btn btn-sm px-1 tooltip tooltip-top" aria-label="Swap Colors" data-tip="Swap Colors" onclick={swapColors}>
                     <svg class="w-6 h-6 mx-1 opacity-50" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M2 6C2 3.79086 3.79086 2 6 2C8.20914 2 10 3.79086 10 6V18C10 20.2091 8.20914 22 6 22C3.79086 22 2 20.2091 2 18V6Z" stroke="currentColor" stroke-width="1.5"></path> <path d="M9.99977 8.24268L13.3134 4.92902C14.8755 3.36692 17.4082 3.36692 18.9703 4.92902C20.5324 6.49112 20.5324 9.02378 18.9703 10.5859L9.30615 20.25" stroke="currentColor" stroke-width="1.5"></path> <path d="M6 22L18 22C20.2091 22 22 20.2091 22 18C22 15.7909 20.2091 14 18 14L15.5 14" stroke="currentColor" stroke-width="1.5"></path> <path d="M7 18C7 18.5523 6.55228 19 6 19C5.44772 19 5 18.5523 5 18C5 17.4477 5.44772 17 6 17C6.55228 17 7 17.4477 7 18Z" stroke="currentColor" stroke-width="1.5"></path> </g></svg>
                 </button> -->
-                <button class="btn btn-sm px-1 tooltip tooltip-top" aria-label="Copy Points" data-tip="Copy To Clipboard" onclick={copyPointsToClipboard}>
+                <button class="btn btn-sm rounded bg-gray-100 gap-1 hover:bg-neutral hover:text-white px-1 tooltip tooltip-top" aria-label="Copy Points" data-tip="Copy To Clipboard" onclick={copyPointsToClipboard}>
                     <svg class="w-7 h-7 opacity-70" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M10 8V7C10 6.05719 10 5.58579 10.2929 5.29289C10.5858 5 11.0572 5 12 5H17C17.9428 5 18.4142 5 18.7071 5.29289C19 5.58579 19 6.05719 19 7V12C19 12.9428 19 13.4142 18.7071 13.7071C18.4142 14 17.9428 14 17 14H16M7 19H12C12.9428 19 13.4142 19 13.7071 18.7071C14 18.4142 14 17.9428 14 17V12C14 11.0572 14 10.5858 13.7071 10.2929C13.4142 10 12.9428 10 12 10H7C6.05719 10 5.58579 10 5.29289 10.2929C5 10.5858 5 11.0572 5 12V17C5 17.9428 5 18.4142 5.29289 18.7071C5.58579 19 6.05719 19 7 19Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>
                 </button>
             </div>
