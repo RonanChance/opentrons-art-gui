@@ -1,6 +1,7 @@
 <script>
     import GalleryCard from '$lib/components/GalleryCard.svelte';
     import PlateImage from '$lib/components/PlateImage.svelte';
+    import OminTrayImage from '$lib/components/OminTrayImage.svelte';
     import { onMount } from 'svelte';
     import { browser } from '$app/environment';
     import { well_colors, old_well_colors } from '$lib/proteins.js';
@@ -34,7 +35,7 @@
 </script>
 
 <article class="prose w-full mx-auto mt-5">
-    <h2 class="text-center">Opentrons Art Gallery</h2>
+    <h2 class="text-center">Automation Art Gallery</h2>
 </article>
 
 <div class="flex flex-row w-full max-w-[100vw] sm:max-w-[500px] mx-auto px-5 opacity-70">
@@ -45,7 +46,7 @@
     <div class="tabs tabs-bordered">
         <input type="radio" name="tab" class="tab" aria-label="Images" onclick={() => {filter = -1;}} />
         <input type="radio" name="tab" class="tab" aria-label="Gallery" onclick={() => {filter = 0; record_load_iteration = 0; loadedRecords = []; loadGallery();}} checked />
-        <input type="radio" name="tab" class="tab" aria-label="2025" onclick={() => {filter = 1; record_load_iteration = 0; loadedRecords = []; loadGallery();}} />
+        <!-- <input type="radio" name="tab" class="tab" aria-label="2025" onclick={() => {filter = 1; record_load_iteration = 0; loadedRecords = []; loadGallery();}} /> -->
         <!-- <input type="radio" name="tab" class="tab" aria-label="All" onclick={() => {filter = 2; record_load_iteration = 0; loadedRecords = []; loadGallery();}} /> -->
     </div>
 </div>
@@ -75,8 +76,12 @@
         <!-- GRID OF PLATES -->
         <div class="flex flex-row flex-wrap w-full mx-auto justify-center pt-3 gap-0 mb-10">
             {#each loadedRecords as record, i}
-                <a class="max-w-[75px] sm:max-w-[100px]" href="./?id={record.id}">
-                    <PlateImage {record} {i} {well_colors} {old_well_colors} />
+                <a class="max-w-[75px] sm:max-w-[100px] my-auto" href="./?id={record.id}">
+                    {#if record.grid_style === 'OmniTray' || record.grid_style === 'OmniTrayFromImage' || record.grid_style === 'Echo384' || record.grid_style === 'Echo384FromImage'}
+                        <OminTrayImage {record} {i} {well_colors} {old_well_colors} />
+                    {:else}
+                        <PlateImage {record} {i} {well_colors} {old_well_colors} />
+                    {/if}
                 </a>
             {/each}
         </div>

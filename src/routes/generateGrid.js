@@ -7,8 +7,10 @@ export function generateGrid(grid_style, radius_mm, grid_spacing_mm, QRCode_text
     else if (grid_style === 'Honeycomb') return honeycomb(radius_mm, grid_spacing_mm);
     else if (grid_style === 'QRCode') return qrcode(radius_mm, grid_spacing_mm, QRCode_text);
     else if (grid_style === 'Image') return image(radius_mm, grid_spacing_mm, imageColors);
-    else if (grid_style === 'Echo384') return echo384(grid_spacing_mm);
+    else if (grid_style === 'Echo384') return echo384();
     else if (grid_style === 'Echo384FromImage') return echo384FromImage(imageColors);
+    else if (grid_style === 'OmniTray') return OmniTray();
+    else if (grid_style === 'OmniTrayImage') return OmniTrayImage(imageColors);
 }
 
 function grid(radius_mm, grid_spacing_mm) {
@@ -235,6 +237,62 @@ function echo384FromImage(imageColors) {
 
             const xPos = col * x_spacing;  // same as echo384
             const yPos = row * y_spacing;  // same as echo384
+
+            points.push({
+                x: xPos.toFixed(3),
+                y: yPos.toFixed(3),
+                color
+            });
+        }
+    }
+
+    return points;
+}
+
+function OmniTray() {
+    const width_mm = 128;
+    const height_mm = 86;
+    const rows = 32;
+    const cols = 48;
+    const points = [];
+
+    // 1536-well pitch
+    const x_spacing = 2.5;
+    const y_spacing = 2.5;
+
+    for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+            const x = col * x_spacing;
+            const y = row * y_spacing;
+            points.push({ x: x.toFixed(3), y: y.toFixed(3) });
+        }
+    }
+
+    return points;
+}
+
+function OmniTrayImage(imageColors) {
+    const points = [];
+    const rows = 32;
+    const cols = 48;
+    if (!imageColors || !imageColors.length || !imageColors[0].length) return points;
+
+    const x_spacing = 2.5;  // mm between columns for 1536
+    const y_spacing = 2.5;  // mm between rows for 1536
+
+    const imgH = imageColors.length;
+    const imgW = imageColors[0].length;
+
+    for (let row = 0; row < rows; row++) {
+        const imgY = Math.round((row / (rows - 1)) * (imgH - 1));
+        const colorRow = imageColors[imgY] || [];
+
+        for (let col = 0; col < cols; col++) {
+            const imgX = Math.round((col / (cols - 1)) * (imgW - 1));
+            const color = colorRow[imgX] ?? '#FFFFFF';
+
+            const xPos = col * x_spacing;
+            const yPos = row * y_spacing;
 
             points.push({
                 x: xPos.toFixed(3),

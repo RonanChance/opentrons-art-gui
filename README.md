@@ -1,5 +1,5 @@
-# Opentrons Art GUI
-Graphical interface for drawing patterns with Opentrons OT-2 and the Python API.
+# Automation Art GUI
+Graphical interface for drawing patterns with Opentrons OT-2 (Python API) or Echo 525 acoustic liquid handler (CSV).
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
