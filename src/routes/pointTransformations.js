@@ -10,23 +10,23 @@ export function shiftPoints(direction, new_spacing, old_spacing, radius_mm, poin
     const maxY384 = (rows384 - 1) * echoYSpacing;
 
     // Echo 1536
-    const OmniTrayXSpacing = 2.5;
-    const OmniTrayYSpacing = 2.5;
+    const Echo1536XSpacing = 2.5;
+    const Echo1536YSpacing = 2.5;
 
     // -------------------------
     // Direction → shift amount
     // -------------------------
-    if (grid_style === "Echo384" || grid_style === "Echo384FromImage") {
+    if (grid_style === "Echo384" || grid_style === "Echo384Image") {
         if (direction === "up") dy = -echoYSpacing;
         else if (direction === "down") dy = echoYSpacing;
         else if (direction === "left") dx = -echoXSpacing;
         else if (direction === "right") dx = echoXSpacing;
     } 
-    else if (grid_style === "OmniTray" || grid_style === "OmniTrayImage") {
-        if (direction === "up") dy = -OmniTrayYSpacing;
-        else if (direction === "down") dy = OmniTrayYSpacing;
-        else if (direction === "left") dx = -OmniTrayXSpacing;
-        else if (direction === "right") dx = OmniTrayXSpacing;
+    else if (grid_style === "Echo1536" || grid_style === "Echo1536Image") {
+        if (direction === "up") dy = -Echo1536YSpacing;
+        else if (direction === "down") dy = Echo1536YSpacing;
+        else if (direction === "left") dx = -Echo1536XSpacing;
+        else if (direction === "right") dx = Echo1536XSpacing;
     }
     else {
         if (direction === "up") dy = new_spacing;
@@ -55,12 +55,12 @@ export function shiftPoints(direction, new_spacing, old_spacing, radius_mm, poin
                 newX = Math.max(0, Math.min(i * echoXSpacing, maxX384));
                 newY = Math.max(0, Math.min(j * echoYSpacing, maxY384));
             }
-            else if (grid_style.startsWith("OmniTray")) {
-                const i = Math.round(x / OmniTrayXSpacing);
-                const j = Math.round(y / OmniTrayYSpacing);
+            else if (grid_style.startsWith("Echo1536")) {
+                const i = Math.round(x / Echo1536XSpacing);
+                const j = Math.round(y / Echo1536YSpacing);
 
-                newX = i * OmniTrayXSpacing;
-                newY = j * OmniTrayYSpacing;
+                newX = i * Echo1536XSpacing;
+                newY = j * Echo1536YSpacing;
             }
             else {
                 const i = Math.round(x / old_spacing);
@@ -91,7 +91,7 @@ export function shiftPoints(direction, new_spacing, old_spacing, radius_mm, poin
             newX = Math.max(0, Math.min(newX, maxX384));
             newY = Math.max(0, Math.min(newY, maxY384));
         }
-        else if (grid_style.startsWith("OmniTray")) {
+        else if (grid_style.startsWith("Echo1536")) {
             // no boundary box needed; stays numeric
         }
         else {

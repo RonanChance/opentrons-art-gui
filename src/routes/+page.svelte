@@ -68,7 +68,7 @@
             }
 
             window.addEventListener('keydown', function(event) {
-                if (Object.keys(point_colors).length > 0 && ['Standard', 'Grid', 'Image', 'Echo384', 'Echo384FromImage', 'OmniTray', 'OmniTrayImage'].includes(grid_style)) {
+                if (Object.keys(point_colors).length > 0 && ['Standard', 'Grid', 'Image', 'Echo384', 'Echo384Image', 'Echo1536', 'Echo1536Image'].includes(grid_style)) {
                     const directions = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right'};
                     const direction = directions[event.key];
                     if (direction) {
@@ -92,7 +92,7 @@
                     point_colors = new_colors;
                     groupByColors();
                 }
-            if (['Standard', 'Grid', 'Image', 'Echo384', 'Echo384FromImage', 'OmniTray', 'OmniTrayImage'].includes(grid_style)) {
+            if (['Standard', 'Grid', 'Image', 'Echo384', 'Echo384Image', 'Echo1536', 'Echo1536Image'].includes(grid_style)) {
                 const current = grid_spacing_mm;
                 const previous = prev_grid_spacing_mm;
                 if (current !== previous && !loadingURLRecord) {
@@ -101,7 +101,7 @@
                     prev_grid_spacing_mm = current;
                 }
             }
-            if (grid_style === 'Image' || grid_style === 'Echo384FromImage' || grid_style === 'OmniTrayImage') {
+            if (grid_style === 'Image' || grid_style === 'Echo384Image' || grid_style === 'Echo1536Image') {
                 if (img) {
                     const new_colors = {};
                     for (const point of points) {
@@ -124,7 +124,7 @@
         if (Object.keys(point_colors).length > 0) {
             return !['Standard', 'Grid', 'QRCode', 'Image'].includes(grid_style)
         }
-        if (grid_style === 'Echo384' || grid_style === 'Echo384FromImage' || grid_style === 'OmniTray' || grid_style === 'OmniTrayImage') {
+        if (grid_style === 'Echo384' || grid_style === 'Echo384Image' || grid_style === 'Echo1536' || grid_style === 'Echo1536Image') {
             return true
         }
         return false;
@@ -603,23 +603,47 @@ def run(protocol):
         URL.revokeObjectURL(url); // Clean up the URL object
     }
 
-      function downloadEchoCSV() {
-        if (!Object.keys(points_by_color).length) return;
+function downloadEchoCSV() {
+    if (!Object.keys(points_by_color).length) return;
 
-        // CSV header
-        let csv = 'Source Plate Name,Source Plate Barcode,Source Plate Type,Source Well,Destination Plate Name,Destination Plate Barcode,Destination Plate Type,Destination Well,Transfer Volume\n';
+    const csvHeader = 'Source Plate Name,Source Plate Barcode,Source Plate Type,Source Well,Destination Plate Name,Destination Plate Barcode,Destination Plate Type,Destination Well,Transfer Volume\n';
+    let csv = csvHeader;
 
-        // Loop through points
-        for (const [color, points] of Object.entries(points_by_color)) {
+    // Track current well and remaining volume per color
+    const wellTracker = {}; // { color: { currentIndex, remainingVolume } }
+
+    for (const [color, points] of Object.entries(points_by_color)) {
         const sourceWellPrefix = source_384_well_colors[stripAfterLastUnderscore(color)] || '';
+        // Initialize tracker
+        wellTracker[color] = { currentIndex: 0, remainingVolume: working_echo_volume_ul };
 
         points.forEach(({ point }) => {
+            let currentWellIndex = wellTracker[color].currentIndex;
+            let remainingVolume = wellTracker[color].remainingVolume;
+
+            // If remainingVolume is zero, move to next well
+            if (remainingVolume <= 0) {
+                currentWellIndex += 1;
+                remainingVolume = working_echo_volume_ul;
+            }
+
+            // Compute source well
+            const sourceWell = `${sourceWellPrefix}${currentWellIndex + 1}`; // A1 = index 0
+
+            // Compute destination well
             const destRow = rowLabel1536(point[1] / 2.5);
             const destCol = point[0] / 2.5 + 1;
 
-            csv += `Echo_Artwork_Source,${source_id},384-well Plate Echo PP,${sourceWellPrefix}${starting_column},Echo_Artwork_Dest,${destination_id},1-flat-thermo-264728-omni-1536,${destRow}${destCol},${point_size * 1000}\n`;
+            csv += `Echo_Artwork_Source,${source_id},384-well Plate Echo PP,${sourceWell},Echo_Artwork_Dest,${destination_id},1-flat-thermo-264728-omni-1536,${destRow}${destCol},${point_size * 1000}\n`;
+
+            // Deduct used volume
+            remainingVolume -= point_size;
+
+            // Update tracker
+            wellTracker[color].currentIndex = currentWellIndex;
+            wellTracker[color].remainingVolume = remainingVolume;
         });
-        }
+    }
 
         const now = new Date();
         const year = now.getFullYear().toString().slice(2);
@@ -930,10 +954,10 @@ def run(protocol):
 
 <!-- AGAR PLATE -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="mb-4 flex items-center mx-auto w-full max-w-[94vw] sm:max-w-[460px] ${(grid_style === 'Echo384' || grid_style === 'Echo384FromImage' || grid_style === "OmniTray" || grid_style === "OmniTrayImage") ? 'aspect-[3/2] mt-4' : 'aspect-square'} rounded-xl">
-<div class={`relative border border-neutral ${grid_style === "Echo384" || grid_style === "Echo384FromImage"  || grid_style === "OmniTray" || grid_style === "OmniTrayImage" ? 'bg-gray-500' : 'bg-neutral' } mx-auto w-full max-w-[90vw] 
+<div class="mb-4 flex items-center mx-auto w-full max-w-[94vw] sm:max-w-[460px] ${(grid_style === 'Echo384' || grid_style === 'Echo384Image' || grid_style === "Echo1536" || grid_style === "Echo1536Image") ? 'aspect-[3/2] mt-4' : 'aspect-square'} rounded-xl">
+<div class={`relative border border-neutral ${grid_style === "Echo384" || grid_style === "Echo384Image"  || grid_style === "Echo1536" || grid_style === "Echo1536Image" ? 'bg-gray-500' : 'bg-neutral' } mx-auto w-full max-w-[90vw] 
           sm:max-w-[440px]
-          ${grid_style === "Echo384" || grid_style === "Echo384FromImage" || grid_style === "OmniTray" || grid_style === "OmniTrayImage"
+          ${grid_style === "Echo384" || grid_style === "Echo384Image" || grid_style === "Echo1536" || grid_style === "Echo1536Image"
             ? 'aspect-[128/86] rounded' 
             : 'aspect-square rounded-full max-h-[90vw] sm:max-h-[440px]'}
           ${loadingURLRecord || loadingAIRecord ? 'blur' : ''}`}
@@ -972,16 +996,16 @@ def run(protocol):
                     {point_size === 4.5 ? 'w-[22px] h-[22px]' : ''}
                     {point_size === 4.75 ? 'w-[23px] h-[23px]' : ''}
                     {point_size === 5 ? 'w-[24px] h-[24px]' : ''}
-                    absolute {grid_style === 'Echo384' || grid_style === 'Echo384FromImage' || grid_style === "OmniTray" || grid_style === "OmniTrayImage" ? '' : 'rounded-full'} [--chkfg:invisible] transition-[box-shadow] duration-200 ease-in-out {point_colors[`${x}, ${y}`] ? 'border-0' : 'border-white opacity-15'} {show_outlines ? '' : 'border-0'}"
+                    absolute {grid_style === 'Echo384' || grid_style === 'Echo384Image' || grid_style === "Echo1536" || grid_style === "Echo1536Image" ? '' : 'rounded-full'} [--chkfg:invisible] transition-[box-shadow] duration-200 ease-in-out {point_colors[`${x}, ${y}`] ? 'border-0' : 'border-white opacity-15'} {show_outlines ? '' : 'border-0'}"
                     style="
                     left: calc(
-                        {grid_style === 'Echo384' || grid_style === 'Echo384FromImage' || grid_style === "OmniTray" || grid_style === "OmniTrayImage"
+                        {grid_style === 'Echo384' || grid_style === 'Echo384Image' || grid_style === "Echo1536" || grid_style === "Echo1536Image"
                         ? (x / 128 * 100 + 4) + '%'
                         : (50 + x / (radius_mm + 4) * 50) + '%'
                         } - {point_size/2}px
                     );
                     top: calc(
-                        {grid_style === 'Echo384' || grid_style === 'Echo384FromImage' || grid_style === "OmniTray" || grid_style === "OmniTrayImage"
+                        {grid_style === 'Echo384' || grid_style === 'Echo384Image' || grid_style === "Echo1536" || grid_style === "Echo1536Image"
                         ? (y / 86 * 100 + 4) + '%'
                         : (50 - y / (radius_mm + 4) * 50) + '%'
                         } - {point_size/2}px
@@ -1034,7 +1058,7 @@ def run(protocol):
             />
         {/each}
         <!-- TIME ESTIMATION -->
-        {#if Object.keys(point_colors).length > 0 && grid_style !== "Echo384" && grid_style !== "Echo384FromImage" && grid_style !== "OmniTray" && grid_style !== "OmniTrayImage"}
+        {#if Object.keys(point_colors).length > 0 && grid_style !== "Echo384" && grid_style !== "Echo384Image" && grid_style !== "Echo1536" && grid_style !== "Echo1536Image"}
             <div class="flex flex-row items-center gap-1 justify-center align-middle absolute top-0 left-0 origin-bottom-left opacity-50 tooltip tooltip-bottom" data-tip="Estimated Print Duration" transition:fade={{ duration: 200 }}>
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M23 12C23 18.0751 18.0751 23 12 23C5.92487 23 1 18.0751 1 12C1 5.92487 5.92487 1 12 1C18.0751 1 23 5.92487 23 12ZM3.00683 12C3.00683 16.9668 7.03321 20.9932 12 20.9932C16.9668 20.9932 20.9932 16.9668 20.9932 12C20.9932 7.03321 16.9668 3.00683 12 3.00683C7.03321 3.00683 3.00683 7.03321 3.00683 12Z" fill="#0F0F0F"></path> <path d="M12 5C11.4477 5 11 5.44771 11 6V12.4667C11 12.4667 11 12.7274 11.1267 12.9235C11.2115 13.0898 11.3437 13.2343 11.5174 13.3346L16.1372 16.0019C16.6155 16.278 17.2271 16.1141 17.5032 15.6358C17.7793 15.1575 17.6155 14.5459 17.1372 14.2698L13 11.8812V6C13 5.44772 12.5523 5 12 5Z" fill="#0F0F0F"></path> </g></svg>
                 <div class="">{formatSeconds(estimatedPrintDuration)}</div>
@@ -1066,7 +1090,7 @@ def run(protocol):
         </div>
     {/if}
 
-    {#if grid_style === 'Image' || grid_style === 'Echo384FromImage' || grid_style === 'OmniTrayImage'}
+    {#if grid_style === 'Image' || grid_style === 'Echo384Image' || grid_style === 'Echo1536Image'}
         <div class="relative w-[50%] mr-auto">
             <input type="file" accept="image/*" class="file-input file-input-xs" onclick={(e) => {e.target.value = null;}} onchange={(e) => {handleFileChange(e, pixelationLevel);}} />
         </div>
@@ -1164,12 +1188,23 @@ def run(protocol):
                     </div>
                 </div>
                 <div class="w-full flex justify-between items-center">
-                    Echo 525
+                    Echo 1536
                     <div class="join">
-                        <button class="btn btn-sm rounded-r-none {grid_style === 'OmniTray' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "OmniTray"; point_size = 0.5;}} aria-label="OmniTray" disabled={Object.keys(point_colors).length > 0}>
+                        <button class="btn btn-sm rounded-r-none {grid_style === 'Echo1536' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "Echo1536"; point_size = 0.5;}} aria-label="Echo1536" disabled={Object.keys(point_colors).length > 0}>
                             <svg class="w-5 h-5 opacity-75"  viewBox="0 0 115 115" fill="none" ><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <path d="M114.822,83.667c0.005-0.003,0.011-0.005,0.016-0.008l-0.242-0.438l-0.174-0.469c-2.889,1.074-5.479,1.014-7.918-0.184 c-7.797-3.829-12.357-18.479-16.769-32.646c-4.267-13.702-8.295-26.646-15.083-28.488c-2.775-0.755-5.739,0.351-9.064,3.382 c-4.777,4.55-9.23,14.32-13.539,23.769C46.907,59.866,41.59,71.53,36.476,72.012c-3.446,0.344-6.995-4.27-10.74-9.134 c-6.261-8.13-14.054-18.248-25.66-10.945l0.229,0.365c-0.084,0.058-0.167,0.105-0.251,0.165l0.24,0.339 c-0.087,0.066-0.173,0.121-0.26,0.189l0.249,0.316c-0.089,0.074-0.178,0.136-0.267,0.213l0.254,0.293 c-0.09,0.082-0.18,0.15-0.27,0.235l0.686,0.729c2.635-2.484,5.091-3.456,7.498-2.976c6.335,1.265,11.459,12.705,15.979,22.798 c4.567,10.196,8.524,19.032,13.547,19.032c0.11,0,0.221-0.004,0.333-0.013c7.147-0.553,9.792-10.111,12.855-21.179 c2.173-7.854,4.636-16.753,9.091-23.108c3.963-5.409,7.5-7.907,10.817-7.629c5.937,0.494,10.636,9.831,15.611,19.717 c5.268,10.469,10.717,21.292,18.522,23.691c3.108,0.956,6.427,0.473,9.86-1.432c0.002,0,0.004-0.001,0.006-0.002l0,0 C114.811,83.673,114.817,83.671,114.822,83.667L114.822,83.667z M24.531,69.191c4.388,7.786,8.159,14.507,12.775,14.122 c6.434-0.546,10.442-11.369,14.686-22.826c3.227-8.712,6.564-17.721,11.146-23.053c3.447-4.012,6.49-5.736,9.291-5.266 c6.006,1.004,10.359,11.948,14.968,23.534c2.541,6.386,5.128,12.874,8.129,18.122c-2.808-4.604-5.325-10.21-7.8-15.729 C82.805,47.113,78.154,36.74,71.658,35.95c-3.406-0.418-6.973,1.813-10.88,6.815c-4.667,5.972-7.538,14.824-10.313,23.385 c-3.473,10.709-6.752,20.825-12.871,21.32c-4.2,0.358-8.168-7.59-12.355-15.985c-1.759-3.528-3.542-7.097-5.426-10.274 C21.469,63.768,23.034,66.537,24.531,69.191z M18.281,57.277c2.314,2.75,4.445,6.018,6.449,9.103 c4.243,6.528,7.916,12.162,12.208,11.781c6.056-0.541,10.657-11.662,15.528-23.435c3.739-9.035,7.604-18.378,12.241-23.236 c3.227-3.38,6.053-4.754,8.648-4.196c6.096,1.309,10.256,13.104,14.66,25.591c2.211,6.268,4.457,12.633,7.051,18.011 c-2.417-4.699-4.596-10.17-6.74-15.563c-4.715-11.855-9.169-23.053-15.73-24.15c-3.176-0.529-6.521,1.3-10.217,5.601 c-4.699,5.467-8.067,14.562-11.325,23.357c-4.13,11.15-8.032,21.685-13.833,22.177c-3.943,0.333-7.774-6.441-11.819-13.616 C23.207,64.808,20.868,60.667,18.281,57.277z M24.944,63.489c4.088,5.309,7.611,9.898,11.626,9.52 c5.69-0.536,10.887-11.937,16.389-24.006c4.268-9.362,8.681-19.042,13.31-23.452c3.044-2.775,5.701-3.804,8.121-3.149 c6.258,1.698,10.207,14.387,14.391,27.822c2.001,6.428,4.034,12.95,6.4,18.56c-2.241-4.952-4.246-10.63-6.223-16.231 c-4.501-12.759-8.752-24.81-15.395-26.236c-2.961-0.635-6.096,0.831-9.581,4.484c-4.767,4.993-8.668,14.424-12.441,23.544 c-4.752,11.484-9.241,22.333-14.693,22.819c-3.694,0.341-7.383-5.333-11.281-11.331c-2.567-3.948-5.333-8.194-8.471-11.336 C19.945,57.002,22.508,60.325,24.944,63.489z M70.889,40.706c-3.684-0.308-7.521,2.321-11.713,8.043 c-4.56,6.504-7.046,15.493-9.242,23.424c-2.962,10.705-5.521,19.95-11.968,20.448c-4.478,0.347-8.564-8.773-12.89-18.432 c-1.322-2.952-2.657-5.93-4.038-8.73c1.141,2.136,2.241,4.336,3.305,6.472c4.421,8.864,8.252,16.551,12.978,16.55 c0.117,0,0.235-0.005,0.354-0.015c6.783-0.549,10.008-10.493,13.741-22.009c2.749-8.478,5.592-17.245,10.15-23.077 c3.674-4.702,6.941-6.806,9.972-6.438c5.935,0.722,10.474,10.844,15.277,21.561c2.743,6.119,5.538,12.334,8.753,17.243 c-2.96-4.259-5.633-9.56-8.258-14.775C82.205,50.827,77.383,41.246,70.889,40.706z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g> </g></svg>
                         </button>
-                        <button class="btn btn-sm rounded-l-none {grid_style === 'OmniTrayImage' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "OmniTrayImage"; point_size = 0.5;}} aria-label="OmniTrayImage" disabled={Object.keys(point_colors).length > 0}>
+                        <button class="btn btn-sm rounded-l-none {grid_style === 'Echo1536Image' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "Echo1536Image"; point_size = 0.5;}} aria-label="Echo1536Image" disabled={Object.keys(point_colors).length > 0}>
+                            <svg class="w-5 h-5 opacity-75" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M4 10V6C4 4.89543 4.89543 4 6 4H12M4.02693 18.329C4.18385 19.277 5.0075 20 6 20H18C19.1046 20 20 19.1046 20 18V14.1901M4.02693 18.329C4.00922 18.222 4 18.1121 4 18V15M4.02693 18.329L7.84762 14.5083C8.52765 13.9133 9.52219 13.8481 10.274 14.3494L10.7832 14.6888C11.5078 15.1719 12.4619 15.1305 13.142 14.5864L15.7901 12.4679C16.4651 11.9279 17.4053 11.8855 18.1228 12.3484C18.2023 12.3997 18.2731 12.4632 18.34 12.5301L20 14.1901M20 14.1901V6C20 4.89543 19.1046 4 18 4H17M11 9C11 10.1046 10.1046 11 9 11C7.89543 11 7 10.1046 7 9C7 7.89543 7.89543 7 9 7C10.1046 7 11 7.89543 11 9Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="w-full flex justify-between items-center">
+                    Echo 384
+                    <div class="join">
+                        <button class="btn btn-sm rounded-r-none group {grid_style === 'Echo384' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "Echo384"; point_size = 2.25;}} aria-label="Echo384" disabled={Object.keys(point_colors).length > 0}>
+                            <svg class="w-5 h-5 opacity-75"  viewBox="0 0 115 115" fill="none" ><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <path d="M114.822,83.667c0.005-0.003,0.011-0.005,0.016-0.008l-0.242-0.438l-0.174-0.469c-2.889,1.074-5.479,1.014-7.918-0.184 c-7.797-3.829-12.357-18.479-16.769-32.646c-4.267-13.702-8.295-26.646-15.083-28.488c-2.775-0.755-5.739,0.351-9.064,3.382 c-4.777,4.55-9.23,14.32-13.539,23.769C46.907,59.866,41.59,71.53,36.476,72.012c-3.446,0.344-6.995-4.27-10.74-9.134 c-6.261-8.13-14.054-18.248-25.66-10.945l0.229,0.365c-0.084,0.058-0.167,0.105-0.251,0.165l0.24,0.339 c-0.087,0.066-0.173,0.121-0.26,0.189l0.249,0.316c-0.089,0.074-0.178,0.136-0.267,0.213l0.254,0.293 c-0.09,0.082-0.18,0.15-0.27,0.235l0.686,0.729c2.635-2.484,5.091-3.456,7.498-2.976c6.335,1.265,11.459,12.705,15.979,22.798 c4.567,10.196,8.524,19.032,13.547,19.032c0.11,0,0.221-0.004,0.333-0.013c7.147-0.553,9.792-10.111,12.855-21.179 c2.173-7.854,4.636-16.753,9.091-23.108c3.963-5.409,7.5-7.907,10.817-7.629c5.937,0.494,10.636,9.831,15.611,19.717 c5.268,10.469,10.717,21.292,18.522,23.691c3.108,0.956,6.427,0.473,9.86-1.432c0.002,0,0.004-0.001,0.006-0.002l0,0 C114.811,83.673,114.817,83.671,114.822,83.667L114.822,83.667z M24.531,69.191c4.388,7.786,8.159,14.507,12.775,14.122 c6.434-0.546,10.442-11.369,14.686-22.826c3.227-8.712,6.564-17.721,11.146-23.053c3.447-4.012,6.49-5.736,9.291-5.266 c6.006,1.004,10.359,11.948,14.968,23.534c2.541,6.386,5.128,12.874,8.129,18.122c-2.808-4.604-5.325-10.21-7.8-15.729 C82.805,47.113,78.154,36.74,71.658,35.95c-3.406-0.418-6.973,1.813-10.88,6.815c-4.667,5.972-7.538,14.824-10.313,23.385 c-3.473,10.709-6.752,20.825-12.871,21.32c-4.2,0.358-8.168-7.59-12.355-15.985c-1.759-3.528-3.542-7.097-5.426-10.274 C21.469,63.768,23.034,66.537,24.531,69.191z M18.281,57.277c2.314,2.75,4.445,6.018,6.449,9.103 c4.243,6.528,7.916,12.162,12.208,11.781c6.056-0.541,10.657-11.662,15.528-23.435c3.739-9.035,7.604-18.378,12.241-23.236 c3.227-3.38,6.053-4.754,8.648-4.196c6.096,1.309,10.256,13.104,14.66,25.591c2.211,6.268,4.457,12.633,7.051,18.011 c-2.417-4.699-4.596-10.17-6.74-15.563c-4.715-11.855-9.169-23.053-15.73-24.15c-3.176-0.529-6.521,1.3-10.217,5.601 c-4.699,5.467-8.067,14.562-11.325,23.357c-4.13,11.15-8.032,21.685-13.833,22.177c-3.943,0.333-7.774-6.441-11.819-13.616 C23.207,64.808,20.868,60.667,18.281,57.277z M24.944,63.489c4.088,5.309,7.611,9.898,11.626,9.52 c5.69-0.536,10.887-11.937,16.389-24.006c4.268-9.362,8.681-19.042,13.31-23.452c3.044-2.775,5.701-3.804,8.121-3.149 c6.258,1.698,10.207,14.387,14.391,27.822c2.001,6.428,4.034,12.95,6.4,18.56c-2.241-4.952-4.246-10.63-6.223-16.231 c-4.501-12.759-8.752-24.81-15.395-26.236c-2.961-0.635-6.096,0.831-9.581,4.484c-4.767,4.993-8.668,14.424-12.441,23.544 c-4.752,11.484-9.241,22.333-14.693,22.819c-3.694,0.341-7.383-5.333-11.281-11.331c-2.567-3.948-5.333-8.194-8.471-11.336 C19.945,57.002,22.508,60.325,24.944,63.489z M70.889,40.706c-3.684-0.308-7.521,2.321-11.713,8.043 c-4.56,6.504-7.046,15.493-9.242,23.424c-2.962,10.705-5.521,19.95-11.968,20.448c-4.478,0.347-8.564-8.773-12.89-18.432 c-1.322-2.952-2.657-5.93-4.038-8.73c1.141,2.136,2.241,4.336,3.305,6.472c4.421,8.864,8.252,16.551,12.978,16.55 c0.117,0,0.235-0.005,0.354-0.015c6.783-0.549,10.008-10.493,13.741-22.009c2.749-8.478,5.592-17.245,10.15-23.077 c3.674-4.702,6.941-6.806,9.972-6.438c5.935,0.722,10.474,10.844,15.277,21.561c2.743,6.119,5.538,12.334,8.753,17.243 c-2.96-4.259-5.633-9.56-8.258-14.775C82.205,50.827,77.383,41.246,70.889,40.706z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g> </g></svg>
+                        </button>
+                        <button class="btn btn-sm rounded-l-none group {grid_style === 'Echo384Image' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "Echo384Image"; point_size = 2.25;}} aria-label="Echo384Image" disabled={Object.keys(point_colors).length > 0}>
                             <svg class="w-5 h-5 opacity-75" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M4 10V6C4 4.89543 4.89543 4 6 4H12M4.02693 18.329C4.18385 19.277 5.0075 20 6 20H18C19.1046 20 20 19.1046 20 18V14.1901M4.02693 18.329C4.00922 18.222 4 18.1121 4 18V15M4.02693 18.329L7.84762 14.5083C8.52765 13.9133 9.52219 13.8481 10.274 14.3494L10.7832 14.6888C11.5078 15.1719 12.4619 15.1305 13.142 14.5864L15.7901 12.4679C16.4651 11.9279 17.4053 11.8855 18.1228 12.3484C18.2023 12.3997 18.2731 12.4632 18.34 12.5301L20 14.1901M20 14.1901V6C20 4.89543 19.1046 4 18 4H17M11 9C11 10.1046 10.1046 11 9 11C7.89543 11 7 10.1046 7 9C7 7.89543 7.89543 7 9 7C10.1046 7 11 7.89543 11 9Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
                         </button>
                     </div>
@@ -1180,7 +1215,7 @@ def run(protocol):
                 <!-- <button class="btn btn-sm group {grid_style === 'Echo384' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "Echo384"; point_size = 2.25;}} aria-label="Echo384" disabled={Object.keys(point_colors).length > 0}>
                     <svg class="w-5 h-5 opacity-75"  viewBox="0 0 115 115" fill="none" ><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <path d="M114.822,83.667c0.005-0.003,0.011-0.005,0.016-0.008l-0.242-0.438l-0.174-0.469c-2.889,1.074-5.479,1.014-7.918-0.184 c-7.797-3.829-12.357-18.479-16.769-32.646c-4.267-13.702-8.295-26.646-15.083-28.488c-2.775-0.755-5.739,0.351-9.064,3.382 c-4.777,4.55-9.23,14.32-13.539,23.769C46.907,59.866,41.59,71.53,36.476,72.012c-3.446,0.344-6.995-4.27-10.74-9.134 c-6.261-8.13-14.054-18.248-25.66-10.945l0.229,0.365c-0.084,0.058-0.167,0.105-0.251,0.165l0.24,0.339 c-0.087,0.066-0.173,0.121-0.26,0.189l0.249,0.316c-0.089,0.074-0.178,0.136-0.267,0.213l0.254,0.293 c-0.09,0.082-0.18,0.15-0.27,0.235l0.686,0.729c2.635-2.484,5.091-3.456,7.498-2.976c6.335,1.265,11.459,12.705,15.979,22.798 c4.567,10.196,8.524,19.032,13.547,19.032c0.11,0,0.221-0.004,0.333-0.013c7.147-0.553,9.792-10.111,12.855-21.179 c2.173-7.854,4.636-16.753,9.091-23.108c3.963-5.409,7.5-7.907,10.817-7.629c5.937,0.494,10.636,9.831,15.611,19.717 c5.268,10.469,10.717,21.292,18.522,23.691c3.108,0.956,6.427,0.473,9.86-1.432c0.002,0,0.004-0.001,0.006-0.002l0,0 C114.811,83.673,114.817,83.671,114.822,83.667L114.822,83.667z M24.531,69.191c4.388,7.786,8.159,14.507,12.775,14.122 c6.434-0.546,10.442-11.369,14.686-22.826c3.227-8.712,6.564-17.721,11.146-23.053c3.447-4.012,6.49-5.736,9.291-5.266 c6.006,1.004,10.359,11.948,14.968,23.534c2.541,6.386,5.128,12.874,8.129,18.122c-2.808-4.604-5.325-10.21-7.8-15.729 C82.805,47.113,78.154,36.74,71.658,35.95c-3.406-0.418-6.973,1.813-10.88,6.815c-4.667,5.972-7.538,14.824-10.313,23.385 c-3.473,10.709-6.752,20.825-12.871,21.32c-4.2,0.358-8.168-7.59-12.355-15.985c-1.759-3.528-3.542-7.097-5.426-10.274 C21.469,63.768,23.034,66.537,24.531,69.191z M18.281,57.277c2.314,2.75,4.445,6.018,6.449,9.103 c4.243,6.528,7.916,12.162,12.208,11.781c6.056-0.541,10.657-11.662,15.528-23.435c3.739-9.035,7.604-18.378,12.241-23.236 c3.227-3.38,6.053-4.754,8.648-4.196c6.096,1.309,10.256,13.104,14.66,25.591c2.211,6.268,4.457,12.633,7.051,18.011 c-2.417-4.699-4.596-10.17-6.74-15.563c-4.715-11.855-9.169-23.053-15.73-24.15c-3.176-0.529-6.521,1.3-10.217,5.601 c-4.699,5.467-8.067,14.562-11.325,23.357c-4.13,11.15-8.032,21.685-13.833,22.177c-3.943,0.333-7.774-6.441-11.819-13.616 C23.207,64.808,20.868,60.667,18.281,57.277z M24.944,63.489c4.088,5.309,7.611,9.898,11.626,9.52 c5.69-0.536,10.887-11.937,16.389-24.006c4.268-9.362,8.681-19.042,13.31-23.452c3.044-2.775,5.701-3.804,8.121-3.149 c6.258,1.698,10.207,14.387,14.391,27.822c2.001,6.428,4.034,12.95,6.4,18.56c-2.241-4.952-4.246-10.63-6.223-16.231 c-4.501-12.759-8.752-24.81-15.395-26.236c-2.961-0.635-6.096,0.831-9.581,4.484c-4.767,4.993-8.668,14.424-12.441,23.544 c-4.752,11.484-9.241,22.333-14.693,22.819c-3.694,0.341-7.383-5.333-11.281-11.331c-2.567-3.948-5.333-8.194-8.471-11.336 C19.945,57.002,22.508,60.325,24.944,63.489z M70.889,40.706c-3.684-0.308-7.521,2.321-11.713,8.043 c-4.56,6.504-7.046,15.493-9.242,23.424c-2.962,10.705-5.521,19.95-11.968,20.448c-4.478,0.347-8.564-8.773-12.89-18.432 c-1.322-2.952-2.657-5.93-4.038-8.73c1.141,2.136,2.241,4.336,3.305,6.472c4.421,8.864,8.252,16.551,12.978,16.55 c0.117,0,0.235-0.005,0.354-0.015c6.783-0.549,10.008-10.493,13.741-22.009c2.749-8.478,5.592-17.245,10.15-23.077 c3.674-4.702,6.941-6.806,9.972-6.438c5.935,0.722,10.474,10.844,15.277,21.561c2.743,6.119,5.538,12.334,8.753,17.243 c-2.96-4.259-5.633-9.56-8.258-14.775C82.205,50.827,77.383,41.246,70.889,40.706z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g> </g></svg>
                 </button>
-                <button class="btn btn-sm group {grid_style === 'Echo384FromImage' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "Echo384FromImage"; point_size = 2.25;}} aria-label="Echo384FromImage" disabled={Object.keys(point_colors).length > 0}>
+                <button class="btn btn-sm group {grid_style === 'Echo384Image' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "Echo384Image"; point_size = 2.25;}} aria-label="Echo384Image" disabled={Object.keys(point_colors).length > 0}>
                     <svg class="w-5 h-5 opacity-75"  viewBox="0 0 115 115" fill="none" ><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <path d="M114.822,83.667c0.005-0.003,0.011-0.005,0.016-0.008l-0.242-0.438l-0.174-0.469c-2.889,1.074-5.479,1.014-7.918-0.184 c-7.797-3.829-12.357-18.479-16.769-32.646c-4.267-13.702-8.295-26.646-15.083-28.488c-2.775-0.755-5.739,0.351-9.064,3.382 c-4.777,4.55-9.23,14.32-13.539,23.769C46.907,59.866,41.59,71.53,36.476,72.012c-3.446,0.344-6.995-4.27-10.74-9.134 c-6.261-8.13-14.054-18.248-25.66-10.945l0.229,0.365c-0.084,0.058-0.167,0.105-0.251,0.165l0.24,0.339 c-0.087,0.066-0.173,0.121-0.26,0.189l0.249,0.316c-0.089,0.074-0.178,0.136-0.267,0.213l0.254,0.293 c-0.09,0.082-0.18,0.15-0.27,0.235l0.686,0.729c2.635-2.484,5.091-3.456,7.498-2.976c6.335,1.265,11.459,12.705,15.979,22.798 c4.567,10.196,8.524,19.032,13.547,19.032c0.11,0,0.221-0.004,0.333-0.013c7.147-0.553,9.792-10.111,12.855-21.179 c2.173-7.854,4.636-16.753,9.091-23.108c3.963-5.409,7.5-7.907,10.817-7.629c5.937,0.494,10.636,9.831,15.611,19.717 c5.268,10.469,10.717,21.292,18.522,23.691c3.108,0.956,6.427,0.473,9.86-1.432c0.002,0,0.004-0.001,0.006-0.002l0,0 C114.811,83.673,114.817,83.671,114.822,83.667L114.822,83.667z M24.531,69.191c4.388,7.786,8.159,14.507,12.775,14.122 c6.434-0.546,10.442-11.369,14.686-22.826c3.227-8.712,6.564-17.721,11.146-23.053c3.447-4.012,6.49-5.736,9.291-5.266 c6.006,1.004,10.359,11.948,14.968,23.534c2.541,6.386,5.128,12.874,8.129,18.122c-2.808-4.604-5.325-10.21-7.8-15.729 C82.805,47.113,78.154,36.74,71.658,35.95c-3.406-0.418-6.973,1.813-10.88,6.815c-4.667,5.972-7.538,14.824-10.313,23.385 c-3.473,10.709-6.752,20.825-12.871,21.32c-4.2,0.358-8.168-7.59-12.355-15.985c-1.759-3.528-3.542-7.097-5.426-10.274 C21.469,63.768,23.034,66.537,24.531,69.191z M18.281,57.277c2.314,2.75,4.445,6.018,6.449,9.103 c4.243,6.528,7.916,12.162,12.208,11.781c6.056-0.541,10.657-11.662,15.528-23.435c3.739-9.035,7.604-18.378,12.241-23.236 c3.227-3.38,6.053-4.754,8.648-4.196c6.096,1.309,10.256,13.104,14.66,25.591c2.211,6.268,4.457,12.633,7.051,18.011 c-2.417-4.699-4.596-10.17-6.74-15.563c-4.715-11.855-9.169-23.053-15.73-24.15c-3.176-0.529-6.521,1.3-10.217,5.601 c-4.699,5.467-8.067,14.562-11.325,23.357c-4.13,11.15-8.032,21.685-13.833,22.177c-3.943,0.333-7.774-6.441-11.819-13.616 C23.207,64.808,20.868,60.667,18.281,57.277z M24.944,63.489c4.088,5.309,7.611,9.898,11.626,9.52 c5.69-0.536,10.887-11.937,16.389-24.006c4.268-9.362,8.681-19.042,13.31-23.452c3.044-2.775,5.701-3.804,8.121-3.149 c6.258,1.698,10.207,14.387,14.391,27.822c2.001,6.428,4.034,12.95,6.4,18.56c-2.241-4.952-4.246-10.63-6.223-16.231 c-4.501-12.759-8.752-24.81-15.395-26.236c-2.961-0.635-6.096,0.831-9.581,4.484c-4.767,4.993-8.668,14.424-12.441,23.544 c-4.752,11.484-9.241,22.333-14.693,22.819c-3.694,0.341-7.383-5.333-11.281-11.331c-2.567-3.948-5.333-8.194-8.471-11.336 C19.945,57.002,22.508,60.325,24.944,63.489z M70.889,40.706c-3.684-0.308-7.521,2.321-11.713,8.043 c-4.56,6.504-7.046,15.493-9.242,23.424c-2.962,10.705-5.521,19.95-11.968,20.448c-4.478,0.347-8.564-8.773-12.89-18.432 c-1.322-2.952-2.657-5.93-4.038-8.73c1.141,2.136,2.241,4.336,3.305,6.472c4.421,8.864,8.252,16.551,12.978,16.55 c0.117,0,0.235-0.005,0.354-0.015c6.783-0.549,10.008-10.493,13.741-22.009c2.749-8.478,5.592-17.245,10.15-23.077 c3.674-4.702,6.941-6.806,9.972-6.438c5.935,0.722,10.474,10.844,15.277,21.561c2.743,6.119,5.538,12.334,8.753,17.243 c-2.96-4.259-5.633-9.56-8.258-14.775C82.205,50.827,77.383,41.246,70.889,40.706z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g> </g></svg>
                 </button> -->
                 <!-- <button class="btn btn-sm group {grid_style === 'QRCode' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "QRCode"; grid_spacing_mm = 2; point_size = 0.25;}} aria-label="QRCode" disabled={Object.keys(point_colors).length > 0}>
@@ -1262,7 +1297,7 @@ def run(protocol):
             <input type="range" min="0.25" max="5" class="range" step="0.25" bind:value={point_size} />
         </div>
         <!-- GRID SPACING -->
-        {#if grid_style === 'OmniTray' || grid_style === 'OmniTrayImage'}
+        {#if grid_style === 'Echo1536' || grid_style === 'Echo1536Image' || grid_style === 'Echo384' || grid_style === 'Echo384Image'}
             <div class="flex flex-col w-full gap-2 mx-auto"></div>
         {:else}
             <div class="flex flex-col w-full gap-2 mx-auto">
@@ -1289,7 +1324,7 @@ def run(protocol):
     <!-- ERASE/PUBLISH BUTTON -->
     <div class="flex flex-row justify-between">
         <div class="flex flex-row gap-2">
-            {#if grid_style === 'OmniTray' || grid_style === 'OmniTrayImage'}
+            {#if grid_style === 'Echo1536' || grid_style === 'Echo1536Image' || grid_style === 'Echo384' || grid_style === 'Echo384Image'}
                 <button class="btn btn-sm rounded bg-gray-100 gap-1 hover:bg-neutral hover:text-white" onclick={download_echo_csv.showModal()}>
                     <svg class="w-5 h-5 inline-block align-middle" transform="scale(1.3) translate(-0.5 0)" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"> <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 5v8.5m0 0l3-3m-3 3l-3-3M5 15v2a2 2 0 002 2h10a2 2 0 002-2v-2" /></svg>
                     Echo CSV
@@ -1324,7 +1359,7 @@ def run(protocol):
                 </button>
             </div>
         </div>
-        {#if grid_style !== 'Echo384' && grid_style !== 'Echo384FromImage' && grid_style !== 'OmniTray' && grid_style !== 'OmniTrayImage'}
+        {#if grid_style !== 'Echo384' && grid_style !== 'Echo384Image' && grid_style !== 'Echo1536' && grid_style !== 'Echo1536Image'}
             <div class="text-xs" bind:this={contentToCopy}>
                 {#if Object.keys(points_by_color).length >= 1}
                     {#each Object.entries(points_by_color) as [color, points]}
@@ -1337,7 +1372,7 @@ def run(protocol):
                     {/each}
                 {/if}
             </div>
-        {:else if grid_style === 'Echo384' || grid_style === 'Echo384FromImage'}
+        {:else if grid_style === 'Echo384' || grid_style === 'Echo384Image'}
             <div class="text-xs break-all whitespace-normal" bind:this={contentToCopy}>
                 {#if Object.keys(points_by_color).length >= 1}
                     {#each Object.entries(points_by_color) as [color, points]}
@@ -1350,7 +1385,7 @@ def run(protocol):
                     {/each}
                 {/if}
             </div>
-        {:else if grid_style === 'OmniTray' || grid_style === 'OmniTrayImage'}
+        {:else if grid_style === 'Echo1536' || grid_style === 'Echo1536Image'}
             <div class="text-xs break-all whitespace-pre overflow-hidden overflow-scroll" bind:this={contentToCopy}>
                 {#if Object.keys(points_by_color).length >= 1}
                     Source Plate Name, Source Plate Barcode, Source Plate Type, Source Well, Destination Plate Name, Destination Plate Barcode, Destination Plate Type, Destination Well, Transfer Volume

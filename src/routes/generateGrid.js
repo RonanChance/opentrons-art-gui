@@ -8,9 +8,9 @@ export function generateGrid(grid_style, radius_mm, grid_spacing_mm, QRCode_text
     else if (grid_style === 'QRCode') return qrcode(radius_mm, grid_spacing_mm, QRCode_text);
     else if (grid_style === 'Image') return image(radius_mm, grid_spacing_mm, imageColors);
     else if (grid_style === 'Echo384') return echo384();
-    else if (grid_style === 'Echo384FromImage') return echo384FromImage(imageColors);
-    else if (grid_style === 'OmniTray') return OmniTray();
-    else if (grid_style === 'OmniTrayImage') return OmniTrayImage(imageColors);
+    else if (grid_style === 'Echo384Image') return Echo384Image(imageColors);
+    else if (grid_style === 'Echo1536') return Echo1536();
+    else if (grid_style === 'Echo1536Image') return Echo1536Image(imageColors);
 }
 
 function grid(radius_mm, grid_spacing_mm) {
@@ -215,7 +215,7 @@ function echo384() {
     return points;
 }
 
-function echo384FromImage(imageColors) {
+function Echo384Image(imageColors) {
     const points = [];
     const rows = 16;
     const cols = 24;
@@ -249,7 +249,7 @@ function echo384FromImage(imageColors) {
     return points;
 }
 
-function OmniTray() {
+function Echo1536() {
     const width_mm = 128;
     const height_mm = 86;
     const rows = 32;
@@ -271,7 +271,7 @@ function OmniTray() {
     return points;
 }
 
-function OmniTrayImage(imageColors) {
+function Echo1536Image(imageColors) {
     const points = [];
     const rows = 32;
     const cols = 48;
