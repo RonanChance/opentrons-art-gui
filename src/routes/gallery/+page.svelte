@@ -76,7 +76,7 @@
         <!-- GRID OF PLATES -->
         <div class="flex flex-row flex-wrap w-full mx-auto justify-center pt-3 gap-0 mb-10">
             {#each loadedRecords as record, i}
-                <a class="max-w-[75px] sm:max-w-[100px] my-auto" href="./?id={record.id}">
+                <a class="max-w-[75px] sm:max-w-[100px] my-auto" href="/automation-art?id={record.id}">
                     {#if record.grid_style === 'Echo384' || record.grid_style === 'Echo384Image' || record.grid_style === 'Echo1536' || record.grid_style === 'Echo1536Image'}
                         <OminTrayImage {record} {i} {well_colors} {old_well_colors} />
                     {:else}
