@@ -6,7 +6,7 @@
 
     let columns = $state(11);
     let selected_column = $state(null);
-    let stack_mode = $state(true);
+    let stack_mode = $state(false);
     let top_layer_selected = $state(true);
     let current_enzymes = $state(enzymes.map(e => ({ ...e })));
     
@@ -120,8 +120,7 @@
 
             if (direction === 'up' || direction === 'down') {
                 event.preventDefault();
-                const { fragments, newIndex, enzymesUsed } =
-                iterateDigest(selected_column, lambda_dna, direction);
+                const { fragments, newIndex, enzymesUsed } = iterateDigest(selected_column, lambda_dna, direction);
                 if (top_layer_selected) {
                     bands = {
                         ...bands,
@@ -133,8 +132,7 @@
                             isLadder: false
                         }
                     };
-                }
-                else {
+                } else {
                     bottom_bands = {
                         ...bottom_bands,
                         [selected_column]: {
@@ -214,7 +212,7 @@
         const max = col.digestList.length;
 
         let newIndex = col.index;
-        if (direction === 'up')   newIndex = (newIndex - 1 + max) % max;
+        if (direction === 'up') newIndex = (newIndex - 1 + max) % max;
         if (direction === 'down') newIndex = (newIndex + 1) % max;
 
         // Filter out disabled enzymes
@@ -399,10 +397,20 @@
         modal.close();
     }
 </script>
+
 <article class="prose w-full mx-auto mt-5">
-    <h2 class="text-center text-neutral">DNA Gel Artwork</h2>
+    <h2 class="text-center text-neutral">DNA Gel Electrophoresis</h2>
 </article>
 
+<div class="flex flex-row w-full max-w-[100vw] sm:max-w-[490px] mx-auto px-5 pt-3">
+    <div class="mr-auto items-center flex flex-row gap-2 opacity-70 invisible">
+        <label class="swap mr-auto">
+            <svg class="swap-on w-6 h-6 text-neutral" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g data-name="Layer 2"> <g data-name="eye"> <rect width="24" height="24" opacity="0"></rect> <circle cx="12" cy="12" r="1.5"></circle> <path d="M21.87 11.5c-.64-1.11-4.16-6.68-10.14-6.5-5.53.14-8.73 5-9.6 6.5a1 1 0 0 0 0 1c.63 1.09 4 6.5 9.89 6.5h.25c5.53-.14 8.74-5 9.6-6.5a1 1 0 0 0 0-1zm-9.87 4a3.5 3.5 0 1 1 3.5-3.5 3.5 3.5 0 0 1-3.5 3.5z"></path> </g> </g> </g></svg>
+            <svg class="swap-off w-6 h-6 text-neutral" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g data-name="Layer 2"> <g data-name="eye-off"> <rect width="24" height="24" opacity="0"></rect> <circle cx="12" cy="12" r="1.5"></circle> <path d="M15.29 18.12L14 16.78l-.07-.07-1.27-1.27a4.07 4.07 0 0 1-.61.06A3.5 3.5 0 0 1 8.5 12a4.07 4.07 0 0 1 .06-.61l-2-2L5 7.87a15.89 15.89 0 0 0-2.87 3.63 1 1 0 0 0 0 1c.63 1.09 4 6.5 9.89 6.5h.25a9.48 9.48 0 0 0 3.23-.67z"></path> <path d="M8.59 5.76l2.8 2.8A4.07 4.07 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 4.07 4.07 0 0 1-.06.61l2.68 2.68.84.84a15.89 15.89 0 0 0 2.91-3.63 1 1 0 0 0 0-1c-.64-1.11-4.16-6.68-10.14-6.5a9.48 9.48 0 0 0-3.23.67z"></path> <path d="M20.71 19.29L19.41 18l-2-2-9.52-9.53L6.42 5 4.71 3.29a1 1 0 0 0-1.42 1.42L5.53 7l1.75 1.7 7.31 7.3.07.07L16 17.41l.59.59 2.7 2.71a1 1 0 0 0 1.42 0 1 1 0 0 0 0-1.42z"></path> </g> </g> </g></svg>
+        </label>
+    </div>
+    <a href='/gel-gallery' class="mr-0 flex flex-row gap-2 items-center opacity-70 text-sm"> Gallery <svg class="w-5 h-5" fill="currentColor" viewBox="0 -0.5 33 33" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>pictures1</title> <path d="M26.604 29.587l-2.624-0.72-0.006-7.258 2.51 0.706 3.619-13.509-18.332-4.912-1.208 4.506h-2.068l1.863-6.952 22.193 5.946-5.947 22.193zM23.039 32h-23.039v-22.977h23.039v22.977zM21.041 11.021h-19.043v13.985h19.043v-13.985zM7.849 20.993l2.283-3.692 2.283 2.301 3.139-4.727 3.283 8.134h-14.556l1.855-3.71 1.713 1.694zM6.484 17.086c-0.828 0-1.499-0.67-1.499-1.498s0.671-1.498 1.499-1.498 1.498 0.67 1.498 1.498-0.67 1.498-1.498 1.498z"></path> </g></svg></a>
+</div>
 
 <div class="flex flex-col w-full max-w-[90vw] sm:max-w-[525px] mx-auto px-5 pt-5">
     <div class="flex flex-row mx-auto w-full">
@@ -492,19 +500,30 @@
                             <button
                                 class="btn btn-xs flex-1 px-0 py-0 bg-gray-100 hover:bg-neutral hover:text-white"
                                 onclick={() => {
-                                    const { fragments, newIndex, enzymesUsed } =
-                                        iterateDigest(selected_column, lambda_dna, 'down');
-
-                                    bands = {
-                                        ...bands,
-                                        [selected_column]: {
-                                            ...bands[selected_column],
-                                            currentBands: fragments,
-                                            index: newIndex,
-                                            enzymesUsed,
-                                            isLadder: false
-                                        }
-                                    };
+                                    const { fragments, newIndex, enzymesUsed } = iterateDigest(selected_column, lambda_dna, 'up');
+                                    if (top_layer_selected) {
+                                        bands = {
+                                            ...bands,
+                                            [selected_column]: {
+                                                ...bands[selected_column],
+                                                currentBands: fragments,
+                                                index: newIndex,
+                                                enzymesUsed,
+                                                isLadder: false
+                                            }
+                                        };
+                                    } else {
+                                        bottom_bands = {
+                                            ...bottom_bands,
+                                            [selected_column]: {
+                                                ...bottom_bands[selected_column],
+                                                currentBands: fragments,
+                                                index: newIndex,
+                                                enzymesUsed,
+                                                isLadder: false
+                                            }
+                                        };
+                                    }
                                 }}
                             >
                                 &uarr;
@@ -512,18 +531,30 @@
                             <button
                                 class="btn btn-xs flex-1 px-0 py-0 bg-gray-100 hover:bg-neutral hover:text-white"
                                 onclick={() => {
-                                    const { fragments, newIndex, enzymesUsed } = iterateDigest(selected_column, lambda_dna, 'up');
-
-                                    bands = {
-                                        ...bands,
-                                        [selected_column]: {
-                                            ...bands[selected_column],
-                                            currentBands: fragments,
-                                            index: newIndex,
-                                            enzymesUsed,
-                                            isLadder: false
-                                        }
-                                    };
+                                    const { fragments, newIndex, enzymesUsed } = iterateDigest(selected_column, lambda_dna, 'down');
+                                    if (top_layer_selected) {
+                                        bands = {
+                                            ...bands,
+                                            [selected_column]: {
+                                                ...bands[selected_column],
+                                                currentBands: fragments,
+                                                index: newIndex,
+                                                enzymesUsed,
+                                                isLadder: false
+                                            }
+                                        };
+                                    } else {
+                                        bottom_bands = {
+                                            ...bottom_bands,
+                                            [selected_column]: {
+                                                ...bottom_bands[selected_column],
+                                                currentBands: fragments,
+                                                index: newIndex,
+                                                enzymesUsed,
+                                                isLadder: false
+                                            }
+                                        };
+                                    }
                                 }}
                             >
                                 &darr;
@@ -640,9 +671,64 @@
     </div>
 </div>
 
+<!-- Put controls here -->
+<!-- <div class="flex flex-col w-full max-w-[90vw] sm:max-w-[525px] mx-auto px-5 pt-5">
+    <div class="flex flex-row mx-auto w-full bg-gray-100 rounded text-sm px-2">
+        <div class="">
+            arrow
+        </div>
+        <div class="">
+
+        </div>
+    </div>
+</div> -->
+
+<article class="prose w-full mx-auto mt-5 pt-5 sm:max-w-[700px] px-5">
+    <h4 class="flex flex-row justify-between text-neutral mb-1 inline">
+        Restriction Enzymes
+        <div>
+            <div class="join">
+                <button
+                    class="btn join-item btn-xs bg-gray-100 hover:bg-neutral hover:text-white"
+                    onclick={() => {
+                        current_enzymes.forEach(e => e.enabled = true);
+                        current_enzymes = [...current_enzymes];
+                    }}
+                >All On</button>
+
+                <button
+                    class="btn join-item bg-gray-100 btn-xs hover:bg-neutral hover:text-white"
+                    onclick={() => {
+                        current_enzymes.forEach(e => e.enabled = false);
+                        current_enzymes = [...current_enzymes];
+                    }}
+                >All Off</button>
+            </div>
+    </div>
+    </h4>
+    <hr class="pb-3" />
+</article>
+<div class="flex flex-col w-full max-w-[100vw] sm:max-w-[700px] mx-auto px-5">
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+        {#each current_enzymes as enzyme, i}
+            <label class="flex items-center justify-between px-2 py-1 border-b text-sm">
+                <span>{enzyme.name}</span>
+
+                <input
+                    type="checkbox"
+                    bind:checked={enzyme.enabled}
+                    onchange={() => {
+                        current_enzymes = [...current_enzymes];
+                    }}
+                    class="checkbox checkbox-sm"
+                />
+            </label>
+        {/each}
+    </div>
+</div>
 
 <!-- Top Level Gel Restriction Digests -->
-<div class="flex flex-col w-full max-w-[100vw] sm:max-w-[700px] mx-auto px-5 pt-5">
+<div class="flex flex-col w-full max-w-[100vw] sm:max-w-[700px] mx-auto px-5">
     <article class="prose w-full mx-auto mt-5">
         <h4 class="text-left text-neutral mb-1">
             {#if stack_mode}
@@ -997,52 +1083,7 @@
 </div>
 {/if}
 
-<article class="prose w-full mx-auto mt-5">
-    <h4 class="text-left text-neutral mb-1">Restriction Digest Parameters</h4>
-    <hr class="pb-3" />
-</article>
-<div class="flex flex-col w-full max-w-[100vw] sm:max-w-[700px] mx-auto px-5">
-    <div class="flex justify-left items-center pb-4 pt-2">
-        <!-- <div class="flex italic">Restriction Enzymes</div> -->
-        <div>
-            <div class="join">
-                <button
-                    class="btn join-item btn-xs bg-gray-100 hover:bg-neutral hover:text-white"
-                    onclick={() => {
-                        current_enzymes.forEach(e => e.enabled = true);
-                        current_enzymes = [...current_enzymes];
-                    }}
-                >All On</button>
-
-                <button
-                    class="btn join-item rounded-r bg-gray-100 btn-xs hover:bg-neutral hover:text-white"
-                    onclick={() => {
-                        current_enzymes.forEach(e => e.enabled = false);
-                        current_enzymes = [...current_enzymes];
-                    }}
-                >All Off</button>
-            </div>
-        </div>
-    </div>
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-        {#each current_enzymes as enzyme, i}
-            <label class="flex items-center justify-between px-2 py-1 border-b text-sm">
-                <span>{enzyme.name}</span>
-
-                <input
-                    type="checkbox"
-                    bind:checked={enzyme.enabled}
-                    onchange={() => {
-                        current_enzymes = [...current_enzymes];
-                    }}
-                    class="checkbox checkbox-sm"
-                />
-            </label>
-        {/each}
-    </div>
-</div>
-
-<div class="flex flex-col w-full max-w-[100vw] sm:max-w-[750px] mx-auto px-5 pt-5">
+<div class="flex flex-col w-full max-w-[100vw] sm:max-w-[750px] mx-auto px-5">
     <article class="prose w-full mx-auto mt-5">
         <h4 class="text-left text-neutral mb-1">Restriction Digest Parameters</h4>
         <hr class="pb-3" />
@@ -1053,7 +1094,7 @@
     </div>
 </div>
 
-<div class="flex flex-col w-full max-w-[100vw] sm:max-w-[750px] mx-auto px-5 pt-5 pb-20">
+<div class="flex flex-col w-full max-w-[100vw] sm:max-w-[750px] mx-auto px-5 pt-3 pb-20">
     <article class="prose w-full mx-auto mt-5">
         <h4 class="text-left text-neutral mb-1">DNA Gel Electrophoresis</h4>
         <hr class="pb-5" />
