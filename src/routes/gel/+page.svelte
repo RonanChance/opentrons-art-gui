@@ -2,6 +2,7 @@
     import { onMount, tick } from 'svelte';
     import { browser } from '$app/environment';
     import { digest, enzymes, lambda_dna } from '$lib/digest.js';
+    import { page } from '$app/stores';
 
     let columns = $state(11);
     let selected_column = $state(null);
@@ -16,9 +17,15 @@
     let isToastVisible = $state(false);
     let alertMessage = $state('');
     let alertType = $state('');
+    let loadingURLRecord = $state(false);
 
     onMount(() => {
         if (!browser) return;
+
+        let loadRecordId = $page.url.searchParams.get('id');
+        if (loadRecordId) {
+            loadRecord(loadRecordId);
+        }
 
         const modal = document.getElementById('upload_modal');
         const handleDown = (e) => {
@@ -341,15 +348,29 @@
 		setTimeout(() => { isToastVisible = false; }, 3000);
 	}
 
+    async function loadRecord(id) {
+        try {
+            loadingURLRecord = true;
+            const response = await fetch('/loadGel', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 'id': id })
+            });
+            const r = await response.json();
+            columns = r.record.columns;
+            stack_mode = r.record.stack_mode;
+            current_enzymes = r.record.current_enzymes;
+            bands = r.record.bands;
+            bottom_bands = r.record.bottom_bands;
+            showAlert("alert-success", "Loaded design successfully!");
+        } catch (error) {
+            showAlert("alert-warning", "Failed to load design.");
+        }
+        loadingURLRecord = false;
+    }
+
     async function saveToGallery() {
         uploading = true;
-        // const hasCut = Object.values(bands).some(col => Array.isArray(col.currentBands) && col.currentBands.length > 1);
-        // if (hasCut) {
-        //     showAlert("alert-warning", "Design cannot be empty.");
-        //     uploading = false;
-        //     return;
-        // }
-
         const response = await fetch('/save-gel', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
