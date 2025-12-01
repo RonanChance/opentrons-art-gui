@@ -955,7 +955,7 @@ function downloadEchoCSV() {
 <!-- AGAR PLATE -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="mb-4 flex items-center mx-auto w-full max-w-[94vw] sm:max-w-[460px] ${(grid_style === 'Echo384' || grid_style === 'Echo384Image' || grid_style === "Echo1536" || grid_style === "Echo1536Image") ? 'aspect-[3/2] mt-4' : 'aspect-square'} rounded-xl">
-<div class={`relative border border-neutral ${grid_style === "Echo384" || grid_style === "Echo384Image"  || grid_style === "Echo1536" || grid_style === "Echo1536Image" ? 'bg-gray-500' : 'bg-neutral' } mx-auto w-full max-w-[90vw] 
+<div class={`relative border border-neutral ${grid_style === "Echo384" || grid_style === "Echo384Image"  || grid_style === "Echo1536" || grid_style === "Echo1536Image" ? 'bg-neutral' : 'bg-neutral' } mx-auto w-full max-w-[90vw] 
           sm:max-w-[440px]
           ${grid_style === "Echo384" || grid_style === "Echo384Image" || grid_style === "Echo1536" || grid_style === "Echo1536Image"
             ? 'aspect-[128/86] rounded' 
@@ -998,18 +998,20 @@ function downloadEchoCSV() {
                     {point_size === 5 ? 'w-[24px] h-[24px]' : ''}
                     absolute {grid_style === 'Echo384' || grid_style === 'Echo384Image' || grid_style === "Echo1536" || grid_style === "Echo1536Image" ? '' : 'rounded-full'} [--chkfg:invisible] transition-[box-shadow] duration-200 ease-in-out {point_colors[`${x}, ${y}`] ? 'border-0' : 'border-white opacity-15'} {show_outlines ? '' : 'border-0'}"
                     style="
-                    left: calc(
-                        {grid_style === 'Echo384' || grid_style === 'Echo384Image' || grid_style === "Echo1536" || grid_style === "Echo1536Image"
-                        ? (x / 128 * 100 + 4) + '%'
-                        : (50.5 + x / (radius_mm + 4) * 50) + '%'
-                        } - {point_size/2}px
-                    );
-                    top: calc(
-                        {grid_style === 'Echo384' || grid_style === 'Echo384Image' || grid_style === "Echo1536" || grid_style === "Echo1536Image"
-                        ? (y / 86 * 100 + 4) + '%'
+                    left: {
+                                (grid_style === 'Echo384' || grid_style === 'Echo384Image')
+                                    ? (x / 128 * 100 + 5.2) + '%'
+                                : (grid_style === 'Echo1536' || grid_style === 'Echo1536Image')
+                                    ? (x / 128 * 100 + 4.2) + '%'
+                                : (50.5 + x / (radius_mm + 4) * 50) + '%'
+                            };
+                    top: {
+                        (grid_style === 'Echo384' || grid_style === 'Echo384Image')
+                            ? (y / 86 * 100 + 6) + '%'
+                        : (grid_style === 'Echo1536' || grid_style === 'Echo1536Image')
+                            ? (y / 86 * 100 + 4.7) + '%'
                         : (50.5 - y / (radius_mm + 4) * 50) + '%'
-                        } - {point_size/2}px
-                    );
+                    };
                     transform: translate(-50%, -50%);
                     background-color: {well_colors[point_colors[`${x}, ${y}`]] 
                         || old_well_colors[point_colors[`${x}, ${y}`]] 
