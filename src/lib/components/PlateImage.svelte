@@ -57,7 +57,7 @@
     }
 </script>
 
-<div bind:this={container} on:mousemove={handleMouseMove} on:mouseleave={resetTilt} class="tilt-effect rounded-full overflow-hidden aspect-square mx-auto bg-neutral border border-neutral/70" aria-label="Art Circle" role="button" tabindex="0">
+<div bind:this={container} on:mousemove={handleMouseMove} on:mouseleave={resetTilt} class="tilt-effect rounded-full overflow-hidden aspect-square mx-auto bg-base-200 border border-neutral/70" aria-label="Art Circle" role="button" tabindex="0">
     <canvas bind:this={canvas} class="w-full h-full rounded-full overflow-hidden"></canvas>
 </div>
 

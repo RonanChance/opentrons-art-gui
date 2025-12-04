@@ -66,7 +66,7 @@ function drawPoints() {
 </script>
 
 <div bind:this={container} on:mousemove={handleMouseMove} on:mouseleave={resetTilt}
-     class="tilt-effect rounded-md overflow-hidden mx-auto bg-neutral border border-neutral/70 aspect-[3/2]"
+     class="tilt-effect rounded-md overflow-hidden mx-auto bg-base-200 border border-neutral/70 aspect-[3/2]"
      aria-label="OmniTray Art" role="button" tabindex="0">
     <canvas bind:this={canvas} class="w-full h-full"></canvas>
 </div>

@@ -10,13 +10,14 @@
 
     // LOCAL COPY
     let current_well_colors = $state({...current_well_colors_import})
+    let ginkgo_art = $state(false);
 
     // GRID DATA
-    let grid_style = $state('Standard'); // 'Standard', 'Honeycomb', 'Radial', 'QRCode', 'Image'
+    let grid_style = $state('Echo1536'); // 'Standard', 'Honeycomb', 'Radial', 'QRCode', 'Image'
     let radius_mm = $state(39.9);
     let grid_spacing_mm = $state(3);
     let prev_grid_spacing_mm = $state(3);
-    let point_size = $state(2.25);
+    let point_size = $state(0.75);
     let points = $state({});
     let point_colors = $state({}); // Typical workflow: edit point_colors then call groupByColors()
     let points_by_color = $state({});
@@ -41,15 +42,17 @@
     
     // IMAGE DATA
     let pixelatedSrc = $state(null);
-    let canvasSize = $state(40);
-    let pixelationLevel = $state(40);
+    let canvasSize = $state(1536);
+    let pixelationLevel = $state(1536);
     let brightness = $state(100);
     let contrast = $state(100);
     let saturation = $state(100);
+    let rotation = $state(0);
     let imageColors = $state([]);
     let file = null;
     let img = null;
     let whiteBgReplacement = $state('Invisible');
+    let sliderValue = Math.log(pixelationLevel);
 
     // ECHO DATA
     let source_id = $state(null);
@@ -679,7 +682,7 @@ function downloadEchoCSV() {
 	}
 
     $effect(() => {
-        processImage(canvasSize, pixelationLevel, brightness, contrast, saturation);
+        processImage(canvasSize, pixelationLevel, brightness, contrast, saturation, rotation);
         if (pixelationLevel > canvasSize) { pixelationLevel = canvasSize; }
     });
 
@@ -689,8 +692,6 @@ function downloadEchoCSV() {
             grid_spacing_mm = 1.8;
             point_size = 0.25;
         }
-        canvasSize = 40;
-        pixelationLevel = 40;
         brightness = 100;
         contrast = 100;
         saturation = 100;
@@ -714,43 +715,36 @@ function downloadEchoCSV() {
             return;
         }
 
-        // --- pixelation canvas (square) ---
         const temp = document.createElement('canvas');
         temp.width = pixelationLevel;
         temp.height = pixelationLevel;
         const tctx = temp.getContext('2d');
 
-        // Always start with white background
         tctx.fillStyle = "#ffffff";
         tctx.fillRect(0, 0, temp.width, temp.height);
 
-        // use actual bitmap size AFTER the image has fully loaded
         const iw = img.naturalWidth;
         const ih = img.naturalHeight;
-
-        // compute scale such that the longest side fits exactly
         const scale = Math.min(temp.width / iw, temp.height / ih);
-
         const sw = iw * scale;
         const sh = ih * scale;
 
-        // center inside square
-        const ox = (temp.width - sw) * 0.5;
-        const oy = (temp.height - sh) * 0.5;
-
+        // Translate to center, rotate, draw image, then restore
+        tctx.save();
+        tctx.translate(temp.width / 2, temp.height / 2);
+        tctx.rotate((rotation * Math.PI) / 180); // rotation in radians
         tctx.filter = `contrast(${contrast}%) brightness(${brightness}%) saturate(${saturation}%)`;
-        tctx.drawImage(img, ox, oy, sw, sh);
+        tctx.drawImage(img, -sw / 2, -sh / 2, sw, sh);
+        tctx.restore();
 
         ctx.imageSmoothingEnabled = false;
 
-        // Just scale the square → square (no distortion possible)
+        // Stretch temp to full canvas (ignore aspect ratio)
         ctx.drawImage(temp, 0, 0, canvasSize, canvasSize);
 
         pixelatedSrc = canvas.toDataURL();
         imageColors = getPixelHexColors(ctx, canvasSize, canvasSize);
     }
-
-
 
     function formatSeconds(seconds) {
         let totalDuration = 0;
@@ -797,7 +791,7 @@ function downloadEchoCSV() {
 </script>
 
 <article class="prose w-full mx-auto mt-5">
-    <h2 class="text-center text-neutral">Automation Art Interface</h2>
+    <h2 class="text-center text-base-content">Automation Art Interface</h2>
 </article>
 
 <dialog id="upload_modal" class="modal modal-middle">
@@ -807,10 +801,10 @@ function downloadEchoCSV() {
             <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 256 256" id="Flat" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M63.99805,140.002a7.99955,7.99955,0,0,1-8,8h-.00049l-44.00147-.0039a8,8,0,0,1-6.3955-12.80469A67.81463,67.81463,0,0,1,33.02783,113.5127,39.99241,39.99241,0,1,1,99.29492,76.50293a7.99971,7.99971,0,0,1-3.78515,8.37695,64.36027,64.36027,0,0,0-27.85889,33.7959A63.645,63.645,0,0,0,63.99805,140.002Zm186.39941-4.81054a67.81009,67.81009,0,0,0-27.42676-21.68067A39.99246,39.99246,0,1,0,156.70361,76.5a8.00092,8.00092,0,0,0,3.78467,8.37695,64.367,64.367,0,0,1,27.85938,33.79688A63.64448,63.64448,0,0,1,192,140a8.00039,8.00039,0,0,0,8.001,8l44.001-.00391a8,8,0,0,0,6.39551-12.80468ZM157.16162,178.0896a48,48,0,1,0-58.32324,0,71.66776,71.66776,0,0,0-35.59522,34.40454A7.9997,7.9997,0,0,0,70.43457,223.999H185.56543a8.00017,8.00017,0,0,0,7.19141-11.50488A71.66776,71.66776,0,0,0,157.16162,178.0896Z"></path> </g></svg>
             Publicly viewable
         </p>
-        <p class="pt-2 flex flex-row gap-2 items-center">
+        <!-- <p class="pt-2 flex flex-row gap-2 items-center">
             <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 256 256" id="Flat" xmlns="http://www.w3.org/2000/svg" stroke="#000000" stroke-width="5.12"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M225.25439,82.74512a51.65924,51.65924,0,0,1-15.22949,36.76953L181.74072,147.7998a52.0625,52.0625,0,0,1-73.54,0,8.00053,8.00053,0,0,1,11.31446-11.31445,36.04088,36.04088,0,0,0,50.91211,0l28.2832-28.28515A35.99926,35.99926,0,0,0,147.79932,57.29L128.00049,77.08887A8.00053,8.00053,0,1,1,116.686,65.77441l19.79882-19.79882a51.99951,51.99951,0,0,1,88.76953,36.76953Zm-97.25488,96.166L108.20068,198.71A35.99926,35.99926,0,1,1,57.28955,147.7998l28.2832-28.28515a36.03821,36.03821,0,0,1,50.91211,0,8.00053,8.00053,0,1,0,11.31446-11.31445,52.0625,52.0625,0,0,0-73.54,0L45.9751,136.48535a52.00031,52.00031,0,0,0,73.54,73.53906L139.314,190.22559a8.00053,8.00053,0,0,0-11.31445-11.31446Z"></path> </g></svg>
             Shareable link
-        </p>
+        </p> -->
         <p class="pt-2 flex flex-row gap-2 items-center">
             <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 256.00 256.00" id="Flat" xmlns="http://www.w3.org/2000/svg" stroke="#000000" stroke-width="5.12"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M80.34375,115.668A8,8,0,0,1,86,102.01074h34V40a8,8,0,0,1,16,0v62.01074h34a8,8,0,0,1,5.65625,13.65723l-42,41.98926a7.99945,7.99945,0,0,1-11.3125,0ZM216,144a8.00039,8.00039,0,0,0-8,8v56H48V152a8,8,0,0,0-16,0v56a16.01833,16.01833,0,0,0,16,16H208a16.01833,16.01833,0,0,0,16-16V152A8.00039,8.00039,0,0,0,216,144Z"></path> </g></svg>
             Access on any device
@@ -941,8 +935,8 @@ function downloadEchoCSV() {
     <div class="mr-auto items-center flex flex-row gap-2 opacity-70">
         <label class="swap mr-auto">
             <input type="checkbox" id="toggle-outlines" bind:checked={show_outlines} />
-            <svg class="swap-on w-6 h-6 text-neutral" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g data-name="Layer 2"> <g data-name="eye"> <rect width="24" height="24" opacity="0"></rect> <circle cx="12" cy="12" r="1.5"></circle> <path d="M21.87 11.5c-.64-1.11-4.16-6.68-10.14-6.5-5.53.14-8.73 5-9.6 6.5a1 1 0 0 0 0 1c.63 1.09 4 6.5 9.89 6.5h.25c5.53-.14 8.74-5 9.6-6.5a1 1 0 0 0 0-1zm-9.87 4a3.5 3.5 0 1 1 3.5-3.5 3.5 3.5 0 0 1-3.5 3.5z"></path> </g> </g> </g></svg>
-            <svg class="swap-off w-6 h-6 text-neutral" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g data-name="Layer 2"> <g data-name="eye-off"> <rect width="24" height="24" opacity="0"></rect> <circle cx="12" cy="12" r="1.5"></circle> <path d="M15.29 18.12L14 16.78l-.07-.07-1.27-1.27a4.07 4.07 0 0 1-.61.06A3.5 3.5 0 0 1 8.5 12a4.07 4.07 0 0 1 .06-.61l-2-2L5 7.87a15.89 15.89 0 0 0-2.87 3.63 1 1 0 0 0 0 1c.63 1.09 4 6.5 9.89 6.5h.25a9.48 9.48 0 0 0 3.23-.67z"></path> <path d="M8.59 5.76l2.8 2.8A4.07 4.07 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 4.07 4.07 0 0 1-.06.61l2.68 2.68.84.84a15.89 15.89 0 0 0 2.91-3.63 1 1 0 0 0 0-1c-.64-1.11-4.16-6.68-10.14-6.5a9.48 9.48 0 0 0-3.23.67z"></path> <path d="M20.71 19.29L19.41 18l-2-2-9.52-9.53L6.42 5 4.71 3.29a1 1 0 0 0-1.42 1.42L5.53 7l1.75 1.7 7.31 7.3.07.07L16 17.41l.59.59 2.7 2.71a1 1 0 0 0 1.42 0 1 1 0 0 0 0-1.42z"></path> </g> </g> </g></svg>
+            <svg class="swap-on w-6 h-6 opacity-70" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g data-name="Layer 2"> <g data-name="eye"> <rect width="24" height="24" opacity="0"></rect> <circle cx="12" cy="12" r="1.5"></circle> <path d="M21.87 11.5c-.64-1.11-4.16-6.68-10.14-6.5-5.53.14-8.73 5-9.6 6.5a1 1 0 0 0 0 1c.63 1.09 4 6.5 9.89 6.5h.25c5.53-.14 8.74-5 9.6-6.5a1 1 0 0 0 0-1zm-9.87 4a3.5 3.5 0 1 1 3.5-3.5 3.5 3.5 0 0 1-3.5 3.5z"></path> </g> </g> </g></svg>
+            <svg class="swap-off w-6 h-6 opacity-70" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g data-name="Layer 2"> <g data-name="eye-off"> <rect width="24" height="24" opacity="0"></rect> <circle cx="12" cy="12" r="1.5"></circle> <path d="M15.29 18.12L14 16.78l-.07-.07-1.27-1.27a4.07 4.07 0 0 1-.61.06A3.5 3.5 0 0 1 8.5 12a4.07 4.07 0 0 1 .06-.61l-2-2L5 7.87a15.89 15.89 0 0 0-2.87 3.63 1 1 0 0 0 0 1c.63 1.09 4 6.5 9.89 6.5h.25a9.48 9.48 0 0 0 3.23-.67z"></path> <path d="M8.59 5.76l2.8 2.8A4.07 4.07 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 4.07 4.07 0 0 1-.06.61l2.68 2.68.84.84a15.89 15.89 0 0 0 2.91-3.63 1 1 0 0 0 0-1c-.64-1.11-4.16-6.68-10.14-6.5a9.48 9.48 0 0 0-3.23.67z"></path> <path d="M20.71 19.29L19.41 18l-2-2-9.52-9.53L6.42 5 4.71 3.29a1 1 0 0 0-1.42 1.42L5.53 7l1.75 1.7 7.31 7.3.07.07L16 17.41l.59.59 2.7 2.71a1 1 0 0 0 1.42 0 1 1 0 0 0 0-1.42z"></path> </g> </g> </g></svg>
         </label>
         {#if current_point.x != null && current_point.y != null}
             {roundPoint(current_point.x)}, {roundPoint(current_point.y)}
@@ -955,7 +949,7 @@ function downloadEchoCSV() {
 <!-- AGAR PLATE -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="mb-4 flex items-center mx-auto w-full max-w-[94vw] sm:max-w-[460px] ${(grid_style === 'Echo384' || grid_style === 'Echo384Image' || grid_style === "Echo1536" || grid_style === "Echo1536Image") ? 'aspect-[3/2] mt-4' : 'aspect-square'} rounded-xl">
-<div class={`relative border border-neutral ${grid_style === "Echo384" || grid_style === "Echo384Image"  || grid_style === "Echo1536" || grid_style === "Echo1536Image" ? 'bg-neutral' : 'bg-neutral' } mx-auto w-full max-w-[90vw] 
+<div class={`relative border border-neutral/60 bg-base-200 mx-auto w-full max-w-[90vw] 
           sm:max-w-[440px]
           ${grid_style === "Echo384" || grid_style === "Echo384Image" || grid_style === "Echo1536" || grid_style === "Echo1536Image"
             ? 'aspect-[128/86] rounded' 
@@ -988,28 +982,20 @@ function downloadEchoCSV() {
                     {point_size === 2.5 ? 'w-[14px] h-[14px]' : ''} 
                     {point_size === 2.75 ? 'w-[15px] h-[15px]' : ''}
                     {point_size === 3 ? 'w-[16px] h-[16px]' : ''}
-                    {point_size === 3.25 ? 'w-[17px] h-[17px]' : ''}
-                    {point_size === 3.5 ? 'w-[18px] h-[18px]' : ''}
-                    {point_size === 3.75 ? 'w-[19px] h-[19px]' : ''}
-                    {point_size === 4 ? 'w-[20px] h-[20px]' : ''}
-                    {point_size === 4.25 ? 'w-[21px] h-[21px]' : ''}
-                    {point_size === 4.5 ? 'w-[22px] h-[22px]' : ''}
-                    {point_size === 4.75 ? 'w-[23px] h-[23px]' : ''}
-                    {point_size === 5 ? 'w-[24px] h-[24px]' : ''}
-                    absolute {grid_style === 'Echo384' || grid_style === 'Echo384Image' || grid_style === "Echo1536" || grid_style === "Echo1536Image" ? '' : 'rounded-full'} [--chkfg:invisible] transition-[box-shadow] duration-200 ease-in-out {point_colors[`${x}, ${y}`] ? 'border-0' : 'border-white opacity-15'} {show_outlines ? '' : 'border-0'}"
+                    absolute {grid_style === 'Echo384' || grid_style === 'Echo384Image' || grid_style === "Echo1536" || grid_style === "Echo1536Image" ? '' : 'rounded-full'} [--chkfg:invisible] transition-[box-shadow] duration-200 ease-in-out {point_colors[`${x}, ${y}`] ? 'border-0' : 'border-white opacity-10'} {show_outlines ? '' : 'border-0'}"
                     style="
                     left: {
-                                (grid_style === 'Echo384' || grid_style === 'Echo384Image')
-                                    ? (x / 128 * 100 + 5.2) + '%'
-                                : (grid_style === 'Echo1536' || grid_style === 'Echo1536Image')
-                                    ? (x / 128 * 100 + 4.2) + '%'
-                                : (50.5 + x / (radius_mm + 4) * 50) + '%'
-                            };
+                        (grid_style === 'Echo384' || grid_style === 'Echo384Image')
+                            ? (x / 128 * 105 + 2.8) + '%'
+                        : (grid_style === 'Echo1536' || grid_style === 'Echo1536Image')
+                            ? (x / 128 * 105 + 1.68) + '%'
+                        : (50.5 + x / (radius_mm + 4) * 50) + '%'
+                    };
                     top: {
                         (grid_style === 'Echo384' || grid_style === 'Echo384Image')
-                            ? (y / 86 * 100 + 6) + '%'
+                            ? (y / 86 * 105 + 4.1) + '%'
                         : (grid_style === 'Echo1536' || grid_style === 'Echo1536Image')
-                            ? (y / 86 * 100 + 4.7) + '%'
+                            ? (y / 86 * 105 + 2.65) + '%'
                         : (50.5 - y / (radius_mm + 4) * 50) + '%'
                     };
                     transform: translate(-50%, -50%);
@@ -1017,7 +1003,7 @@ function downloadEchoCSV() {
                         || old_well_colors[point_colors[`${x}, ${y}`]] 
                         || 'transparent'};
                     box-shadow: {point_colors[`${x}, ${y}`]
-                        ? `0 0 3px 2px ${well_colors[point_colors[`${x}, ${y}`]] 
+                        ? `0 0 2px 1.5px ${well_colors[point_colors[`${x}, ${y}`]] 
                         || old_well_colors[point_colors[`${x}, ${y}`]] 
                         || 'transparent'}`
                         : 'none'};
@@ -1063,12 +1049,12 @@ function downloadEchoCSV() {
         <!-- TIME ESTIMATION -->
         {#if Object.keys(point_colors).length > 0 && grid_style !== "Echo384" && grid_style !== "Echo384Image" && grid_style !== "Echo1536" && grid_style !== "Echo1536Image"}
             <div class="flex flex-row items-center gap-1 justify-center align-middle absolute top-0 left-0 origin-bottom-left opacity-50 tooltip tooltip-bottom" data-tip="Estimated Print Duration" transition:fade={{ duration: 200 }}>
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M23 12C23 18.0751 18.0751 23 12 23C5.92487 23 1 18.0751 1 12C1 5.92487 5.92487 1 12 1C18.0751 1 23 5.92487 23 12ZM3.00683 12C3.00683 16.9668 7.03321 20.9932 12 20.9932C16.9668 20.9932 20.9932 16.9668 20.9932 12C20.9932 7.03321 16.9668 3.00683 12 3.00683C7.03321 3.00683 3.00683 7.03321 3.00683 12Z" fill="#0F0F0F"></path> <path d="M12 5C11.4477 5 11 5.44771 11 6V12.4667C11 12.4667 11 12.7274 11.1267 12.9235C11.2115 13.0898 11.3437 13.2343 11.5174 13.3346L16.1372 16.0019C16.6155 16.278 17.2271 16.1141 17.5032 15.6358C17.7793 15.1575 17.6155 14.5459 17.1372 14.2698L13 11.8812V6C13 5.44772 12.5523 5 12 5Z" fill="#0F0F0F"></path> </g></svg>
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M23 12C23 18.0751 18.0751 23 12 23C5.92487 23 1 18.0751 1 12C1 5.92487 5.92487 1 12 1C18.0751 1 23 5.92487 23 12ZM3.00683 12C3.00683 16.9668 7.03321 20.9932 12 20.9932C16.9668 20.9932 20.9932 16.9668 20.9932 12C20.9932 7.03321 16.9668 3.00683 12 3.00683C7.03321 3.00683 3.00683 7.03321 3.00683 12Z" fill="currentColor"></path> <path d="M12 5C11.4477 5 11 5.44771 11 6V12.4667C11 12.4667 11 12.7274 11.1267 12.9235C11.2115 13.0898 11.3437 13.2343 11.5174 13.3346L16.1372 16.0019C16.6155 16.278 17.2271 16.1141 17.5032 15.6358C17.7793 15.1575 17.6155 14.5459 17.1372 14.2698L13 11.8812V6C13 5.44772 12.5523 5 12 5Z" fill="currentColor"></path> </g></svg>
                 <div class="">{formatSeconds(estimatedPrintDuration)}</div>
             </div>
         {/if}
         <!-- MOVEMENT KEYS -->
-        {#if Object.keys(point_colors).length > 0 && (grid_style === "Standard" || grid_style === "Image")}
+        {#if Object.keys(point_colors).length > 0 && grid_style !== "Echo384" && grid_style !== "Echo384Image" && grid_style !== "Echo1536" && grid_style !== "Echo1536Image"}
             <div class="absolute bottom-0 right-0 scale-[60%] origin-bottom-right" transition:fade={{ duration: 200 }}>
                 <div class="flex w-full justify-center">
                     <button class="kbd" onclick={() => {point_colors = shiftPoints("up", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors, grid_style); groupByColors();}}>▲</button>
@@ -1094,78 +1080,79 @@ function downloadEchoCSV() {
     {/if}
 
     {#if grid_style === 'Image' || grid_style === 'Echo384Image' || grid_style === 'Echo1536Image'}
-        <div class="relative w-[50%] mr-auto">
+        <div class="flex flex-row w-full mr-auto items-center">
             <input type="file" accept="image/*" class="file-input file-input-xs" onclick={(e) => {e.target.value = null;}} onchange={(e) => {handleFileChange(e, pixelationLevel);}} />
+            {#if !pixelatedSrc}<span class="opacity-70 text-xs">White backgrounds works best!</span>{/if}
         </div>
     {/if}
 
     {#if pixelatedSrc}
-        <div class="flex flex-row w-full gap-4 text-xs bg-gray-100 rounded px-2 py-2">
-            <div class="w-[25%] mx-auto my-auto">
+        <div class="flex flex-row w-full gap-4 text-xs bg-base-200 rounded px-2 py-2">
+            <div class="w-[25%] mx-auto my-auto flex flex-col">
                 <img src={pixelatedSrc} class="w-full mx-auto outline outline-neutral outline-2 rounded" alt="Pixelated" />
             </div>
-            <div class="w-[75%] flex flex-col">
+            <div class="w-[75%] flex flex-col items-center justify-center gap-1">
                 <div class="flex flex-row w-full gap-3 justify-between">
-                    <!-- CANVAS SIZE -->
-                    <div class="flex flex-col justify-between items-center gap-1 w-1/3">
-                        <span class="font-semibold mr-auto">Canvas</span>
-                        <div class="flex items-center gap-2 mr-auto">
-                            <span class="opacity-70">{canvasSize}x{canvasSize}px</span>
-                            <div class="flex flex-col h-full opacity-70">
-                                <button class="button flex-1 p-0 leading-none" onclick={() => {canvasSize += 5}}>▲</button>
-                                <button class="button flex-1 p-0 leading-none" onclick={() => {canvasSize -= 5}}>▼</button>
-                            </div>
-                        </div>
+                    <!-- PIXELATION -->
+                    <div class="flex flex-col gap-2 w-1/2">
+                        <span class="flex flex-row justify-between">
+                            <span class="font-semibold">Pixelation</span>
+                            <span class="opacity-70">{Math.round((canvasSize - pixelationLevel) / canvasSize * 100)}%</span>
+                        </span>
+                        <input
+                            type="range"
+                            min={4}
+                            max={canvasSize}
+                            step={2}
+                            bind:value={pixelationLevel}
+                            class="w-full range range-xs"
+                        />
                     </div>
-                    <!-- RESOLUTION -->
-                    <div class="flex flex-col justify-between items-center gap-1 w-1/3">
-                        <span class="font-semibold mr-auto">Resolution</span>
-                        <div class="flex items-center gap-2 mr-auto">
-                            <span class="opacity-70">{pixelationLevel}px</span>
-                            <div class="flex flex-col h-full opacity-70">
-                                <button class="button flex-1 p-0 leading-none" onclick={() => {pixelationLevel += 5}}>▲</button>
-                                <button class="button flex-1 p-0 leading-none" onclick={() => {pixelationLevel -= 5}}>▼</button>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- REPLACE WHITE -->
-                    <div class="flex flex-col gap-1 w-1/3">
-                        <span class="font-semibold my-auto mr-auto">White</span>
-                        <select class="select select-xs mr-auto truncate max-w-24" bind:value={whiteBgReplacement} onchange={() => {processImage(canvasSize, pixelationLevel)}} >
-                            <option selected>Invisible</option>
-                            {#each Object.entries(current_well_colors).filter(([name, val]) => name !== 'White' &&  name !== "Erase" && val) as [key, value], i}
-                                <option>
-                                    {key}
-                                </option>
-                            {/each}
-                        </select>
-                    </div>
-                </div>
-
-                <div class="divider my-0"></div>
-
-                <!-- IMAGE PROCESSING -->
-                <div class="flex flex-row w-full gap-3 text-xs">
                     <!-- BRIGHTNESS -->
-                    <div class="flex flex-col gap-2 w-1/3">
+                    <div class="flex flex-col gap-2 w-1/2">
                         <div class="flex flex-row justify-between">
                             <span class="font-semibold">Brightness</span><span class="opacity-70">{brightness}%</span>
                         </div>
                         <input type="range" min="10" max="300" class="range range-xs" step="10" bind:value={brightness} />
                     </div>
+                </div>
+
+                <!-- IMAGE PROCESSING -->
+                <div class="flex flex-row w-full gap-3 text-xs">
                     <!-- CONTRAST -->
-                    <div class="flex flex-col gap-2 w-1/3">
+                    <div class="flex flex-col gap-2 w-1/2">
                         <div class="flex flex-row justify-between">
                             <span class="font-semibold">Contrast</span><span class="opacity-70">{contrast}%</span>
                         </div>
                         <input type="range" min="10" max="300" class="range range-xs" step="10" bind:value={contrast} />
                     </div>
                     <!-- SATURATION -->
-                    <div class="flex flex-col gap-2 w-1/3">
+                    <div class="flex flex-col gap-2 w-1/2">
                         <div class="flex flex-row justify-between">
                             <span class="font-semibold">Saturation</span><span class="opacity-70">{saturation}%</span>
                         </div>
                         <input type="range" min="10" max="300" class="range range-xs" step="10" bind:value={saturation} />
+                    </div>
+                </div>
+
+                <div class="flex flex-row w-full gap-3 text-xs">
+                    <!-- REPLACE WHITE -->
+                    <div class="flex flex-col gap-2 w-1/2">
+                        <span class="font-semibold">Replace White</span>
+                        <select class="select select-xs w-full truncate bg-primary text-primary-content border-0" bind:value={whiteBgReplacement} onchange={() => {processImage(canvasSize, pixelationLevel)}}>
+                            <option selected>Invisible</option>
+                            {#each Object.entries(current_well_colors).filter(([name, val]) => name !== 'White' &&  name !== "Erase" && val) as [key, value], i}
+                                <option>{key}</option>
+                            {/each}
+                        </select>
+                    </div>
+                    
+                    <!-- ROTATION -->
+                    <div class="flex flex-col gap-2 w-1/2">
+                        <div class="flex flex-row justify-between">
+                            <span class="font-semibold">Rotation</span><span class="opacity-70">{rotation}°</span>
+                        </div>
+                        <input type="range" min="0" max="360" class="range range-xs" step="5" bind:value={rotation} />
                     </div>
                 </div>
             </div>
@@ -1178,53 +1165,57 @@ function downloadEchoCSV() {
             <div class="flex flex-row justify-between">
                 <span class="font-semibold">Grid</span> <span class="opacity-70">{grid_style}</span>
             </div>
-            <div class="flex flex-col gap-2 flex-wrap justify-center {Object.keys(point_colors).length > 0 ? 'tooltip tooltip-top' : ''}" data-tip="Erase Grid to Edit">
-                <div class="w-full flex justify-between items-center">
-                    Opentrons
-                    <div class="join">
-                        <button class="btn btn-sm rounded-r-none {grid_style === 'Standard' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "Standard"; grid_spacing_mm = 3; point_size = 1.5;}} aria-label="Standard" disabled={Object.keys(point_colors).length > 0}>
-                            <svg class="w-5 h-5 opacity-75" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><circle cx="8" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="12" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="16" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="8" cy="12" r="1" fill="currentColor" stroke="none" /><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" /><circle cx="16" cy="12" r="1" fill="currentColor" stroke="none" /><circle cx="8" cy="16" r="1" fill="currentColor" stroke="none" /><circle cx="12" cy="16" r="1" fill="currentColor" stroke="none" /><circle cx="16" cy="16" r="1" fill="currentColor" stroke="none" /></svg>
-                        </button>
-                        <button class="btn btn-sm rounded-l-none {grid_style === 'Image' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "Image"; grid_spacing_mm = 1.8; point_size = 0.25;}} aria-label="Image" disabled={Object.keys(point_colors).length > 0}>
-                            <svg class="w-5 h-5 opacity-75" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M4 10V6C4 4.89543 4.89543 4 6 4H12M4.02693 18.329C4.18385 19.277 5.0075 20 6 20H18C19.1046 20 20 19.1046 20 18V14.1901M4.02693 18.329C4.00922 18.222 4 18.1121 4 18V15M4.02693 18.329L7.84762 14.5083C8.52765 13.9133 9.52219 13.8481 10.274 14.3494L10.7832 14.6888C11.5078 15.1719 12.4619 15.1305 13.142 14.5864L15.7901 12.4679C16.4651 11.9279 17.4053 11.8855 18.1228 12.3484C18.2023 12.3997 18.2731 12.4632 18.34 12.5301L20 14.1901M20 14.1901V6C20 4.89543 19.1046 4 18 4H17M11 9C11 10.1046 10.1046 11 9 11C7.89543 11 7 10.1046 7 9C7 7.89543 7.89543 7 9 7C10.1046 7 11 7.89543 11 9Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
-                        </button>
+            <!-- Arrow keys for non-circular agar plates -->
+            {#if Object.keys(point_colors).length > 0 && (grid_style === "Echo384" || grid_style === "Echo384Image" || grid_style === "Echo1536" || grid_style === "Echo1536Image")}
+                <div class="flex flex-col mt-auto" in:fade={{ duration: 300 }}>
+                    <div class="flex w-full justify-center">
+                        <button class="kbd" onclick={() => {point_colors = shiftPoints("up", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors, grid_style); groupByColors();}}>▲</button>
+                    </div>
+                    <div class="flex w-full justify-center gap-2 pt-2">
+                        <button class="kbd" onclick={() => {point_colors = shiftPoints("left", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors, grid_style); groupByColors();}}>◀︎</button>
+                        <button class="kbd" onclick={() => {point_colors = shiftPoints("down", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors, grid_style); groupByColors();}}>▼</button>
+                        <button class="kbd" onclick={() => {point_colors = shiftPoints("right", grid_spacing_mm, grid_spacing_mm, radius_mm, point_colors, grid_style); groupByColors();}}>▶︎</button>
                     </div>
                 </div>
-                <div class="w-full flex justify-between items-center">
-                    Echo 1536
-                    <div class="join">
-                        <button class="btn btn-sm rounded-r-none {grid_style === 'Echo1536' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "Echo1536"; point_size = 0.5;}} aria-label="Echo1536" disabled={Object.keys(point_colors).length > 0}>
-                            <svg class="w-5 h-5 opacity-75"  viewBox="0 0 115 115" fill="none" ><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <path d="M114.822,83.667c0.005-0.003,0.011-0.005,0.016-0.008l-0.242-0.438l-0.174-0.469c-2.889,1.074-5.479,1.014-7.918-0.184 c-7.797-3.829-12.357-18.479-16.769-32.646c-4.267-13.702-8.295-26.646-15.083-28.488c-2.775-0.755-5.739,0.351-9.064,3.382 c-4.777,4.55-9.23,14.32-13.539,23.769C46.907,59.866,41.59,71.53,36.476,72.012c-3.446,0.344-6.995-4.27-10.74-9.134 c-6.261-8.13-14.054-18.248-25.66-10.945l0.229,0.365c-0.084,0.058-0.167,0.105-0.251,0.165l0.24,0.339 c-0.087,0.066-0.173,0.121-0.26,0.189l0.249,0.316c-0.089,0.074-0.178,0.136-0.267,0.213l0.254,0.293 c-0.09,0.082-0.18,0.15-0.27,0.235l0.686,0.729c2.635-2.484,5.091-3.456,7.498-2.976c6.335,1.265,11.459,12.705,15.979,22.798 c4.567,10.196,8.524,19.032,13.547,19.032c0.11,0,0.221-0.004,0.333-0.013c7.147-0.553,9.792-10.111,12.855-21.179 c2.173-7.854,4.636-16.753,9.091-23.108c3.963-5.409,7.5-7.907,10.817-7.629c5.937,0.494,10.636,9.831,15.611,19.717 c5.268,10.469,10.717,21.292,18.522,23.691c3.108,0.956,6.427,0.473,9.86-1.432c0.002,0,0.004-0.001,0.006-0.002l0,0 C114.811,83.673,114.817,83.671,114.822,83.667L114.822,83.667z M24.531,69.191c4.388,7.786,8.159,14.507,12.775,14.122 c6.434-0.546,10.442-11.369,14.686-22.826c3.227-8.712,6.564-17.721,11.146-23.053c3.447-4.012,6.49-5.736,9.291-5.266 c6.006,1.004,10.359,11.948,14.968,23.534c2.541,6.386,5.128,12.874,8.129,18.122c-2.808-4.604-5.325-10.21-7.8-15.729 C82.805,47.113,78.154,36.74,71.658,35.95c-3.406-0.418-6.973,1.813-10.88,6.815c-4.667,5.972-7.538,14.824-10.313,23.385 c-3.473,10.709-6.752,20.825-12.871,21.32c-4.2,0.358-8.168-7.59-12.355-15.985c-1.759-3.528-3.542-7.097-5.426-10.274 C21.469,63.768,23.034,66.537,24.531,69.191z M18.281,57.277c2.314,2.75,4.445,6.018,6.449,9.103 c4.243,6.528,7.916,12.162,12.208,11.781c6.056-0.541,10.657-11.662,15.528-23.435c3.739-9.035,7.604-18.378,12.241-23.236 c3.227-3.38,6.053-4.754,8.648-4.196c6.096,1.309,10.256,13.104,14.66,25.591c2.211,6.268,4.457,12.633,7.051,18.011 c-2.417-4.699-4.596-10.17-6.74-15.563c-4.715-11.855-9.169-23.053-15.73-24.15c-3.176-0.529-6.521,1.3-10.217,5.601 c-4.699,5.467-8.067,14.562-11.325,23.357c-4.13,11.15-8.032,21.685-13.833,22.177c-3.943,0.333-7.774-6.441-11.819-13.616 C23.207,64.808,20.868,60.667,18.281,57.277z M24.944,63.489c4.088,5.309,7.611,9.898,11.626,9.52 c5.69-0.536,10.887-11.937,16.389-24.006c4.268-9.362,8.681-19.042,13.31-23.452c3.044-2.775,5.701-3.804,8.121-3.149 c6.258,1.698,10.207,14.387,14.391,27.822c2.001,6.428,4.034,12.95,6.4,18.56c-2.241-4.952-4.246-10.63-6.223-16.231 c-4.501-12.759-8.752-24.81-15.395-26.236c-2.961-0.635-6.096,0.831-9.581,4.484c-4.767,4.993-8.668,14.424-12.441,23.544 c-4.752,11.484-9.241,22.333-14.693,22.819c-3.694,0.341-7.383-5.333-11.281-11.331c-2.567-3.948-5.333-8.194-8.471-11.336 C19.945,57.002,22.508,60.325,24.944,63.489z M70.889,40.706c-3.684-0.308-7.521,2.321-11.713,8.043 c-4.56,6.504-7.046,15.493-9.242,23.424c-2.962,10.705-5.521,19.95-11.968,20.448c-4.478,0.347-8.564-8.773-12.89-18.432 c-1.322-2.952-2.657-5.93-4.038-8.73c1.141,2.136,2.241,4.336,3.305,6.472c4.421,8.864,8.252,16.551,12.978,16.55 c0.117,0,0.235-0.005,0.354-0.015c6.783-0.549,10.008-10.493,13.741-22.009c2.749-8.478,5.592-17.245,10.15-23.077 c3.674-4.702,6.941-6.806,9.972-6.438c5.935,0.722,10.474,10.844,15.277,21.561c2.743,6.119,5.538,12.334,8.753,17.243 c-2.96-4.259-5.633-9.56-8.258-14.775C82.205,50.827,77.383,41.246,70.889,40.706z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g> </g></svg>
-                        </button>
-                        <button class="btn btn-sm rounded-l-none {grid_style === 'Echo1536Image' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "Echo1536Image"; point_size = 0.5;}} aria-label="Echo1536Image" disabled={Object.keys(point_colors).length > 0}>
-                            <svg class="w-5 h-5 opacity-75" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M4 10V6C4 4.89543 4.89543 4 6 4H12M4.02693 18.329C4.18385 19.277 5.0075 20 6 20H18C19.1046 20 20 19.1046 20 18V14.1901M4.02693 18.329C4.00922 18.222 4 18.1121 4 18V15M4.02693 18.329L7.84762 14.5083C8.52765 13.9133 9.52219 13.8481 10.274 14.3494L10.7832 14.6888C11.5078 15.1719 12.4619 15.1305 13.142 14.5864L15.7901 12.4679C16.4651 11.9279 17.4053 11.8855 18.1228 12.3484C18.2023 12.3997 18.2731 12.4632 18.34 12.5301L20 14.1901M20 14.1901V6C20 4.89543 19.1046 4 18 4H17M11 9C11 10.1046 10.1046 11 9 11C7.89543 11 7 10.1046 7 9C7 7.89543 7.89543 7 9 7C10.1046 7 11 7.89543 11 9Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
-                        </button>
+            {:else}
+                <div class="flex flex-col gap-2 flex-wrap justify-center {Object.keys(point_colors).length > 0 ? 'tooltip tooltip-top' : ''}" data-tip="Erase to edit" in:fade={{ duration: 300 }}>
+                    <div class="w-full flex justify-between items-center">
+                        Echo 1536
+                        <div class="join">
+                            <button class="btn btn-sm rounded-r-none {grid_style === 'Echo1536' ? 'btn-primary' : 'btn-outline btn-primary'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "Echo1536"; point_size = 0.75;}} aria-label="Echo1536" disabled={Object.keys(point_colors).length > 0}>
+                                <svg class="w-5 h-5 opacity-75"  viewBox="0 0 115 115" fill="none" ><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <path d="M114.822,83.667c0.005-0.003,0.011-0.005,0.016-0.008l-0.242-0.438l-0.174-0.469c-2.889,1.074-5.479,1.014-7.918-0.184 c-7.797-3.829-12.357-18.479-16.769-32.646c-4.267-13.702-8.295-26.646-15.083-28.488c-2.775-0.755-5.739,0.351-9.064,3.382 c-4.777,4.55-9.23,14.32-13.539,23.769C46.907,59.866,41.59,71.53,36.476,72.012c-3.446,0.344-6.995-4.27-10.74-9.134 c-6.261-8.13-14.054-18.248-25.66-10.945l0.229,0.365c-0.084,0.058-0.167,0.105-0.251,0.165l0.24,0.339 c-0.087,0.066-0.173,0.121-0.26,0.189l0.249,0.316c-0.089,0.074-0.178,0.136-0.267,0.213l0.254,0.293 c-0.09,0.082-0.18,0.15-0.27,0.235l0.686,0.729c2.635-2.484,5.091-3.456,7.498-2.976c6.335,1.265,11.459,12.705,15.979,22.798 c4.567,10.196,8.524,19.032,13.547,19.032c0.11,0,0.221-0.004,0.333-0.013c7.147-0.553,9.792-10.111,12.855-21.179 c2.173-7.854,4.636-16.753,9.091-23.108c3.963-5.409,7.5-7.907,10.817-7.629c5.937,0.494,10.636,9.831,15.611,19.717 c5.268,10.469,10.717,21.292,18.522,23.691c3.108,0.956,6.427,0.473,9.86-1.432c0.002,0,0.004-0.001,0.006-0.002l0,0 C114.811,83.673,114.817,83.671,114.822,83.667L114.822,83.667z M24.531,69.191c4.388,7.786,8.159,14.507,12.775,14.122 c6.434-0.546,10.442-11.369,14.686-22.826c3.227-8.712,6.564-17.721,11.146-23.053c3.447-4.012,6.49-5.736,9.291-5.266 c6.006,1.004,10.359,11.948,14.968,23.534c2.541,6.386,5.128,12.874,8.129,18.122c-2.808-4.604-5.325-10.21-7.8-15.729 C82.805,47.113,78.154,36.74,71.658,35.95c-3.406-0.418-6.973,1.813-10.88,6.815c-4.667,5.972-7.538,14.824-10.313,23.385 c-3.473,10.709-6.752,20.825-12.871,21.32c-4.2,0.358-8.168-7.59-12.355-15.985c-1.759-3.528-3.542-7.097-5.426-10.274 C21.469,63.768,23.034,66.537,24.531,69.191z M18.281,57.277c2.314,2.75,4.445,6.018,6.449,9.103 c4.243,6.528,7.916,12.162,12.208,11.781c6.056-0.541,10.657-11.662,15.528-23.435c3.739-9.035,7.604-18.378,12.241-23.236 c3.227-3.38,6.053-4.754,8.648-4.196c6.096,1.309,10.256,13.104,14.66,25.591c2.211,6.268,4.457,12.633,7.051,18.011 c-2.417-4.699-4.596-10.17-6.74-15.563c-4.715-11.855-9.169-23.053-15.73-24.15c-3.176-0.529-6.521,1.3-10.217,5.601 c-4.699,5.467-8.067,14.562-11.325,23.357c-4.13,11.15-8.032,21.685-13.833,22.177c-3.943,0.333-7.774-6.441-11.819-13.616 C23.207,64.808,20.868,60.667,18.281,57.277z M24.944,63.489c4.088,5.309,7.611,9.898,11.626,9.52 c5.69-0.536,10.887-11.937,16.389-24.006c4.268-9.362,8.681-19.042,13.31-23.452c3.044-2.775,5.701-3.804,8.121-3.149 c6.258,1.698,10.207,14.387,14.391,27.822c2.001,6.428,4.034,12.95,6.4,18.56c-2.241-4.952-4.246-10.63-6.223-16.231 c-4.501-12.759-8.752-24.81-15.395-26.236c-2.961-0.635-6.096,0.831-9.581,4.484c-4.767,4.993-8.668,14.424-12.441,23.544 c-4.752,11.484-9.241,22.333-14.693,22.819c-3.694,0.341-7.383-5.333-11.281-11.331c-2.567-3.948-5.333-8.194-8.471-11.336 C19.945,57.002,22.508,60.325,24.944,63.489z M70.889,40.706c-3.684-0.308-7.521,2.321-11.713,8.043 c-4.56,6.504-7.046,15.493-9.242,23.424c-2.962,10.705-5.521,19.95-11.968,20.448c-4.478,0.347-8.564-8.773-12.89-18.432 c-1.322-2.952-2.657-5.93-4.038-8.73c1.141,2.136,2.241,4.336,3.305,6.472c4.421,8.864,8.252,16.551,12.978,16.55 c0.117,0,0.235-0.005,0.354-0.015c6.783-0.549,10.008-10.493,13.741-22.009c2.749-8.478,5.592-17.245,10.15-23.077 c3.674-4.702,6.941-6.806,9.972-6.438c5.935,0.722,10.474,10.844,15.277,21.561c2.743,6.119,5.538,12.334,8.753,17.243 c-2.96-4.259-5.633-9.56-8.258-14.775C82.205,50.827,77.383,41.246,70.889,40.706z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g> </g></svg>
+                            </button>
+                            <button class="btn btn-sm rounded-l-none {grid_style === 'Echo1536Image' ? 'btn-primary' : 'btn-outline btn-primary'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "Echo1536Image"; point_size = 0.75; canvasSize = 384; pixelationLevel = 384;}} aria-label="Echo1536Image" disabled={Object.keys(point_colors).length > 0}>
+                                <svg class="w-5 h-5 opacity-75" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M4 10V6C4 4.89543 4.89543 4 6 4H12M4.02693 18.329C4.18385 19.277 5.0075 20 6 20H18C19.1046 20 20 19.1046 20 18V14.1901M4.02693 18.329C4.00922 18.222 4 18.1121 4 18V15M4.02693 18.329L7.84762 14.5083C8.52765 13.9133 9.52219 13.8481 10.274 14.3494L10.7832 14.6888C11.5078 15.1719 12.4619 15.1305 13.142 14.5864L15.7901 12.4679C16.4651 11.9279 17.4053 11.8855 18.1228 12.3484C18.2023 12.3997 18.2731 12.4632 18.34 12.5301L20 14.1901M20 14.1901V6C20 4.89543 19.1046 4 18 4H17M11 9C11 10.1046 10.1046 11 9 11C7.89543 11 7 10.1046 7 9C7 7.89543 7.89543 7 9 7C10.1046 7 11 7.89543 11 9Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
+                            </button>
+                        </div>
                     </div>
-                </div>
-                <div class="w-full flex justify-between items-center">
-                    Echo 384
-                    <div class="join">
-                        <button class="btn btn-sm rounded-r-none group {grid_style === 'Echo384' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "Echo384"; point_size = 2.25;}} aria-label="Echo384" disabled={Object.keys(point_colors).length > 0}>
-                            <svg class="w-5 h-5 opacity-75"  viewBox="0 0 115 115" fill="none" ><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <path d="M114.822,83.667c0.005-0.003,0.011-0.005,0.016-0.008l-0.242-0.438l-0.174-0.469c-2.889,1.074-5.479,1.014-7.918-0.184 c-7.797-3.829-12.357-18.479-16.769-32.646c-4.267-13.702-8.295-26.646-15.083-28.488c-2.775-0.755-5.739,0.351-9.064,3.382 c-4.777,4.55-9.23,14.32-13.539,23.769C46.907,59.866,41.59,71.53,36.476,72.012c-3.446,0.344-6.995-4.27-10.74-9.134 c-6.261-8.13-14.054-18.248-25.66-10.945l0.229,0.365c-0.084,0.058-0.167,0.105-0.251,0.165l0.24,0.339 c-0.087,0.066-0.173,0.121-0.26,0.189l0.249,0.316c-0.089,0.074-0.178,0.136-0.267,0.213l0.254,0.293 c-0.09,0.082-0.18,0.15-0.27,0.235l0.686,0.729c2.635-2.484,5.091-3.456,7.498-2.976c6.335,1.265,11.459,12.705,15.979,22.798 c4.567,10.196,8.524,19.032,13.547,19.032c0.11,0,0.221-0.004,0.333-0.013c7.147-0.553,9.792-10.111,12.855-21.179 c2.173-7.854,4.636-16.753,9.091-23.108c3.963-5.409,7.5-7.907,10.817-7.629c5.937,0.494,10.636,9.831,15.611,19.717 c5.268,10.469,10.717,21.292,18.522,23.691c3.108,0.956,6.427,0.473,9.86-1.432c0.002,0,0.004-0.001,0.006-0.002l0,0 C114.811,83.673,114.817,83.671,114.822,83.667L114.822,83.667z M24.531,69.191c4.388,7.786,8.159,14.507,12.775,14.122 c6.434-0.546,10.442-11.369,14.686-22.826c3.227-8.712,6.564-17.721,11.146-23.053c3.447-4.012,6.49-5.736,9.291-5.266 c6.006,1.004,10.359,11.948,14.968,23.534c2.541,6.386,5.128,12.874,8.129,18.122c-2.808-4.604-5.325-10.21-7.8-15.729 C82.805,47.113,78.154,36.74,71.658,35.95c-3.406-0.418-6.973,1.813-10.88,6.815c-4.667,5.972-7.538,14.824-10.313,23.385 c-3.473,10.709-6.752,20.825-12.871,21.32c-4.2,0.358-8.168-7.59-12.355-15.985c-1.759-3.528-3.542-7.097-5.426-10.274 C21.469,63.768,23.034,66.537,24.531,69.191z M18.281,57.277c2.314,2.75,4.445,6.018,6.449,9.103 c4.243,6.528,7.916,12.162,12.208,11.781c6.056-0.541,10.657-11.662,15.528-23.435c3.739-9.035,7.604-18.378,12.241-23.236 c3.227-3.38,6.053-4.754,8.648-4.196c6.096,1.309,10.256,13.104,14.66,25.591c2.211,6.268,4.457,12.633,7.051,18.011 c-2.417-4.699-4.596-10.17-6.74-15.563c-4.715-11.855-9.169-23.053-15.73-24.15c-3.176-0.529-6.521,1.3-10.217,5.601 c-4.699,5.467-8.067,14.562-11.325,23.357c-4.13,11.15-8.032,21.685-13.833,22.177c-3.943,0.333-7.774-6.441-11.819-13.616 C23.207,64.808,20.868,60.667,18.281,57.277z M24.944,63.489c4.088,5.309,7.611,9.898,11.626,9.52 c5.69-0.536,10.887-11.937,16.389-24.006c4.268-9.362,8.681-19.042,13.31-23.452c3.044-2.775,5.701-3.804,8.121-3.149 c6.258,1.698,10.207,14.387,14.391,27.822c2.001,6.428,4.034,12.95,6.4,18.56c-2.241-4.952-4.246-10.63-6.223-16.231 c-4.501-12.759-8.752-24.81-15.395-26.236c-2.961-0.635-6.096,0.831-9.581,4.484c-4.767,4.993-8.668,14.424-12.441,23.544 c-4.752,11.484-9.241,22.333-14.693,22.819c-3.694,0.341-7.383-5.333-11.281-11.331c-2.567-3.948-5.333-8.194-8.471-11.336 C19.945,57.002,22.508,60.325,24.944,63.489z M70.889,40.706c-3.684-0.308-7.521,2.321-11.713,8.043 c-4.56,6.504-7.046,15.493-9.242,23.424c-2.962,10.705-5.521,19.95-11.968,20.448c-4.478,0.347-8.564-8.773-12.89-18.432 c-1.322-2.952-2.657-5.93-4.038-8.73c1.141,2.136,2.241,4.336,3.305,6.472c4.421,8.864,8.252,16.551,12.978,16.55 c0.117,0,0.235-0.005,0.354-0.015c6.783-0.549,10.008-10.493,13.741-22.009c2.749-8.478,5.592-17.245,10.15-23.077 c3.674-4.702,6.941-6.806,9.972-6.438c5.935,0.722,10.474,10.844,15.277,21.561c2.743,6.119,5.538,12.334,8.753,17.243 c-2.96-4.259-5.633-9.56-8.258-14.775C82.205,50.827,77.383,41.246,70.889,40.706z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g> </g></svg>
-                        </button>
-                        <button class="btn btn-sm rounded-l-none group {grid_style === 'Echo384Image' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "Echo384Image"; point_size = 2.25;}} aria-label="Echo384Image" disabled={Object.keys(point_colors).length > 0}>
-                            <svg class="w-5 h-5 opacity-75" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M4 10V6C4 4.89543 4.89543 4 6 4H12M4.02693 18.329C4.18385 19.277 5.0075 20 6 20H18C19.1046 20 20 19.1046 20 18V14.1901M4.02693 18.329C4.00922 18.222 4 18.1121 4 18V15M4.02693 18.329L7.84762 14.5083C8.52765 13.9133 9.52219 13.8481 10.274 14.3494L10.7832 14.6888C11.5078 15.1719 12.4619 15.1305 13.142 14.5864L15.7901 12.4679C16.4651 11.9279 17.4053 11.8855 18.1228 12.3484C18.2023 12.3997 18.2731 12.4632 18.34 12.5301L20 14.1901M20 14.1901V6C20 4.89543 19.1046 4 18 4H17M11 9C11 10.1046 10.1046 11 9 11C7.89543 11 7 10.1046 7 9C7 7.89543 7.89543 7 9 7C10.1046 7 11 7.89543 11 9Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
-                        </button>
+                    <div class="w-full flex justify-between items-center">
+                        Echo 384
+                        <div class="join">
+                            <button class="btn btn-sm rounded-r-none group {grid_style === 'Echo384' ? 'btn-primary' : 'btn-outline btn-primary'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "Echo384"; point_size = 2.25;}} aria-label="Echo384" disabled={Object.keys(point_colors).length > 0}>
+                                <svg class="w-5 h-5 opacity-75"  viewBox="0 0 115 115" fill="none" ><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <path d="M114.822,83.667c0.005-0.003,0.011-0.005,0.016-0.008l-0.242-0.438l-0.174-0.469c-2.889,1.074-5.479,1.014-7.918-0.184 c-7.797-3.829-12.357-18.479-16.769-32.646c-4.267-13.702-8.295-26.646-15.083-28.488c-2.775-0.755-5.739,0.351-9.064,3.382 c-4.777,4.55-9.23,14.32-13.539,23.769C46.907,59.866,41.59,71.53,36.476,72.012c-3.446,0.344-6.995-4.27-10.74-9.134 c-6.261-8.13-14.054-18.248-25.66-10.945l0.229,0.365c-0.084,0.058-0.167,0.105-0.251,0.165l0.24,0.339 c-0.087,0.066-0.173,0.121-0.26,0.189l0.249,0.316c-0.089,0.074-0.178,0.136-0.267,0.213l0.254,0.293 c-0.09,0.082-0.18,0.15-0.27,0.235l0.686,0.729c2.635-2.484,5.091-3.456,7.498-2.976c6.335,1.265,11.459,12.705,15.979,22.798 c4.567,10.196,8.524,19.032,13.547,19.032c0.11,0,0.221-0.004,0.333-0.013c7.147-0.553,9.792-10.111,12.855-21.179 c2.173-7.854,4.636-16.753,9.091-23.108c3.963-5.409,7.5-7.907,10.817-7.629c5.937,0.494,10.636,9.831,15.611,19.717 c5.268,10.469,10.717,21.292,18.522,23.691c3.108,0.956,6.427,0.473,9.86-1.432c0.002,0,0.004-0.001,0.006-0.002l0,0 C114.811,83.673,114.817,83.671,114.822,83.667L114.822,83.667z M24.531,69.191c4.388,7.786,8.159,14.507,12.775,14.122 c6.434-0.546,10.442-11.369,14.686-22.826c3.227-8.712,6.564-17.721,11.146-23.053c3.447-4.012,6.49-5.736,9.291-5.266 c6.006,1.004,10.359,11.948,14.968,23.534c2.541,6.386,5.128,12.874,8.129,18.122c-2.808-4.604-5.325-10.21-7.8-15.729 C82.805,47.113,78.154,36.74,71.658,35.95c-3.406-0.418-6.973,1.813-10.88,6.815c-4.667,5.972-7.538,14.824-10.313,23.385 c-3.473,10.709-6.752,20.825-12.871,21.32c-4.2,0.358-8.168-7.59-12.355-15.985c-1.759-3.528-3.542-7.097-5.426-10.274 C21.469,63.768,23.034,66.537,24.531,69.191z M18.281,57.277c2.314,2.75,4.445,6.018,6.449,9.103 c4.243,6.528,7.916,12.162,12.208,11.781c6.056-0.541,10.657-11.662,15.528-23.435c3.739-9.035,7.604-18.378,12.241-23.236 c3.227-3.38,6.053-4.754,8.648-4.196c6.096,1.309,10.256,13.104,14.66,25.591c2.211,6.268,4.457,12.633,7.051,18.011 c-2.417-4.699-4.596-10.17-6.74-15.563c-4.715-11.855-9.169-23.053-15.73-24.15c-3.176-0.529-6.521,1.3-10.217,5.601 c-4.699,5.467-8.067,14.562-11.325,23.357c-4.13,11.15-8.032,21.685-13.833,22.177c-3.943,0.333-7.774-6.441-11.819-13.616 C23.207,64.808,20.868,60.667,18.281,57.277z M24.944,63.489c4.088,5.309,7.611,9.898,11.626,9.52 c5.69-0.536,10.887-11.937,16.389-24.006c4.268-9.362,8.681-19.042,13.31-23.452c3.044-2.775,5.701-3.804,8.121-3.149 c6.258,1.698,10.207,14.387,14.391,27.822c2.001,6.428,4.034,12.95,6.4,18.56c-2.241-4.952-4.246-10.63-6.223-16.231 c-4.501-12.759-8.752-24.81-15.395-26.236c-2.961-0.635-6.096,0.831-9.581,4.484c-4.767,4.993-8.668,14.424-12.441,23.544 c-4.752,11.484-9.241,22.333-14.693,22.819c-3.694,0.341-7.383-5.333-11.281-11.331c-2.567-3.948-5.333-8.194-8.471-11.336 C19.945,57.002,22.508,60.325,24.944,63.489z M70.889,40.706c-3.684-0.308-7.521,2.321-11.713,8.043 c-4.56,6.504-7.046,15.493-9.242,23.424c-2.962,10.705-5.521,19.95-11.968,20.448c-4.478,0.347-8.564-8.773-12.89-18.432 c-1.322-2.952-2.657-5.93-4.038-8.73c1.141,2.136,2.241,4.336,3.305,6.472c4.421,8.864,8.252,16.551,12.978,16.55 c0.117,0,0.235-0.005,0.354-0.015c6.783-0.549,10.008-10.493,13.741-22.009c2.749-8.478,5.592-17.245,10.15-23.077 c3.674-4.702,6.941-6.806,9.972-6.438c5.935,0.722,10.474,10.844,15.277,21.561c2.743,6.119,5.538,12.334,8.753,17.243 c-2.96-4.259-5.633-9.56-8.258-14.775C82.205,50.827,77.383,41.246,70.889,40.706z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g> </g></svg>
+                            </button>
+                            <button class="btn btn-sm rounded-l-none group {grid_style === 'Echo384Image' ? 'btn-primary' : 'btn-outline btn-primary'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "Echo384Image"; point_size = 2.25; canvasSize = 384; pixelationLevel = 384;}} aria-label="Echo384Image" disabled={Object.keys(point_colors).length > 0}>
+                                <svg class="w-5 h-5 opacity-75" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M4 10V6C4 4.89543 4.89543 4 6 4H12M4.02693 18.329C4.18385 19.277 5.0075 20 6 20H18C19.1046 20 20 19.1046 20 18V14.1901M4.02693 18.329C4.00922 18.222 4 18.1121 4 18V15M4.02693 18.329L7.84762 14.5083C8.52765 13.9133 9.52219 13.8481 10.274 14.3494L10.7832 14.6888C11.5078 15.1719 12.4619 15.1305 13.142 14.5864L15.7901 12.4679C16.4651 11.9279 17.4053 11.8855 18.1228 12.3484C18.2023 12.3997 18.2731 12.4632 18.34 12.5301L20 14.1901M20 14.1901V6C20 4.89543 19.1046 4 18 4H17M11 9C11 10.1046 10.1046 11 9 11C7.89543 11 7 10.1046 7 9C7 7.89543 7.89543 7 9 7C10.1046 7 11 7.89543 11 9Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
+                            </button>
+                        </div>
                     </div>
+                    {#if !ginkgo_art}
+                        <div class="w-full flex justify-between items-center">
+                            Opentrons
+                            <div class="join">
+                                <button class="btn btn-sm rounded-r-none {grid_style === 'Standard' ? 'btn-primary' : 'btn-outline btn-primary'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "Standard"; grid_spacing_mm = 3; point_size = 1.5;}} aria-label="Standard" disabled={Object.keys(point_colors).length > 0}>
+                                    <svg class="w-5 h-5 opacity-75" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><circle cx="8" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="12" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="16" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="8" cy="12" r="1" fill="currentColor" stroke="none" /><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" /><circle cx="16" cy="12" r="1" fill="currentColor" stroke="none" /><circle cx="8" cy="16" r="1" fill="currentColor" stroke="none" /><circle cx="12" cy="16" r="1" fill="currentColor" stroke="none" /><circle cx="16" cy="16" r="1" fill="currentColor" stroke="none" /></svg>
+                                </button>
+                                <button class="btn btn-sm rounded-l-none {grid_style === 'Image' ? 'btn-primary' : 'btn-outline btn-primary'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "Image"; grid_spacing_mm = 1.8; point_size = 0.25; pixelationLevel = 40; canvasSize = 40;}} aria-label="Image" disabled={Object.keys(point_colors).length > 0}>
+                                    <svg class="w-5 h-5 opacity-75" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M4 10V6C4 4.89543 4.89543 4 6 4H12M4.02693 18.329C4.18385 19.277 5.0075 20 6 20H18C19.1046 20 20 19.1046 20 18V14.1901M4.02693 18.329C4.00922 18.222 4 18.1121 4 18V15M4.02693 18.329L7.84762 14.5083C8.52765 13.9133 9.52219 13.8481 10.274 14.3494L10.7832 14.6888C11.5078 15.1719 12.4619 15.1305 13.142 14.5864L15.7901 12.4679C16.4651 11.9279 17.4053 11.8855 18.1228 12.3484C18.2023 12.3997 18.2731 12.4632 18.34 12.5301L20 14.1901M20 14.1901V6C20 4.89543 19.1046 4 18 4H17M11 9C11 10.1046 10.1046 11 9 11C7.89543 11 7 10.1046 7 9C7 7.89543 7.89543 7 9 7C10.1046 7 11 7.89543 11 9Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
+                                </button>
+                            </div>
+                        </div>
+                    {/if}
                 </div>
-                <!-- <button class="btn btn-sm group {grid_style === 'Radial' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "Radial"; grid_spacing_mm = 3; point_size = 1.5;}} aria-label="Radial" disabled={Object.keys(point_colors).length > 0}>
-                    <svg class="w-5 h-5 opacity-75" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"> <circle cx="12" cy="12" r="10" /> <circle cx="12" cy="7" r="1" fill="currentColor" stroke="none" /> <circle cx="15.8" cy="8.8" r="1" fill="currentColor" stroke="none" /> <circle cx="17" cy="12" r="1" fill="currentColor" stroke="none" /> <circle cx="15.8" cy="15.2" r="1" fill="currentColor" stroke="none" /> <circle cx="12" cy="17" r="1" fill="currentColor" stroke="none" />  <circle cx="8.2" cy="15.2" r="1" fill="currentColor" stroke="none" /> <circle cx="7" cy="12" r="1" fill="currentColor" stroke="none" /> <circle cx="8.2" cy="8.8" r="1" fill="currentColor" stroke="none" /> <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" /> </svg>
-                    </button> -->
-                <!-- <button class="btn btn-sm group {grid_style === 'Echo384' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "Echo384"; point_size = 2.25;}} aria-label="Echo384" disabled={Object.keys(point_colors).length > 0}>
-                    <svg class="w-5 h-5 opacity-75"  viewBox="0 0 115 115" fill="none" ><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <path d="M114.822,83.667c0.005-0.003,0.011-0.005,0.016-0.008l-0.242-0.438l-0.174-0.469c-2.889,1.074-5.479,1.014-7.918-0.184 c-7.797-3.829-12.357-18.479-16.769-32.646c-4.267-13.702-8.295-26.646-15.083-28.488c-2.775-0.755-5.739,0.351-9.064,3.382 c-4.777,4.55-9.23,14.32-13.539,23.769C46.907,59.866,41.59,71.53,36.476,72.012c-3.446,0.344-6.995-4.27-10.74-9.134 c-6.261-8.13-14.054-18.248-25.66-10.945l0.229,0.365c-0.084,0.058-0.167,0.105-0.251,0.165l0.24,0.339 c-0.087,0.066-0.173,0.121-0.26,0.189l0.249,0.316c-0.089,0.074-0.178,0.136-0.267,0.213l0.254,0.293 c-0.09,0.082-0.18,0.15-0.27,0.235l0.686,0.729c2.635-2.484,5.091-3.456,7.498-2.976c6.335,1.265,11.459,12.705,15.979,22.798 c4.567,10.196,8.524,19.032,13.547,19.032c0.11,0,0.221-0.004,0.333-0.013c7.147-0.553,9.792-10.111,12.855-21.179 c2.173-7.854,4.636-16.753,9.091-23.108c3.963-5.409,7.5-7.907,10.817-7.629c5.937,0.494,10.636,9.831,15.611,19.717 c5.268,10.469,10.717,21.292,18.522,23.691c3.108,0.956,6.427,0.473,9.86-1.432c0.002,0,0.004-0.001,0.006-0.002l0,0 C114.811,83.673,114.817,83.671,114.822,83.667L114.822,83.667z M24.531,69.191c4.388,7.786,8.159,14.507,12.775,14.122 c6.434-0.546,10.442-11.369,14.686-22.826c3.227-8.712,6.564-17.721,11.146-23.053c3.447-4.012,6.49-5.736,9.291-5.266 c6.006,1.004,10.359,11.948,14.968,23.534c2.541,6.386,5.128,12.874,8.129,18.122c-2.808-4.604-5.325-10.21-7.8-15.729 C82.805,47.113,78.154,36.74,71.658,35.95c-3.406-0.418-6.973,1.813-10.88,6.815c-4.667,5.972-7.538,14.824-10.313,23.385 c-3.473,10.709-6.752,20.825-12.871,21.32c-4.2,0.358-8.168-7.59-12.355-15.985c-1.759-3.528-3.542-7.097-5.426-10.274 C21.469,63.768,23.034,66.537,24.531,69.191z M18.281,57.277c2.314,2.75,4.445,6.018,6.449,9.103 c4.243,6.528,7.916,12.162,12.208,11.781c6.056-0.541,10.657-11.662,15.528-23.435c3.739-9.035,7.604-18.378,12.241-23.236 c3.227-3.38,6.053-4.754,8.648-4.196c6.096,1.309,10.256,13.104,14.66,25.591c2.211,6.268,4.457,12.633,7.051,18.011 c-2.417-4.699-4.596-10.17-6.74-15.563c-4.715-11.855-9.169-23.053-15.73-24.15c-3.176-0.529-6.521,1.3-10.217,5.601 c-4.699,5.467-8.067,14.562-11.325,23.357c-4.13,11.15-8.032,21.685-13.833,22.177c-3.943,0.333-7.774-6.441-11.819-13.616 C23.207,64.808,20.868,60.667,18.281,57.277z M24.944,63.489c4.088,5.309,7.611,9.898,11.626,9.52 c5.69-0.536,10.887-11.937,16.389-24.006c4.268-9.362,8.681-19.042,13.31-23.452c3.044-2.775,5.701-3.804,8.121-3.149 c6.258,1.698,10.207,14.387,14.391,27.822c2.001,6.428,4.034,12.95,6.4,18.56c-2.241-4.952-4.246-10.63-6.223-16.231 c-4.501-12.759-8.752-24.81-15.395-26.236c-2.961-0.635-6.096,0.831-9.581,4.484c-4.767,4.993-8.668,14.424-12.441,23.544 c-4.752,11.484-9.241,22.333-14.693,22.819c-3.694,0.341-7.383-5.333-11.281-11.331c-2.567-3.948-5.333-8.194-8.471-11.336 C19.945,57.002,22.508,60.325,24.944,63.489z M70.889,40.706c-3.684-0.308-7.521,2.321-11.713,8.043 c-4.56,6.504-7.046,15.493-9.242,23.424c-2.962,10.705-5.521,19.95-11.968,20.448c-4.478,0.347-8.564-8.773-12.89-18.432 c-1.322-2.952-2.657-5.93-4.038-8.73c1.141,2.136,2.241,4.336,3.305,6.472c4.421,8.864,8.252,16.551,12.978,16.55 c0.117,0,0.235-0.005,0.354-0.015c6.783-0.549,10.008-10.493,13.741-22.009c2.749-8.478,5.592-17.245,10.15-23.077 c3.674-4.702,6.941-6.806,9.972-6.438c5.935,0.722,10.474,10.844,15.277,21.561c2.743,6.119,5.538,12.334,8.753,17.243 c-2.96-4.259-5.633-9.56-8.258-14.775C82.205,50.827,77.383,41.246,70.889,40.706z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g> </g></svg>
-                </button>
-                <button class="btn btn-sm group {grid_style === 'Echo384Image' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "Echo384Image"; point_size = 2.25;}} aria-label="Echo384Image" disabled={Object.keys(point_colors).length > 0}>
-                    <svg class="w-5 h-5 opacity-75"  viewBox="0 0 115 115" fill="none" ><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <path d="M114.822,83.667c0.005-0.003,0.011-0.005,0.016-0.008l-0.242-0.438l-0.174-0.469c-2.889,1.074-5.479,1.014-7.918-0.184 c-7.797-3.829-12.357-18.479-16.769-32.646c-4.267-13.702-8.295-26.646-15.083-28.488c-2.775-0.755-5.739,0.351-9.064,3.382 c-4.777,4.55-9.23,14.32-13.539,23.769C46.907,59.866,41.59,71.53,36.476,72.012c-3.446,0.344-6.995-4.27-10.74-9.134 c-6.261-8.13-14.054-18.248-25.66-10.945l0.229,0.365c-0.084,0.058-0.167,0.105-0.251,0.165l0.24,0.339 c-0.087,0.066-0.173,0.121-0.26,0.189l0.249,0.316c-0.089,0.074-0.178,0.136-0.267,0.213l0.254,0.293 c-0.09,0.082-0.18,0.15-0.27,0.235l0.686,0.729c2.635-2.484,5.091-3.456,7.498-2.976c6.335,1.265,11.459,12.705,15.979,22.798 c4.567,10.196,8.524,19.032,13.547,19.032c0.11,0,0.221-0.004,0.333-0.013c7.147-0.553,9.792-10.111,12.855-21.179 c2.173-7.854,4.636-16.753,9.091-23.108c3.963-5.409,7.5-7.907,10.817-7.629c5.937,0.494,10.636,9.831,15.611,19.717 c5.268,10.469,10.717,21.292,18.522,23.691c3.108,0.956,6.427,0.473,9.86-1.432c0.002,0,0.004-0.001,0.006-0.002l0,0 C114.811,83.673,114.817,83.671,114.822,83.667L114.822,83.667z M24.531,69.191c4.388,7.786,8.159,14.507,12.775,14.122 c6.434-0.546,10.442-11.369,14.686-22.826c3.227-8.712,6.564-17.721,11.146-23.053c3.447-4.012,6.49-5.736,9.291-5.266 c6.006,1.004,10.359,11.948,14.968,23.534c2.541,6.386,5.128,12.874,8.129,18.122c-2.808-4.604-5.325-10.21-7.8-15.729 C82.805,47.113,78.154,36.74,71.658,35.95c-3.406-0.418-6.973,1.813-10.88,6.815c-4.667,5.972-7.538,14.824-10.313,23.385 c-3.473,10.709-6.752,20.825-12.871,21.32c-4.2,0.358-8.168-7.59-12.355-15.985c-1.759-3.528-3.542-7.097-5.426-10.274 C21.469,63.768,23.034,66.537,24.531,69.191z M18.281,57.277c2.314,2.75,4.445,6.018,6.449,9.103 c4.243,6.528,7.916,12.162,12.208,11.781c6.056-0.541,10.657-11.662,15.528-23.435c3.739-9.035,7.604-18.378,12.241-23.236 c3.227-3.38,6.053-4.754,8.648-4.196c6.096,1.309,10.256,13.104,14.66,25.591c2.211,6.268,4.457,12.633,7.051,18.011 c-2.417-4.699-4.596-10.17-6.74-15.563c-4.715-11.855-9.169-23.053-15.73-24.15c-3.176-0.529-6.521,1.3-10.217,5.601 c-4.699,5.467-8.067,14.562-11.325,23.357c-4.13,11.15-8.032,21.685-13.833,22.177c-3.943,0.333-7.774-6.441-11.819-13.616 C23.207,64.808,20.868,60.667,18.281,57.277z M24.944,63.489c4.088,5.309,7.611,9.898,11.626,9.52 c5.69-0.536,10.887-11.937,16.389-24.006c4.268-9.362,8.681-19.042,13.31-23.452c3.044-2.775,5.701-3.804,8.121-3.149 c6.258,1.698,10.207,14.387,14.391,27.822c2.001,6.428,4.034,12.95,6.4,18.56c-2.241-4.952-4.246-10.63-6.223-16.231 c-4.501-12.759-8.752-24.81-15.395-26.236c-2.961-0.635-6.096,0.831-9.581,4.484c-4.767,4.993-8.668,14.424-12.441,23.544 c-4.752,11.484-9.241,22.333-14.693,22.819c-3.694,0.341-7.383-5.333-11.281-11.331c-2.567-3.948-5.333-8.194-8.471-11.336 C19.945,57.002,22.508,60.325,24.944,63.489z M70.889,40.706c-3.684-0.308-7.521,2.321-11.713,8.043 c-4.56,6.504-7.046,15.493-9.242,23.424c-2.962,10.705-5.521,19.95-11.968,20.448c-4.478,0.347-8.564-8.773-12.89-18.432 c-1.322-2.952-2.657-5.93-4.038-8.73c1.141,2.136,2.241,4.336,3.305,6.472c4.421,8.864,8.252,16.551,12.978,16.55 c0.117,0,0.235-0.005,0.354-0.015c6.783-0.549,10.008-10.493,13.741-22.009c2.749-8.478,5.592-17.245,10.15-23.077 c3.674-4.702,6.941-6.806,9.972-6.438c5.935,0.722,10.474,10.844,15.277,21.561c2.743,6.119,5.538,12.334,8.753,17.243 c-2.96-4.259-5.633-9.56-8.258-14.775C82.205,50.827,77.383,41.246,70.889,40.706z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g> </g></svg>
-                </button> -->
-                <!-- <button class="btn btn-sm group {grid_style === 'QRCode' ? 'btn-neutral' : 'btn-outline'} {Object.keys(point_colors).length > 0 ? 'cursor-not-allowed' : ''}" type="button" onclick={() => {grid_style = "QRCode"; grid_spacing_mm = 2; point_size = 0.25;}} aria-label="QRCode" disabled={Object.keys(point_colors).length > 0}>
-                    <svg class="w-5 h-5 opacity-75" fill="currentColor" height="200px" width="200px" viewBox="0 0 24 24" id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <defs> <style>.cls-1{fill:none;}.cls-2{clip-path:url(#clip-path);}</style> <clipPath id="clip-path"> <rect class="cls-1" x="-0.04" width="24" height="24"></rect> </clipPath> </defs> <title>qr-alt</title> <g class="cls-2"> <path d="M9.84,11.17H7.13a1.4,1.4,0,0,1-1.4-1.39V7.07a1.4,1.4,0,0,1,1.4-1.4H9.84a1.4,1.4,0,0,1,1.39,1.4V9.78A1.39,1.39,0,0,1,9.84,11.17ZM7.23,9.67h2.5V7.17H7.23Z"></path> <path d="M16.88,11.17H14.16a1.39,1.39,0,0,1-1.39-1.39V7.07a1.4,1.4,0,0,1,1.39-1.4h2.72a1.4,1.4,0,0,1,1.39,1.4V9.78A1.39,1.39,0,0,1,16.88,11.17Zm-2.61-1.5h2.5V7.17h-2.5Z"></path> <path d="M9.84,18.33H7.13a1.4,1.4,0,0,1-1.4-1.4V14.22a1.4,1.4,0,0,1,1.4-1.39H9.84a1.39,1.39,0,0,1,1.39,1.39v2.71A1.4,1.4,0,0,1,9.84,18.33Zm-2.61-1.5h2.5v-2.5H7.23Z"></path> <path d="M16.88,18.44H14.16a1.39,1.39,0,0,1-1.39-1.39V14.33a1.39,1.39,0,0,1,1.39-1.39h2.72a1.4,1.4,0,0,1,1.39,1.39v2.72A1.39,1.39,0,0,1,16.88,18.44Zm-2.61-1.5h2.5v-2.5h-2.5Z"></path> <path d="M3,8.25a.76.76,0,0,1-.75-.75V3A.76.76,0,0,1,3,2.25H7.5a.75.75,0,0,1,0,1.5H3.75V7.5A.76.76,0,0,1,3,8.25Z"></path> <path d="M21,8.25a.76.76,0,0,1-.75-.75V3.75H16.5a.75.75,0,0,1,0-1.5H21a.76.76,0,0,1,.75.75V7.5A.76.76,0,0,1,21,8.25Z"></path> <path d="M21,21.75H16.5a.75.75,0,0,1,0-1.5h3.75V16.5a.75.75,0,0,1,1.5,0V21A.76.76,0,0,1,21,21.75Z"></path> <path d="M7.5,21.75H3A.76.76,0,0,1,2.25,21V16.5a.75.75,0,0,1,1.5,0v3.75H7.5a.75.75,0,0,1,0,1.5Z"></path> </g> </g></svg>
-                </button> -->
-            </div>
+            {/if}
         </div>
         <!-- BACTERIA COLOR & CONTROLS -->
         <div class="flex flex-col w-[50%] gap-2 mx-auto">
@@ -1249,19 +1240,21 @@ function downloadEchoCSV() {
                         ></div>
                     </div>
                 {/each}
-                <div role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter'} onclick={() => showBacteriaModal = !showBacteriaModal}
-                    class="opacity-40 w-[24px] h-[24px] rounded-full cursor-pointer border-[1px] transition outline-none focus:ring-2 ring-offset-2 flex items-center justify-center"
-                    style="background-color: #fffff; border-color: #000; box-shadow: {'none'};">
-                    <div class="w-[14px] h-[14px] rounded-full block" style="background-color: '000';">
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M13 3C13 2.44772 12.5523 2 12 2C11.4477 2 11 2.44772 11 3V11H3C2.44772 11 2 11.4477 2 12C2 12.5523 2.44772 13 3 13H11V21C11 21.5523 11.4477 22 12 22C12.5523 22 13 21.5523 13 21V13H21C21.5523 13 22 12.5523 22 12C22 11.4477 21.5523 11 21 11H13V3Z" fill="#0F0F0F"></path> </g></svg>
+                {#if !ginkgo_art}
+                    <div role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter'} onclick={() => showBacteriaModal = !showBacteriaModal}
+                        class="opacity-40 w-[24px] h-[24px] rounded-full cursor-pointer border-[1px] transition outline-none focus:ring-2 ring-offset-2 flex items-center justify-center"
+                        style="background-color: #fffff; border-color: #fff; box-shadow: {'none'};">
+                        <div class="w-[14px] h-[14px] rounded-full block text-primary">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M13 3C13 2.44772 12.5523 2 12 2C11.4477 2 11 2.44772 11 3V11H3C2.44772 11 2 11.4477 2 12C2 12.5523 2.44772 13 3 13H11V21C11 21.5523 11.4477 22 12 22C12.5523 22 13 21.5523 13 21V13H21C21.5523 13 22 12.5523 22 12C22 11.4477 21.5523 11 21 11H13V3Z" fill="currentColor"></path> </g></svg>
+                        </div>
                     </div>
-                </div>
+                {/if}
             </div>
         </div>
     </div>
 
     {#if showBacteriaModal}
-        <div class="relative overflow-y-none bg-white border rounded shadow z-10 p-2">
+        <div class="relative overflow-y-none bg-secondary border rounded shadow z-10 p-2">
             <button class="absolute -top-2 -left-2 text-gray-500 hover:text-black text-sm bg-neutral rounded-full px-1 py-1" aria-label="close" onclick={() => showBacteriaModal = false}>
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M20.7457 3.32851C20.3552 2.93798 19.722 2.93798 19.3315 3.32851L12.0371 10.6229L4.74275 3.32851C4.35223 2.93798 3.71906 2.93798 3.32854 3.32851C2.93801 3.71903 2.93801 4.3522 3.32854 4.74272L10.6229 12.0371L3.32856 19.3314C2.93803 19.722 2.93803 20.3551 3.32856 20.7457C3.71908 21.1362 4.35225 21.1362 4.74277 20.7457L12.0371 13.4513L19.3315 20.7457C19.722 21.1362 20.3552 21.1362 20.7457 20.7457C21.1362 20.3551 21.1362 19.722 20.7457 19.3315L13.4513 12.0371L20.7457 4.74272C21.1362 4.3522 21.1362 3.71903 20.7457 3.32851Z" fill="#fff"></path> </g></svg>
             </button>
@@ -1270,7 +1263,7 @@ function downloadEchoCSV() {
                 <div class="">
                     <div class="join">
                         <button class="btn join-item rounded-l btn-xs hover:bg-neutral hover:text-white" onclick={() => {current_well_colors = {...current_well_colors_import}; if (grid_style === 'Image') {processImage(canvasSize, pixelationLevel);}}}>Default</button>
-                        <button class="btn join-itembtn btn-xs hover:bg-neutral hover:text-white" onclick={() => {Object.keys(well_colors).forEach(key => current_well_colors[key] = true); if (grid_style === 'Image') {processImage(canvasSize, pixelationLevel);}}}>All On</button>
+                        <button class="btn join-item btn-xs hover:bg-neutral hover:text-white" onclick={() => {Object.keys(well_colors).forEach(key => current_well_colors[key] = true); if (grid_style === 'Image') {processImage(canvasSize, pixelationLevel);}}}>All On</button>
                         <button class="btn join-item rounded-r btn-xs hover:bg-neutral hover:text-white" onclick={() => {Object.keys(well_colors).forEach(key => {if (key !== 'White' && key !== 'Erase') { current_well_colors[key] = false;}}); if (grid_style === 'Image') {processImage(canvasSize, pixelationLevel);}}}>All Off</button>
                     </div>
                 </div>
@@ -1292,13 +1285,15 @@ function downloadEchoCSV() {
     {/if}
 
     <div class="flex flex-row w-full gap-6">
-        <!-- POINT SIZE -->
-        <div class="flex flex-col w-full gap-2 mx-auto">
-            <div class="flex flex-row justify-between">
-                <span class="font-semibold">Size</span><span class="opacity-70">{point_size}µL</span>
+        {#if grid_style !== 'Echo1536' && grid_style !== 'Echo1536Image' && grid_style !== 'Echo384' && grid_style !== 'Echo384Image'}
+            <!-- POINT SIZE -->
+            <div class="flex flex-col w-full gap-2 mx-auto">
+                <div class="flex flex-row justify-between">
+                    <span class="font-semibold">Size</span><span class="opacity-70">{point_size}µL</span>
+                </div>
+                <input type="range" min="0.25" max="3" class="range" step="0.25" bind:value={point_size} />
             </div>
-            <input type="range" min="0.25" max="5" class="range" step="0.25" bind:value={point_size} />
-        </div>
+        {/if}
         <!-- GRID SPACING -->
         {#if grid_style === 'Echo1536' || grid_style === 'Echo1536Image' || grid_style === 'Echo384' || grid_style === 'Echo384Image'}
             <div class="flex flex-col w-full gap-2 mx-auto"></div>
@@ -1328,42 +1323,42 @@ function downloadEchoCSV() {
     <div class="flex flex-row justify-between">
         <div class="flex flex-row gap-2">
             {#if grid_style === 'Echo1536' || grid_style === 'Echo1536Image' || grid_style === 'Echo384' || grid_style === 'Echo384Image'}
-                <button class="btn btn-sm rounded bg-gray-100 gap-1 hover:bg-neutral hover:text-white" onclick={download_echo_csv.showModal()}>
+                <button class="btn btn-sm rounded gap-1 bg-base-200 text-base-content hover:bg-base-300 hover:text-base-content" onclick={download_echo_csv.showModal()}>
                     <svg class="w-5 h-5 inline-block align-middle" transform="scale(1.3) translate(-0.5 0)" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"> <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 5v8.5m0 0l3-3m-3 3l-3-3M5 15v2a2 2 0 002 2h10a2 2 0 002-2v-2" /></svg>
                     Echo CSV
                 </button>
             {:else}
-                <button class="btn btn-sm rounded bg-gray-100 gap-1 hover:bg-neutral hover:text-white" onclick={download_modal.showModal()}>
+                <button class="btn btn-sm rounded gap-1 bg-base-200 text-base-content hover:bg-base-300 hover:text-base-content" onclick={download_modal.showModal()}>
                     <svg class="w-5 h-5 inline-block align-middle" transform="scale(1.3) translate(-0.5 0)" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"> <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 5v8.5m0 0l3-3m-3 3l-3-3M5 15v2a2 2 0 002 2h10a2 2 0 002-2v-2" /></svg>
                     Opentrons Script
                 </button>
             {/if}
-            <button class="btn btn-sm rounded bg-gray-100 gap-1 hover:bg-neutral hover:text-white" onclick={() => { if (!uploading) {upload_modal.showModal()}}}>
+            <button class="btn btn-sm rounded gap-1 bg-base-200 text-base-content hover:bg-base-300 hover:text-base-content" onclick={() => { if (!uploading) {upload_modal.showModal()}}}>
                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 35 35" version="1.1" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>upload1</title> <path d="M29.426 15.535c0 0 0.649-8.743-7.361-9.74-6.865-0.701-8.955 5.679-8.955 5.679s-2.067-1.988-4.872-0.364c-2.511 1.55-2.067 4.388-2.067 4.388s-5.576 1.084-5.576 6.768c0.124 5.677 6.054 5.734 6.054 5.734h9.351v-6h-3l5-5 5 5h-3v6h8.467c0 0 5.52 0.006 6.295-5.395 0.369-5.906-5.336-7.070-5.336-7.070z"></path> </g></svg>
                 Publish
             </button>
         </div>
-        <button class="btn btn-sm rounded bg-gray-100 gap-1 hover:bg-neutral hover:text-white" onclick={resetValues}>
+        <button class="btn btn-sm rounded gap-1 bg-base-200 text-base-content hover:bg-base-300 hover:text-base-content" onclick={resetValues}>
             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path transform="scale(1.2) translate(-3 -2.5)" fill-rule="evenodd" clip-rule="evenodd" d="M15.0722 3.9967L20.7508 9.83395L17.0544 13.5304L13.0758 17.5H21.0041V19H7.93503L4.00195 15.0669L15.0722 3.9967ZM10.952 17.5L15.4628 12.9994L11.8268 9.3634L6.12327 15.0669L8.55635 17.5H10.952Z" fill="currentColor"></path> </g></svg>
-            Reset
+            Erase
         </button>
     </div>
 
     <!-- SHOW POINTS -->
-    <div class="flex flex-col w-full gap-2 mx-auto bg-gray-100 rounded px-2 {Object.keys(points_by_color).length >= 1 ? 'pb-2' : ''}">
+    <div class="flex flex-col w-full gap-2 mx-auto bg-base-200 rounded px-3 {Object.keys(points_by_color).length >= 1 ? 'pb-2' : ''}">
         <div class="flex flex-row justify-between pt-2 items-center">
             <span class="font-semibold">Coordinates</span>
             <div class="flex flex-row flex-wrap justify-end gap-2 max-w-full overflow-hidden">
                 <!-- <button class="btn btn-sm px-1 tooltip tooltip-top" aria-label="Swap Colors" data-tip="Swap Colors" onclick={swapColors}>
                     <svg class="w-6 h-6 mx-1 opacity-50" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M2 6C2 3.79086 3.79086 2 6 2C8.20914 2 10 3.79086 10 6V18C10 20.2091 8.20914 22 6 22C3.79086 22 2 20.2091 2 18V6Z" stroke="currentColor" stroke-width="1.5"></path> <path d="M9.99977 8.24268L13.3134 4.92902C14.8755 3.36692 17.4082 3.36692 18.9703 4.92902C20.5324 6.49112 20.5324 9.02378 18.9703 10.5859L9.30615 20.25" stroke="currentColor" stroke-width="1.5"></path> <path d="M6 22L18 22C20.2091 22 22 20.2091 22 18C22 15.7909 20.2091 14 18 14L15.5 14" stroke="currentColor" stroke-width="1.5"></path> <path d="M7 18C7 18.5523 6.55228 19 6 19C5.44772 19 5 18.5523 5 18C5 17.4477 5.44772 17 6 17C6.55228 17 7 17.4477 7 18Z" stroke="currentColor" stroke-width="1.5"></path> </g></svg>
                 </button> -->
-                <button class="btn btn-sm rounded bg-gray-100 gap-1 hover:bg-neutral hover:text-white px-1 tooltip tooltip-top" aria-label="Copy Points" data-tip="Copy To Clipboard" onclick={copyPointsToClipboard}>
+                <button class="btn btn-sm rounded bg-base-100 gap-1 hover:bg-neutral hover:text-white px-1 tooltip tooltip-top" aria-label="Copy Points" data-tip="Copy To Clipboard" onclick={copyPointsToClipboard}>
                     <svg class="w-7 h-7 opacity-70" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M10 8V7C10 6.05719 10 5.58579 10.2929 5.29289C10.5858 5 11.0572 5 12 5H17C17.9428 5 18.4142 5 18.7071 5.29289C19 5.58579 19 6.05719 19 7V12C19 12.9428 19 13.4142 18.7071 13.7071C18.4142 14 17.9428 14 17 14H16M7 19H12C12.9428 19 13.4142 19 13.7071 18.7071C14 18.4142 14 17.9428 14 17V12C14 11.0572 14 10.5858 13.7071 10.2929C13.4142 10 12.9428 10 12 10H7C6.05719 10 5.58579 10 5.29289 10.2929C5 10.5858 5 11.0572 5 12V17C5 17.9428 5 18.4142 5.29289 18.7071C5.58579 19 6.05719 19 7 19Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>
                 </button>
             </div>
         </div>
         {#if grid_style !== 'Echo384' && grid_style !== 'Echo384Image' && grid_style !== 'Echo1536' && grid_style !== 'Echo1536Image'}
-            <div class="text-xs" bind:this={contentToCopy}>
+            <div class="text-xs opacity-70" bind:this={contentToCopy}>
                 {#if Object.keys(points_by_color).length >= 1}
                     {#each Object.entries(points_by_color) as [color, points]}
                         <div>
@@ -1376,7 +1371,7 @@ function downloadEchoCSV() {
                 {/if}
             </div>
         {:else if grid_style === 'Echo384' || grid_style === 'Echo384Image'}
-            <div class="text-xs break-all whitespace-normal" bind:this={contentToCopy}>
+            <div class="text-xs break-all whitespace-normal opacity-70" bind:this={contentToCopy}>
                 {#if Object.keys(points_by_color).length >= 1}
                     {#each Object.entries(points_by_color) as [color, points]}
                         <div>
@@ -1389,7 +1384,7 @@ function downloadEchoCSV() {
                 {/if}
             </div>
         {:else if grid_style === 'Echo1536' || grid_style === 'Echo1536Image'}
-            <div class="text-xs break-all whitespace-pre overflow-hidden overflow-scroll" bind:this={contentToCopy}>
+            <div class="text-xs break-all whitespace-pre overflow-hidden overflow-scroll opacity-70" bind:this={contentToCopy}>
                 {#if Object.keys(points_by_color).length >= 1}
                     Source Plate Name, Source Plate Barcode, Source Plate Type, Source Well, Destination Plate Name, Destination Plate Barcode, Destination Plate Type, Destination Well, Transfer Volume
                     {#each Object.entries(points_by_color) as [color, points]}
